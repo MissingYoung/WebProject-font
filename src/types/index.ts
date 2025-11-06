@@ -5,7 +5,7 @@ export interface AuthResponseData {
   token: string;
   userId: number;
   username: string;
-  role: string[]; // 文档示例是一个字符串数组
+  role: string; // 角色是单个字符串
 }
 
 // 通用的 API 响应体结构
@@ -20,8 +20,8 @@ export interface ApiResponse<T> {
 
 // 登录接口的请求体 (Payload) 类型
 export interface LoginPayload {
-  sduId?: string; 
-  password?: string;
+  sduId: string; 
+  password: string;
 }
 
 
@@ -29,8 +29,8 @@ export interface LoginPayload {
 
 // 注册接口的请求体类型
 export interface RegisterPayload {
-  sduId?: string;
-  password?: string;
-  realName?: string;
-  username?: string;
+  sduId: string;
+  password: string;
+  realName: string;
+  username: string;
 }

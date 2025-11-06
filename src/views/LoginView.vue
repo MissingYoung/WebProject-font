@@ -22,6 +22,20 @@ import { RouterLink } from 'vue-router'
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background-color: hsl(210 40% 98%);
+  background: linear-gradient(135deg, hsl(210 40% 98%) 0%, hsl(210 50% 95%) 50%, hsl(220 45% 96%) 100%);
+  position: relative;
+}
+
+.page-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    radial-gradient(circle at 20% 80%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(147, 51, 234, 0.08) 0%, transparent 50%);
+  pointer-events: none;
 }
 </style>
