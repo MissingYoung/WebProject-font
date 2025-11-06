@@ -27,15 +27,25 @@ const formData = reactive<RegisterPayload>({
 const { isLoading, error, submit } = useAuthForm(register)
 
 const handleRegister = async () => {
-  const result = await submit(formData)
-  if (result && result.code === 200) {
-    console.log('注册成功:', result)
-    alert('注册成功！即将跳转到登录页...')
-    // 注册成功后，自动跳转到登录页面
-    router.push('/login')
+  const {username, password, sduId, realName} = formData;
+  if (!username|| !password|| !sduId || !realName) {
+    error.value = '所有字段均为必填项，请完整填写后重试';
+    return;
   }
-  else {
-    error.value = '注册失败,请检查输入信息'
+  try {
+    const result = await submit(formData)
+    if (result && result.code === 200) {
+      console.log('注册成功: ', result.message);
+      alert('注册成功！即将跳转到首页...')
+      error.value = ''
+     // router.push('/')
+    } else if (result && result.code === 400) {
+      error.value = '注册失败: ' + result.message
+      console.error('注册失败:(Code:400) ', result.message);
+    }
+  } catch (err) {
+    error.value = '注册过程中出现错误，请检查你的网络或稍后重试'
+    console.error('注册异常: ', err);
   }
 }
 </script>
@@ -61,8 +71,8 @@ const handleRegister = async () => {
         <Input id="realName" type="text" placeholder="请输入真实姓名" v-model="formData.realName" />
       </div>
       <div class="grid gap-2">
-        <Label for="sduId">SDU ID</Label>
-        <Input id="sduId" type="text" placeholder="请输入 SDU ID" v-model="formData.sduId" />
+        <Label for="sduId">学工号</Label>
+        <Input id="sduId" type="text" placeholder="请输入学工号" v-model="formData.sduId" />
       </div>
       <div class="grid gap-2">
         <Label for="password">密码</Label>

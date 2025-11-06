@@ -5,7 +5,7 @@ export interface AuthResponseData {
   token: string;
   userId: number;
   username: string;
-  role: string[]; // 文档示例是一个字符串数组
+  role: string; 
 }
 
 // 通用的 API 响应体结构
