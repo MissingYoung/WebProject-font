@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useAuthForm } from '@/composables/userAuthForm'
 import { register } from '@/lib/api'
 import type { RegisterPayload } from '@/types' 
+import  { isPureString} from '@/utils/validate'
 
 // 引入 UI 组件
 import { Button } from '@/components/ui/button'
@@ -26,12 +27,19 @@ const formData = reactive<RegisterPayload>({
 // 复用完全相同的 Composable，只传入不同的 API 函数
 const { isLoading, error, submit } = useAuthForm(register)
 
+
+
 const handleRegister = async () => {
   const {username, password, sduId, realName} = formData;
   if (!username|| !password|| !sduId || !realName) {
     error.value = '所有字段均为必填项，请完整填写后重试';
     return;
   }
+  if (!isPureString(sduId)) {
+    error.value = '学工号格式不正确，请输入有效的学工号';
+    return;
+  }
+  
   try {
     const result = await submit(formData)
     if (result && result.code === 200) {
