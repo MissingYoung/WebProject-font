@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { reactive, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthForm } from '@/composables/userAuthForm'
-import { updateUserProfile } from '@/lib/api'
+import { updateUserProfile, getUserInfo } from '@/lib/api'
 import type { UpdateProfilePayload } from '@/types'
 
 // 引入 UI 组件
@@ -16,7 +16,7 @@ import { Textarea } from '@/components/ui/textarea'
 
 const router = useRouter()
 
-// 从本地读取 userId （先这样）
+// 从本地读取 userId（不考虑登录态）
 const userId = localStorage.getItem('userId') || ''
 
 // 表单数据
@@ -28,7 +28,26 @@ const formData = reactive<UpdateProfilePayload>({
 })
 
 const { isLoading, error, submit } = useAuthForm((data) => updateUserProfile(data, userId))
-const isLoadingProfile = ref(false) // 用于禁用按钮/占位
+const isLoadingProfile = ref(false)
+const userRole = ref('')
+const hasPermission = ref(false) // 这个页面只要有 userId 即可编辑（测试）
+
+onMounted(async () => {
+  if (!userId) {
+    error.value = '未找到用户ID'
+    return
+  }
+  isLoadingProfile.value = true
+  try {
+    const res = await getUserInfo(userId)
+    userRole.value = res?.data?.role || ''
+  } catch (e: any) {
+    console.warn('获取角色失败(可忽略)：', e?.message)
+  } finally {
+    isLoadingProfile.value = false
+  }
+  hasPermission.value = true
+})
 
 const handleUpdate = async () => {
   if (!userId) {
@@ -40,10 +59,8 @@ const handleUpdate = async () => {
     if (result && (result as any).code === 200) {
       alert('用户资料更新成功！')
       router.back()
-    } else {
-      if (!error.value) {
-        error.value = (result && (result as any).message) || '更新失败,请检查输入信息'
-      }
+    } else if (!error.value) {
+      error.value = (result && (result as any).message) || '更新失败,请检查输入信息'
     }
   } catch (err: any) {
     error.value = err?.message || '提交过程中发生异常'
@@ -57,16 +74,22 @@ const handleUpdate = async () => {
       <CardTitle class="text-3xl font-semibold mb-3">编辑用户资料</CardTitle>
       <CardDescription class="text-base">修改您的个人资料信息</CardDescription>
     </CardHeader>
+
     <CardContent class="pt-12 px-10 pb-10 h-auto overflow-y-auto">
-      <div v-if="isLoadingProfile" class="flex justify-center py-16">
-        <Loader2 class="h-8 w-8 animate-spin" />
+      <div v-if="error || !hasPermission" class="flex justify-center mb-6">
+        <Alert class="bg-red-100 border-red-500 w-full max-w-2xl flex justify-center px-4">
+          <div class="w-full text-center">
+            <AlertDescription class="text-red-700 text-lg font-semibold !text-center w-full block">
+              {{ error || '正在验证登录状态...' }}
+            </AlertDescription>
+          </div>
+        </Alert>
       </div>
 
-      <div v-else class="flex flex-col items-center">
+      <p class="text-sm text-gray-500 mb-4 text-center">当前角色：{{ userRole || '未知' }}</p>
+
+      <div class="flex flex-col items-center">
         <div class="w-full max-w-2xl grid gap-5">
-          <Alert v-if="error" class="bg-red-100 border-red-500 flex justify-center">
-            <AlertDescription class="text-red-700 text-center text-lg font-semibold">{{ error }}</AlertDescription>
-          </Alert>
 
           <div class="grid gap-3">
             <Label for="username">用户名</Label>
@@ -98,10 +121,14 @@ const handleUpdate = async () => {
           </div>
         </div>
       </div>
-
     </CardContent>
+
     <CardFooter class="flex gap-4 px-10 py-6 border-t justify-center">
-      <Button class="h-8 w-20" :disabled="isLoading || isLoadingProfile" @click="handleUpdate">
+      <Button
+        class="h-8 w-20"
+        :disabled="isLoading || isLoadingProfile || !userId"
+        @click="handleUpdate"
+      >
         <Loader2 v-if="isLoading" class="mr-2 h-4 w-4 animate-spin" />
         {{ isLoading ? '更新中...' : '更新资料' }}
       </Button>

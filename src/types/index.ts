@@ -31,6 +31,7 @@ export interface UserInfo {
   ethnic: string;
   politicalStatus: string;
   description: string;
+  role?: string; // 新增：可选角色字段，用于权限判断
 }
 
 // 用户资料 (User Profile)
