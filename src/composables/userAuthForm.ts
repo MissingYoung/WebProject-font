@@ -15,7 +15,8 @@ export function useAuthForm<T, U>(
     isLoading.value = true
     error.value = null
     try {
-      const response = await apiCallFunction(formData)
+      const response = await apiCallFunction(formData);
+      isLoading.value = false
       return response
     } catch (err: any) {
       error.value = err.message || '发生未知错误'
@@ -30,4 +31,17 @@ export function useAuthForm<T, U>(
     error,
     submit,
   }
+}
+
+export function isPureString(str: string): boolean {
+
+  if(typeof str!=="string"||str===""){
+      return false;
+  }
+ for(const char of str){
+     if(char<'0'||char>'9'){
+         return false;
+     }
+ }
+ return true;
 }

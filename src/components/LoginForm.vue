@@ -1,9 +1,10 @@
 <script setup lang="ts"> 
-import { reactive } from 'vue'
-import { useRouter } from 'vue-router'
+import { reactive,ref } from 'vue'
+import { useRouter ,useRoute} from 'vue-router'
 import { useAuthForm } from '@/composables/userAuthForm'
 import { login } from '@/lib/api'
 import type { LoginPayload } from '@/types' 
+import { useUserStore, type UserInfo } from '@/stores/user'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
@@ -15,6 +16,8 @@ import { Loader2 } from 'lucide-vue-next'
 
 
 const router = useRouter()
+const route = useRoute();
+const userStore =useUserStore();
 
 
 const formData = reactive<LoginPayload>({
@@ -23,7 +26,13 @@ const formData = reactive<LoginPayload>({
 })
 
 
-const { isLoading, error, submit } = useAuthForm(login)
+
+const isLoading = ref(false);
+const error = ref<string | null>(null);
+
+const submit = async (payload: LoginPayload) => {
+  return await login(payload);
+};
 
 const handleLogin = async () => {
 
@@ -33,26 +42,49 @@ const handleLogin = async () => {
     return;
   }
 
-  try {
-    const result = await submit(formData)
-    console.log('登录结果: ', result);
-    if (result && result.code === 200) {
-      console.log('登录成功: Token:', result.data?.token);
-      alert('登录成功！即将跳转到首页...')
-      error.value = ''
-      //router.push('/')
+  isLoading.value=true;
+  error.value='';
 
-    } if (result&&result.code === 500) {
-      error.value = '用户名或密码错误,请检查后重试'
-      console.error('登录失败:(Code:500) ', result.message);
+
+  try {
+    const result = await login(formData)
+    console.log('登录结果: ', result);
+    if (!result || !result.data) {
+      throw new Error('登录服务响应异常，请稍后重试');
     }
-    if (result && result.code === 400) {
-      error.value = '登录失败: ' + result.message
-      console.error('登录失败:(Code:400) ', result.message);
-    }
-  } catch (err) {
-    error.value = '登录过程中出现错误，请检查你的网络或稍后重试'
-    console.error('登录异常: ', err);
+    console.log('登录成功: ', result);
+    const {token,username,userId,realName,role}=result.data;
+
+
+      const miniUserInfo:UserInfo={
+        id:result.data.userId,
+        username:username,
+        sduId:formData.sduId,
+        realName:result.data.realName||'',
+        role:result.data.role,
+        avatarUrl:null,
+        
+      }
+
+      userStore.setUser({
+        token:token,
+        user:miniUserInfo,
+      });
+
+
+      alert('登陆成功，即将跳转到首页');
+      await router.push({name:'Dashboard'});
+      error.value='';
+     
+   
+
+
+  } catch (err:any) {
+    const errorMessage = err.message || '登录过程中出现未知错误，请稍后重试';
+    error.value=errorMessage;
+    console.error('登录异常: ', errorMessage);
+  }finally{
+    isLoading.value=false;
   }
 }
 </script>
@@ -79,7 +111,9 @@ const handleLogin = async () => {
       </div>
     </CardContent>
     <CardFooter>
-      <Button class="w-full" :disabled="isLoading" @click="handleLogin">
+      <Button class="w-full  bg-black text-white hover:bg-blue-600 focus-visible:ring-blue-500" 
+      :disabled="isLoading" 
+      @click="handleLogin">
         <Loader2 v-if="isLoading" class="mr-2 h-4 w-4 animate-spin" />
         {{ isLoading ? '登录中...' : '登 录' }}
       </Button>

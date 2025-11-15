@@ -5,6 +5,7 @@ import { useAuthForm } from '@/composables/userAuthForm'
 import { register } from '@/lib/api'
 import type { RegisterPayload } from '@/types' 
 import  { isPureString} from '@/utils/validate'
+import { useUserStore, type UserInfo } from '@/stores/user'
 
 // 引入 UI 组件
 import { Button } from '@/components/ui/button'
@@ -15,6 +16,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Loader2 } from 'lucide-vue-next'
 
 const router = useRouter()
+const userStore =useUserStore();
 
 // 1. 更新 formData 以匹配 RegisterPayload 类型和后端 API 要求
 const formData = reactive<RegisterPayload>({
@@ -44,9 +46,25 @@ const handleRegister = async () => {
     const result = await submit(formData)
     if (result && result.code === 200) {
       console.log('注册成功: ', result.message);
+      
+      const {token,userId,role}=result.data;
+        const miniUserInfo:UserInfo={
+        id:userId,
+        username:username,
+        sduId:formData.sduId,
+        realName:'',
+        role:role,
+        avatarUrl:null,
+        
+      }
+
+      userStore.setUser({
+        token:token,
+        user:miniUserInfo,
+      });
       alert('注册成功！即将跳转到首页...')
       error.value = ''
-     // router.push('/')
+      router.push({name:'Dashboard'})
     } else if (result && result.code === 400) {
       error.value = '注册失败: ' + result.message
       console.error('注册失败:(Code:400) ', result.message);
@@ -88,7 +106,9 @@ const handleRegister = async () => {
       </div>
     </CardContent>
     <CardFooter>
-      <Button class="w-full" :disabled="isLoading" @click="handleRegister">
+      <Button class="w-full  bg-black text-white hover:bg-blue-600 focus-visible:ring-blue-500" 
+      :disabled="isLoading" 
+      @click="handleRegister">
         <Loader2 v-if="isLoading" class="mr-2 h-4 w-4 animate-spin" />
         {{ isLoading ? '创建中...' : '创建账户' }}
       </Button>

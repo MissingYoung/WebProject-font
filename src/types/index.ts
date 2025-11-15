@@ -6,6 +6,8 @@ export interface AuthResponseData {
   userId: number;
   username: string;
   role: string; 
+  realName:string;
+  
 }
 
 // 通用的 API 响应体结构
@@ -33,4 +35,10 @@ export interface RegisterPayload {
   password?: string;
   realName?: string;
   username?: string;
+}
+
+//修改密码接口请求体类型（changePassword)
+export interface ChangePasswordPayload{
+ oldPassword?:string;
+ newPassword?:string;
 }
