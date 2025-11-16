@@ -1,10 +1,4 @@
-import type { ClassValue } from "clsx"
-import { clsx } from "clsx"
-import { twMerge } from "tailwind-merge"
-
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
-}
+//检查字符串是否为纯数字字符串
 export function isPureString(str: string): boolean {
 
   if(typeof str!=="string"||str===""){

@@ -1,11 +1,19 @@
 import axios from 'axios';
-import type {
+import type { 
+  LoginPayload, 
+  RegisterPayload,
+  AuthResponseData,
   ApiResponse,
+  ChangePasswordPayload,
   UpdateUserInfoPayload,
   UserInfo,
   UserProfile,
   UpdateProfilePayload,
+
 } from '@/types';
+import { useUserStore } from '@/stores/user';
+import type {UserInfo}from '@/stores/user';
+
 
 const apiClient = axios.create({
   baseURL: 'https://webapi.foofish.work', 
@@ -14,74 +22,129 @@ const apiClient = axios.create({
   },
 });
 
-// 更新用户信息请求函数
-export const updateUserInfo = async (payload: UpdateUserInfoPayload, userId: string): Promise<ApiResponse<null>> => {
-  try {
-    if (!userId) throw new Error('缺少用户ID')
-    const token = localStorage.getItem('token')
-    const response = await apiClient.post<ApiResponse<null>>(`/user/${userId}/update-info`, payload, {
-      headers: { 'Authorization': `Bearer ${token}` },
-    })
-    return response.data
-  } catch (error) {
-    if (axios.isAxiosError(error) && error.response) {
-      const errorResponse = error.response.data as ApiResponse<null>;
-      throw new Error(errorResponse.message || '更新用户信息失败啦！');
+//请求拦截器
+apiClient.interceptors.request.use(
+    (config)=>{
+      const userStore =useUserStore();
+      const token =userStore.token;
+
+      if(token){
+        config.headers['satoken']=token;
+      }
+      return config;
+    },
+    ( error)=>{
+      return Promise.reject(error);
     }
-    throw new Error('网络连接失败或服务器无响应');
-  }
-}
+)
+
+//响应拦截器(用于统一处理业务逻辑和错误)
+apiClient.interceptors.response.use(
+    (response)=>{
+      const res =response.data;
+      if(res.code!==200){
+        console.error('API错误:',res.message||'未知错误');
+        return Promise.reject(new Error(res.message||'Error'));
+      }
+      return res; // 如果业务码是 200，只返回 data 部分，简化后续操作
+    },
+    (error)=>{
+      console.error('网络错误',error.response?.data?.message||error.message);
+      if(axios.isAxiosError(error)&&error.response){
+        if(error.response.status===401){
+          const userStore=useUserStore();
+          userStore.logout();
+          window.location.href='/login';
+        }
+        return Promise.reject(new Error(error.response.data?.message||"服务器发生错误"));
+
+      }
+      return Promise.reject(new Error('网络连接失败或服务器无响应'));
+    }
+)
+
+
+
+// 定义通用的成功响应类型
+type LoginSuccessResponse = ApiResponse<AuthResponseData>;
+type RegisterSuccessResponse = ApiResponse<AuthResponseData>;
+type ChangePasswordSuccessResponse =ApiResponse<null>;
+type GetUserSuccessResponse =ApiResponse<UserInfo>;
+type UpdateUserInfoSuccessResponse = ApiResponse<null>;
+type GetUserInfoSuccessResponse = ApiResponse<UserInfo>;
+type GetUserProfileSuccessResponse = ApiResponse<UserProfile>;
+type UpdateUserProfileSuccessResponse = ApiResponse<null>;
+
+
+// 更新用户信息请求函数
+export const updateUserInfo = async (
+    payload: UpdateUserInfoPayload,
+    userId: string): Promise<UpdateUserInfoSuccessResponse> =>
+     apiClient.post(`/user/${userId}/update-info`, payload);
+
 
 // 获取当前用户信息(指定 userId)
-export const getUserInfo = async (userId: string): Promise<ApiResponse<UserInfo>> => {
-  try {
-    if (!userId) throw new Error('缺少用户ID')
-    const token = localStorage.getItem('token')
-    const response = await apiClient.get<ApiResponse<UserInfo>>(`/user/${userId}/info`, {
-      headers: { 'Authorization': `Bearer ${token}` },
-    })
-    return response.data
-  } catch (error) {
-    if (axios.isAxiosError(error) && error.response) {
-      const errorResponse = error.response.data as ApiResponse<null>;
-      throw new Error(errorResponse.message || '获取用户信息失败啦！');
-    }
-    throw new Error('网络连接失败或服务器无响应');
-  }
-}
+export const getUserInfo = async (
+    userId: string): Promise<GetUserInfoSuccessResponse> =>
+ apiClient.get(`/user/${userId}/info`,);
+
 
 // 获取用户资料(指定 userId)
-export const getUserProfile = async (userId: string): Promise<ApiResponse<UserProfile>> => {
-  try {
-    if (!userId) throw new Error('缺少用户ID')
-    const token = localStorage.getItem('token')
-    const response = await apiClient.get<ApiResponse<UserProfile>>(`/user/${userId}/profile`, {
-      headers: { 'Authorization': `Bearer ${token}` },
-    })
-    return response.data
-  } catch (error) {
-    if (axios.isAxiosError(error) && error.response) {
-      const errorResponse = error.response.data as ApiResponse<null>;
-      throw new Error(errorResponse.message || '获取用户资料失败');
-    }
-    throw new Error('网络连接失败或服务器无响应');
-  }
-}
+export const getUserProfile = async (
+    userId: string): Promise<GetUserProfileSuccessResponse > =>
+    apiClient.get(`/user/${userId}/profile`)
+
 
 // 更新用户资料
-export const updateUserProfile = async (payload: UpdateProfilePayload, userId: string): Promise<ApiResponse<null>> => {
-  try {
-    if (!userId) throw new Error('缺少用户ID')
-    const token = localStorage.getItem('token')
-    const response = await apiClient.post<ApiResponse<null>>(`/user/${userId}/update-profile`, payload, {
-      headers: { 'Authorization': `Bearer ${token}` },
-    })
-    return response.data
-  } catch (error) {
-    if (axios.isAxiosError(error) && error.response) {
-      const errorResponse = error.response.data as ApiResponse<null>;
-      throw new Error(errorResponse.message || '更新用户资料失败');
-    }
-    throw new Error('网络连接失败或服务器无响应');
-  }
-}
+export const updateUserProfile = async (
+    payload: UpdateProfilePayload,
+    userId: string): Promise<UpdateUserProfileSuccessResponse> =>
+    apiClient.post(`/user/${userId}/update-profile`, payload)
+
+
+
+
+//  更新登录请求函数
+export const login = async (payload: LoginPayload): Promise<LoginSuccessResponse> => 
+  
+    // 使用API 路径: /auth/login
+     apiClient.post('/auth/login', payload);
+   
+    
+
+
+//  更新注册请求函数
+export const register = async (payload: RegisterPayload): Promise<RegisterSuccessResponse> => 
+ 
+    // 使用API 路径: /auth/register
+    apiClient.post('/auth/register', payload);
+
+
+//  更新修改密码请求函数
+
+/**
+ * 修改用户密码 
+ * @param userId - 用户 ID，将作为 URL 的一部分
+ * @param payload - 包含新旧密码的对象
+ */
+export const changePassword = async (
+  userId:number,
+  payload: ChangePasswordPayload
+): Promise<ChangePasswordSuccessResponse> => 
+    apiClient.post(`/auth/${userId}/change-password`, payload);
+  
+
+
+/**
+ * 获取当前登录用户的信息
+ * 这个请求会自动携带拦截器中设置的 token
+ */
+export const getCurrentUser=async(
+  userId:number,
+
+):Promise<GetUserSuccessResponse>=>
+  
+   apiClient.get(`/auth/${userId}/info`);
+  
+
+
