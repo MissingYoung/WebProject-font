@@ -4,7 +4,8 @@ import { useRouter ,useRoute} from 'vue-router'
 import { useAuthForm } from '@/composables/userAuthForm'
 import { login } from '@/lib/api'
 import type { LoginPayload } from '@/types' 
-import { useUserStore, type UserInfo } from '@/stores/user'
+import { useUserStore, } from '@/stores/user'
+import type { UserInfo } from '@/types'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
@@ -12,6 +13,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Loader2 } from 'lucide-vue-next'
+import IdentifyCode from './IdentifyCode.vue'
 
 
 
@@ -20,15 +22,21 @@ const route = useRoute();
 const userStore =useUserStore();
 
 
-const formData = reactive<LoginPayload>({
+const formData = reactive({
   sduId: '',
   password: '',
+  verifyCode:'',
 })
 
 
-
+const realCode =ref('');
 const isLoading = ref(false);
 const error = ref<string | null>(null);
+
+// 接收子组件生成的验证码
+const handleUpdateCode = (code: string) => {
+  realCode.value = code
+}
 
 const submit = async (payload: LoginPayload) => {
   return await login(payload);
@@ -36,10 +44,16 @@ const submit = async (payload: LoginPayload) => {
 
 const handleLogin = async () => {
 
-  const {sduId, password} = formData;
-  if (!sduId || !password) {
-    error.value = '用户名和密码均为必填项，请完整填写后重试';
+  const {sduId, password,verifyCode} = formData;
+  if (!sduId || !password||!verifyCode) {
+    error.value = '用户名,密码和图形验证码均为必填项，请完整填写后重试';
     return;
+  }
+
+    // 忽略大小写比较的前端验证码
+  if (verifyCode.toLowerCase() !== realCode.value.toLowerCase()) {
+    error.value = '验证码错误，请重新输入'
+    return
   }
 
   isLoading.value=true;
@@ -110,6 +124,25 @@ const handleLogin = async () => {
       <div class="grid gap-2">
         <Label for="password">密码</Label>
         <Input id="password" type="password" v-model="formData.password" />
+      </div>
+      <div class="grid gap-2">
+        <Label for="verifyCode">验证码</Label>
+        <div class="flex gap-3 items-center">
+          <Input
+          id="verifyCode"
+          type="text"
+          placeholder="不区分大小写"
+          v-model="formData.verifyCode"
+          class="flex-1"
+          @key.enter="handleLogin"
+          />
+          <!--验证码图片组件-->
+          <IdentifyCode
+          :width="120"
+          :height="40"
+          @update:code="handleUpdateCode"
+          />
+        </div>
       </div>
     </CardContent>
     <CardFooter>

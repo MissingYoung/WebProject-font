@@ -5,7 +5,8 @@ import { useAuthForm } from '@/composables/userAuthForm'
 import { register } from '@/lib/api'
 import type { RegisterPayload } from '@/types' 
 import  { isPureString} from '@/utils/validate'
-import { useUserStore, type UserInfo } from '@/stores/user'
+import { useUserStore,} from '@/stores/user'
+import type { UserInfo } from '@/types'
 
 // 引入 UI 组件
 import { Button } from '@/components/ui/button'

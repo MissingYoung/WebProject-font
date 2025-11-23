@@ -4,6 +4,7 @@ import RegisterView from '../views/RegisterView.vue'
 import MainLayout from '@/views/MainLayout.vue'
 import ChangePassword from '@/views/ChangePassword.vue'
 import { useUserStore } from '../stores/user'
+import ForgotPassword from '@/views/ForgotPassword.vue'
 
 
 // 使用 vue-router 提供的 RouteRecordRaw 类型来定义路由数组
@@ -39,6 +40,11 @@ const routes: Array<RouteRecordRaw> = [
     name: 'ChangePassword',
     component:ChangePassword,
     meta:{requiresAuth:true}
+  },
+  {
+    path:'/find-password',
+    name:'FindPassword',
+    component:ForgotPassword,
   }
 ]
 

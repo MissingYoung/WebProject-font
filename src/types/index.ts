@@ -8,12 +8,22 @@ export interface AuthResponseData {
   role: string; 
   realName:string;
 
-
+}
 // 通用的 API 响应体结构
 export interface ApiResponse<T> {
   code: number;
   message: string;
   data: T;
+}
+
+export interface UserInfo{
+    id:number;
+    username:string;
+    realName:string;
+    sduId?:string;
+    role:string;
+    avatarUrl?:string|null;
+    
 }
 
 
@@ -23,6 +33,7 @@ export interface ApiResponse<T> {
 export interface LoginPayload {
   sduId?: string; 
   password?: string;
+ 
 }
 
 
@@ -40,4 +51,15 @@ export interface RegisterPayload {
 export interface ChangePasswordPayload{
  oldPassword?:string;
  newPassword?:string;
+}
+
+//邮箱找回密码功能
+export interface SendCodePayload {
+  email: string;
+}
+
+export interface ResetPasswordPayload {
+  email: string;
+  verificationCode: string;
+  newPassword: string;
 }

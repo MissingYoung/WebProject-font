@@ -5,13 +5,16 @@ import type {
   AuthResponseData,
   ApiResponse,
   ChangePasswordPayload,
+  UserInfo,
+  SendCodePayload,
+  ResetPasswordPayload,
 } from '@/types';
 import { useUserStore } from '@/stores/user';
 
 
 
 const apiClient = axios.create({
-  baseURL: 'https://webapi.foofish.work', 
+  baseURL: 'http://localhost:8081', 
   headers: {
     'Content-Type': 'application/json',
   },
@@ -63,6 +66,8 @@ type LoginSuccessResponse = ApiResponse<AuthResponseData>;
 type RegisterSuccessResponse = ApiResponse<AuthResponseData>;
 type ChangePasswordSuccessResponse =ApiResponse<null>;
 type GetUserSuccessResponse =ApiResponse<UserInfo>;
+type SendCodeSuccessResponse =ApiResponse<null>;
+type ResetPasswordSuccessResponse =ApiResponse<null>;
 
 //  更新登录请求函数
 export const login = async (payload: LoginPayload): Promise<LoginSuccessResponse> => 
@@ -105,5 +110,16 @@ export const getCurrentUser=async(
 ):Promise<GetUserSuccessResponse>=>
   
    apiClient.get(`/auth/${userId}/info`);
+
+//公共接口，发送重置密码验证码
+export const sendPasswordResetCode =async(
+  payload:SendCodePayload
+):Promise<SendCodeSuccessResponse>=>
+  apiClient.post('/auth/password-reset/send-code',payload);
+  //重置密码
+export const resetPassword =async(
+  payload:ResetPasswordPayload
+):Promise<ResetPasswordSuccessResponse>=>
+  apiClient.post('/auth/password-reset/reset',payload);  
   
 
