@@ -7,8 +7,7 @@ export interface AuthResponseData {
   username: string;
   role: string; 
   realName:string;
-  
-}
+
 
 // 通用的 API 响应体结构
 export interface ApiResponse<T> {

@@ -93,8 +93,10 @@ const handleLogin = async () => {
  
   <Card class="w-full max-w-sm">
     <CardHeader>
+
       <CardTitle class="text-2xl" style="text-align: center;">作业管理系统</CardTitle>
       <CardTitle class="text-lg">登录</CardTitle>
+
       <CardDescription>请输入您的账户信息。</CardDescription>
     </CardHeader>
     <CardContent class="grid gap-4">
