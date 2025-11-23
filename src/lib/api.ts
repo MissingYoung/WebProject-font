@@ -7,7 +7,7 @@ import type {
   ChangePasswordPayload,
 } from '@/types';
 import { useUserStore } from '@/stores/user';
-import type {UserInfo}from '@/stores/user';
+
 
 
 const apiClient = axios.create({
