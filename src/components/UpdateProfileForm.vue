@@ -27,7 +27,8 @@ const formData = reactive<UpdateProfilePayload>({
   description: '',
 })
 
-const { isLoading, error, submit } = useAuthForm((data) => updateUserProfile(data, userId))
+
+const { isLoading, error, submit } = useAuthForm((data) => updateUserProfile(data as UpdateProfilePayload, userId))
 const isLoadingProfile = ref(false)
 const userRole = ref('')
 const hasPermission = ref(false) // 这个页面只要有 userId 即可编辑（测试）

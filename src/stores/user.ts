@@ -2,16 +2,12 @@ import {defineStore} from 'pinia'
 import {ref ,computed} from 'vue'
 import { getCurrentUser } from '@/lib/api';
 
+import type { UserInfo } from '@/types';
 
-export interface UserInfo{
-    id:number;
-    username:string;
-    realName:string;
-    sduId?:string;
-    role:string;
-    avatarUrl?:string|null;
-    
-}
+
+
+
+
 
 //定义store
 export const useUserStore=defineStore('user',()=>{

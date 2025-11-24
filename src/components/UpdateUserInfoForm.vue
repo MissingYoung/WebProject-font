@@ -36,7 +36,7 @@ const formData = reactive<UpdateUserInfoPayload>({
 
 const userRole = ref('')
 const hasPermission = ref(false)
-const { isLoading, error, submit } = useAuthForm((data) => updateUserInfo(data, userId))
+const { isLoading, error, submit } = useAuthForm((data) => updateUserInfo(data as UpdateUserInfoPayload, userId))
 const isLoadingUserInfo = ref(false)
 
 // 仅从后端获取 role，并判断是否允许提交
@@ -122,7 +122,9 @@ const handleUpdate = async () => {
 
             <div class="grid gap-3">
               <Label for="gender">性别</Label>
-              <Select :model-value="formData.gender?.toString()" @update:model-value="(val) => formData.gender = val ? parseInt(val) as (0 | 1 | 2) : undefined">
+
+              <Select :model-value="formData.gender?.toString()" @update:model-value="(val) => formData.gender = val ? parseInt(String(val)) as (0 | 1 | 2) : undefined">
+
                 <SelectTrigger id="gender" class="h-9 pl-6">
                   <SelectValue placeholder="选择性别" />
                 </SelectTrigger>

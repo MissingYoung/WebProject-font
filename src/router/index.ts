@@ -5,13 +5,17 @@ import RegisterView from '../views/RegisterView.vue'
 import MainLayout from '@/views/MainLayout.vue'
 import ChangePassword from '@/views/ChangePassword.vue'
 import { useUserStore } from '../stores/user'
+
+import ForgotPassword from '@/views/ForgotPassword.vue'
 import UpdateUserInfoView from '../views/UpdateUserInfoView.vue'
 import UpdateProfileView from '../views/UpdateProfileView.vue'
+import CourseList from '@/views/Course/CourseList.vue'
+
 
 
 // 使用 vue-router 提供的 RouteRecordRaw 类型来定义路由数组
 const routes: Array<RouteRecordRaw> = [
-  
+
   {
     path: '/login',
     name: 'Login',
@@ -22,22 +26,7 @@ const routes: Array<RouteRecordRaw> = [
     name: 'Register',
     component: RegisterView,
   },
-  {
-    path:'/',
-    component:MainLayout,
-    redirect:'/dashboard',// 默认重定向到仪表盘
-    meta:{requiresAuth:true},
-    children:[
-      {
-      path:'dashboard',
-      name:'Dashboard',
-      component:()=>import('src/views/DashboardView.vue')
-      },
-    ]
-
-
-  },
-  {
+    {
     path: '/change-password',
     name: 'ChangePassword',
     component:ChangePassword,
@@ -45,9 +34,13 @@ const routes: Array<RouteRecordRaw> = [
   },
   // 根路径重定向到更新页面，避免访问 '/' 时页面为空白
   {
-    path: '/',
-    redirect: '/update-info',
+
+    path:'/find-password',
+    name:'FindPassword',
+    component:ForgotPassword,
   },
+
+
   {
     path: '/update-info',
     name: 'UpdateInfo',
@@ -58,11 +51,37 @@ const routes: Array<RouteRecordRaw> = [
     name: 'UpdateProfile',
     component: UpdateProfileView,
   },
+
+  {
+    path: '/',
+    component: MainLayout,
+    redirect: '/dashboard',// 默认重定向到仪表盘
+    meta: { requiresAuth: true },
+    children: [
+      {
+        path: 'dashboard',
+        name: 'Dashboard',
+        component: () => import('src/views/DashboardView.vue'),
+        meta: { title: '我的桌面' }
+      },
+      {
+        path: 'course-list',
+        name: 'CourseList',
+        component:()=>import('src/views/Course/CourseList.vue'),
+        meta: { title: '课程管理' }
+      },
+    ]
+
+
+  },
+
+
   // 捕获所有未匹配路径并重定向到根路径（或定向到其它页面）
   {
     path: '/:pathMatch(.*)*',
     redirect: '/',
   },
+
 ]
 
 const router = createRouter({
@@ -74,12 +93,12 @@ const router = createRouter({
 
 
 //全局前置守卫
-router.beforeEach((to,from,next)=>{
-  const userStore=useUserStore();
+router.beforeEach((to, from, next) => {
+  const userStore = useUserStore();
   const isLoggedIn = userStore.isLoggedIn;
-  const isAuthPage =to.name==='Login'||to.name==='Register';
+  const isAuthPage = to.name === 'Login' || to.name === 'Register';
   console.log(`导航守卫: 目标路径 ${to.path}, 登录状态: ${isLoggedIn}`);
-    if (userStore.isSoftLoggedOut && !isAuthPage) {
+  if (userStore.isSoftLoggedOut && !isAuthPage) {
     userStore.isSoftLoggedOut = false;
   }
 

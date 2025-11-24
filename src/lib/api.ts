@@ -7,12 +7,20 @@ import type {
   ChangePasswordPayload,
   UpdateUserInfoPayload,
   UserInfo,
+  SendCodePayload,
+  ResetPasswordPayload,
   UserProfile,
   UpdateProfilePayload,
+  CreateCoursePayload,
+  PageResult,
+  CourseQueryParams,
+  CourseVO ,
+
+
 
 } from '@/types';
 import { useUserStore } from '@/stores/user';
-import type {UserInfo}from '@/stores/user';
+
 
 
 const apiClient = axios.create({
@@ -70,10 +78,18 @@ type LoginSuccessResponse = ApiResponse<AuthResponseData>;
 type RegisterSuccessResponse = ApiResponse<AuthResponseData>;
 type ChangePasswordSuccessResponse =ApiResponse<null>;
 type GetUserSuccessResponse =ApiResponse<UserInfo>;
+
+type SendCodeSuccessResponse =ApiResponse<null>;
+type ResetPasswordSuccessResponse =ApiResponse<null>;
+
 type UpdateUserInfoSuccessResponse = ApiResponse<null>;
 type GetUserInfoSuccessResponse = ApiResponse<UserInfo>;
 type GetUserProfileSuccessResponse = ApiResponse<UserProfile>;
 type UpdateUserProfileSuccessResponse = ApiResponse<null>;
+
+type CreateCourseSuccessResponse =ApiResponse<number>;
+type GetCourseListSuccessResponse =ApiResponse<PageResult<CourseVO>>;
+
 
 
 // 更新用户信息请求函数
@@ -100,8 +116,6 @@ export const updateUserProfile = async (
     payload: UpdateProfilePayload,
     userId: string): Promise<UpdateUserProfileSuccessResponse> =>
     apiClient.post(`/user/${userId}/update-profile`, payload)
-
-
 
 
 //  更新登录请求函数
@@ -145,6 +159,33 @@ export const getCurrentUser=async(
 ):Promise<GetUserSuccessResponse>=>
   
    apiClient.get(`/auth/${userId}/info`);
+
+
+//公共接口，发送重置密码验证码
+export const sendPasswordResetCode =async(
+  payload:SendCodePayload
+):Promise<SendCodeSuccessResponse>=>
+  apiClient.post('/auth/password-reset/send-code',payload);
+  //重置密码
+export const resetPassword =async(
+  payload:ResetPasswordPayload
+):Promise<ResetPasswordSuccessResponse>=>
+  apiClient.post('/auth/password-reset/reset',payload);  
+
+ 
+//创建课程
+export const createCourse=async(
+  payload:CreateCoursePayload
+):Promise<CreateCourseSuccessResponse>=>
+  apiClient.post('/course/create', payload);  
+
+//获取课程列表
+export const getCourseList=async(
+  params:CourseQueryParams
+):Promise<GetCourseListSuccessResponse>=>
+  apiClient.get('/course/list',{params});  
+
+
   
 
 

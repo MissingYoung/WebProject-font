@@ -1,36 +1,52 @@
 <!--主页侧边导航栏样式-->
 <script setup lang="ts">
 import { shallowRef } from 'vue';
-import { Home, BookCheck, School, FileText, PencilRuler, MessageSquareQuote } from 'lucide-vue-next';
+import {Button}from '@/components/ui/button'
+import { Home,GraduationCap,Command} from 'lucide-vue-next';
 const menuItems=shallowRef([
-    {name:'我的桌面',path:'/dashboard',icon:Home}
+    {name:'我的桌面',routeName:'Dashboard',icon:Home},
+    {name:'课程列表',routeName:'CourseList',icon:GraduationCap}
 
 
 ])
 </script>
 
 <template>
-    <aside class="hidden w-64 flex-col border-r bg-background sm:flex">
-        <div class="flex h-16 items-center border-b px-6">
-            <a href="/dashboard" class="flex items-center gap-2 font-semibold">
+  <div class="hidden border-r bg-muted/40 md:block w-[220px] lg:w-[280px] h-screen flex-col flex sticky top-0">
+    <!-- 1. 顶部 Logo 区域 -->
+    <div class="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
+      <a href="/" class="flex items-center gap-2 font-semibold">
+        <Command class="h-6 w-6" />
+        <span class="">智慧作业管理平台</span>
+      </a>
+    </div>
 
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6">
-                    <path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3" />
-                </svg>
-                <span class="">智慧作业管理平台</span>
-            </a>
-        </div>
-        <div class="flex-1 overflow-auto py-2">
-            <nav class="grid items-start px-4 text-sm font-medium">
-                <!-- 使用 router-link 来进行导航 -->
-                <router-link v-for="item in menuItems" :key="item.name" :to="item.path"
-                    class="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-                    active-class="bg-muted text-primary">
-                    <component :is="item.icon" class="h-4 w-4" />
-                    {{ item.name }}
-                </router-link>
-            </nav>
-        </div>
-    </aside>
+    <!-- 2. 导航菜单区域 -->
+    <div class="flex-1">
+      <nav class="grid items-start px-2 text-sm font-medium lg:px-4 mt-4 gap-2">
+        
+        <!-- 循环渲染菜单项 -->
+        <router-link 
+          v-for="item in menuItems" 
+          :key="item.routeName"
+          :to="{ name: item.routeName }"
+          custom
+          v-slot="{ href, navigate, isActive }"
+        >
+          <a 
+            :href="href" 
+            @click="navigate"
+            :class="[
+              'flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-primary',
+              isActive ? 'bg-muted text-primary' : 'text-muted-foreground'
+            ]"
+          >
+            <component :is="item.icon" class="h-4 w-4" />
+            {{ item.name }}
+          </a>
+        </router-link>
+
+      </nav>
+    </div>
+  </div>
 </template>

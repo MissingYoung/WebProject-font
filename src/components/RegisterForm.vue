@@ -5,7 +5,10 @@ import { useAuthForm } from '@/composables/userAuthForm'
 import { register } from '@/lib/api'
 import type { RegisterPayload } from '@/types' 
 import  { isPureString} from '@/utils/validate'
-import { useUserStore, type UserInfo } from '@/stores/user'
+
+import { useUserStore} from '@/stores/user'
+import type { UserInfo } from '@/types';
+
 
 // 引入 UI 组件
 import { Button } from '@/components/ui/button'
@@ -48,14 +51,20 @@ const handleRegister = async () => {
       console.log('注册成功: ', result.message);
       
       const {token,userId,role}=result.data;
-        const miniUserInfo:UserInfo={
-        id:userId,
-        username:username,
-        sduId:formData.sduId,
-        realName:'',
-        role:role,
-        avatarUrl:null,
-        
+      const miniUserInfo:UserInfo={
+      id: result.data.userId,
+      username: username,
+      sduId: formData.sduId,
+      realName: result.data.realName || '',
+      role: result.data.role,
+      avatarUrl: '',
+      gender: 2,// 0=MALE, 1=FEMALE, 2=UNKNOWN
+      birthday: '',
+      phone: '',
+      email: '',
+      ethnic: '',
+      politicalStatus: '',
+      description: ''
       }
 
       userStore.setUser({
