@@ -2,14 +2,6 @@ import {defineStore} from 'pinia'
 import {ref ,computed} from 'vue'
 import { getCurrentUser } from '@/lib/api';
 import type { UserInfo } from '@/types';
-<<<<<<< Updated upstream
-
-
-
-
-=======
->>>>>>> Stashed changes
-
 
 
 //定义store

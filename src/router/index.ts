@@ -1,4 +1,3 @@
-
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import LoginView from '../views/LoginView.vue'
 import RegisterView from '../views/RegisterView.vue'
@@ -6,17 +5,13 @@ import MainLayout from '@/views/MainLayout.vue'
 import ChangePassword from '@/views/ChangePassword.vue'
 import { useUserStore } from '../stores/user'
 
-import ForgotPassword from '@/views/ForgotPassword.vue'
+
+
 import UpdateUserInfoView from '../views/UpdateUserInfoView.vue'
 import UpdateProfileView from '../views/UpdateProfileView.vue'
-<<<<<<< Updated upstream
 import CourseList from '@/views/Course/CourseList.vue'
-
-
-
-=======
 import ForgotPassword from '@/views/ForgotPassword.vue'
->>>>>>> Stashed changes
+
 
 
 // 使用 vue-router 提供的 RouteRecordRaw 类型来定义路由数组
@@ -57,7 +52,6 @@ const routes: Array<RouteRecordRaw> = [
     name: 'UpdateProfile',
     component: UpdateProfileView,
   },
-
   {
     path: '/',
     component: MainLayout,
@@ -81,25 +75,12 @@ const routes: Array<RouteRecordRaw> = [
 
   },
 
-
   // 捕获所有未匹配路径并重定向到根路径（或定向到其它页面）
   {
     path: '/:pathMatch(.*)*',
     redirect: '/',
   },
-<<<<<<< Updated upstream
 
-=======
->>>>>>> Stashed changes
-  {
-    path:'/find-password',
-    name:'/FindPassword',
-    component:ForgotPassword,
-  }
-<<<<<<< Updated upstream
-
-=======
->>>>>>> Stashed changes
 ]
 
 const router = createRouter({
@@ -140,6 +121,5 @@ router.beforeEach((to, from, next) => {
 
 
 });
-
 
 export default router

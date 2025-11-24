@@ -27,12 +27,9 @@ const formData = reactive<UpdateProfilePayload>({
   description: '',
 })
 
-<<<<<<< Updated upstream
+
 
 const { isLoading, error, submit } = useAuthForm((data) => updateUserProfile(data as UpdateProfilePayload, userId))
-=======
-const { isLoading, error, submit } = useAuthForm((data:UpdateProfilePayload) => updateUserProfile(data, userId))
->>>>>>> Stashed changes
 const isLoadingProfile = ref(false)
 const userRole = ref('')
 const hasPermission = ref(false) // 这个页面只要有 userId 即可编辑（测试）

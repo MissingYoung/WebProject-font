@@ -3,17 +3,9 @@ import { reactive, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthForm } from '@/composables/userAuthForm'
 import { login } from '@/lib/api'
-<<<<<<< Updated upstream
-
 import type { LoginPayload } from '@/types'
 import { useUserStore } from '@/stores/user'
 import type { UserInfo } from '@/types';
-
-=======
-import type { LoginPayload } from '@/types' 
-import { useUserStore,  } from '@/stores/user'
-import type{UserInfo}from '@/types'
->>>>>>> Stashed changes
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
@@ -65,7 +57,6 @@ const handleLogin = async () => {
     const { token, username, userId, realName, role } = result.data;
 
 
-<<<<<<< Updated upstream
     const miniUserInfo: UserInfo = {
       id: result.data.userId,
       username: username,
@@ -81,23 +72,6 @@ const handleLogin = async () => {
       politicalStatus: '',
       description: ''
       
-=======
-      const miniUserInfo:UserInfo={
-        id:result.data.userId,
-        username:username,
-        sduId:formData.sduId,
-        realName:result.data.realName||'',
-        role:role,
-        avatarUrl:'',
-        gender: 2, // 0=MALE, 1=FEMALE, 2=UNKNOWN
-        birthday: '',
-        phone: '',
-        email: '',
-        ethnic: '',
-        politicalStatus: '',
-        description: '',
-      }
->>>>>>> Stashed changes
 
     }
 
