@@ -12,6 +12,12 @@ import { RouterLink } from 'vue-router'
         立即注册
       </RouterLink>
     </div>
+    <div class="mt-4 text-center text-sm">
+      忘记密码?
+      <RouterLink to="/find-password" class="underline">
+        立即找回
+      </RouterLink>
+    </div>
   </div>
 </template>
 

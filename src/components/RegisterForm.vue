@@ -27,6 +27,7 @@ const formData = reactive<RegisterPayload>({
   password: '',
   sduId: '',
   realName: '',
+  email:'',
 })
 
 // 复用完全相同的 Composable，只传入不同的 API 函数
@@ -35,14 +36,20 @@ const { isLoading, error, submit } = useAuthForm(register)
 
 
 const handleRegister = async () => {
-  const {username, password, sduId, realName} = formData;
-  if (!username|| !password|| !sduId || !realName) {
+  const {username, password, sduId, realName,email} = formData;
+  if (!username|| !password|| !sduId || !realName||!email) {
     error.value = '所有字段均为必填项，请完整填写后重试';
     return;
   }
   if (!isPureString(sduId)) {
     error.value = '学工号格式不正确，请输入有效的学工号';
     return;
+  }
+    // 简单的邮箱格式校验
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!emailRegex.test(formData.email)) {
+    error.value = '请输入有效的邮箱地址'
+    return
   }
   
   try {
@@ -112,6 +119,10 @@ const handleRegister = async () => {
       <div class="grid gap-2">
         <Label for="password">密码</Label>
         <Input id="password" type="password" placeholder="请输入密码" v-model="formData.password" />
+      </div>
+      <div class="grid gap-2">
+        <Label for="password">邮箱</Label>
+        <Input id="email" type="email" placeholder="请输入有效邮箱" v-model="formData.email" />
       </div>
     </CardContent>
     <CardFooter>

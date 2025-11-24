@@ -43,6 +43,7 @@ export interface RegisterPayload {
   password?: string;
   realName?: string;
   username?: string;
+  email:string;
 }
 
 //修改密码接口请求体类型（changePassword)
@@ -52,9 +53,6 @@ export interface ChangePasswordPayload{
 }
 
 
-
-//邮箱找回密码功能
-export interface SendCodePayload {
 
 
 //---用户信息界面---
@@ -71,22 +69,24 @@ export interface UpdateUserInfoPayload {
   politicalStatus?: string;
   description?: string;
 
-
+}
 
 
 // 用户信息数据类型
 export interface UserInfo {
+  sduId?:string,
+  id:number,
   username: string;
   realName: string;
   gender: 0 | 1 | 2; // 0=MALE, 1=FEMALE, 2=UNKNOWN
   birthday: string;
   phone: string;
   email: string;
-  avatarUrl: string;
+  avatarUrl?: string|null;
   ethnic: string;
   politicalStatus: string;
   description: string;
-  role?: string; // 新增：可选角色字段，用于权限判断
+  role?: string; //角色字段，用于权限判断
 }
 
 // 用户资料 (User Profile)
@@ -164,3 +164,12 @@ export interface CourseQueryParams{
 
 }
 
+//邮箱验证码
+export interface SendCodePayload{
+  email:string;
+}
+export interface ResetPasswordPayload{
+  email:string;
+  verificationCode:string;
+  newPassword:string;
+}

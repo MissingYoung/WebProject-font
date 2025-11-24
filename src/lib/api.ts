@@ -17,14 +17,12 @@ import type {
   CourseVO ,
 
 
-
 } from '@/types';
 import { useUserStore } from '@/stores/user';
 
 
-
 const apiClient = axios.create({
-  baseURL: 'https://webapi.foofish.work', 
+  baseURL: 'http://localhost:8081', 
   headers: {
     'Content-Type': 'application/json',
   },
@@ -78,14 +76,12 @@ type LoginSuccessResponse = ApiResponse<AuthResponseData>;
 type RegisterSuccessResponse = ApiResponse<AuthResponseData>;
 type ChangePasswordSuccessResponse =ApiResponse<null>;
 type GetUserSuccessResponse =ApiResponse<UserInfo>;
-
-type SendCodeSuccessResponse =ApiResponse<null>;
-type ResetPasswordSuccessResponse =ApiResponse<null>;
-
 type UpdateUserInfoSuccessResponse = ApiResponse<null>;
 type GetUserInfoSuccessResponse = ApiResponse<UserInfo>;
 type GetUserProfileSuccessResponse = ApiResponse<UserProfile>;
 type UpdateUserProfileSuccessResponse = ApiResponse<null>;
+type SendCodeSuccessResponse =ApiResponse<null>;
+type ResetPasswordSuccessResponse =ApiResponse<null>;
 
 type CreateCourseSuccessResponse =ApiResponse<number>;
 type GetCourseListSuccessResponse =ApiResponse<PageResult<CourseVO>>;
@@ -184,6 +180,13 @@ export const getCourseList=async(
   params:CourseQueryParams
 ):Promise<GetCourseListSuccessResponse>=>
   apiClient.get('/course/list',{params});  
+
+
+ export const getCurrentUserProfile=async(
+  
+ ):Promise< GetUserProfileSuccessResponse>=>
+  apiClient.get('/auth/me'); 
+  
 
 
   
