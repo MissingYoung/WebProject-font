@@ -9,10 +9,14 @@ import { useUserStore } from '../stores/user'
 import ForgotPassword from '@/views/ForgotPassword.vue'
 import UpdateUserInfoView from '../views/UpdateUserInfoView.vue'
 import UpdateProfileView from '../views/UpdateProfileView.vue'
+<<<<<<< Updated upstream
 import CourseList from '@/views/Course/CourseList.vue'
 
 
 
+=======
+import ForgotPassword from '@/views/ForgotPassword.vue'
+>>>>>>> Stashed changes
 
 
 // 使用 vue-router 提供的 RouteRecordRaw 类型来定义路由数组
@@ -83,13 +87,19 @@ const routes: Array<RouteRecordRaw> = [
     path: '/:pathMatch(.*)*',
     redirect: '/',
   },
+<<<<<<< Updated upstream
 
+=======
+>>>>>>> Stashed changes
   {
     path:'/find-password',
     name:'/FindPassword',
     component:ForgotPassword,
   }
+<<<<<<< Updated upstream
 
+=======
+>>>>>>> Stashed changes
 ]
 
 const router = createRouter({

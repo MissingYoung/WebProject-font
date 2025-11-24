@@ -11,11 +11,16 @@ import type {
   ResetPasswordPayload,
   UserProfile,
   UpdateProfilePayload,
+<<<<<<< Updated upstream
   CreateCoursePayload,
   PageResult,
   CourseQueryParams,
   CourseVO ,
 
+=======
+  SendCodePayload,
+  ResetPasswordPayload,
+>>>>>>> Stashed changes
 
 } from '@/types';
 import { useUserStore } from '@/stores/user';
@@ -82,10 +87,13 @@ type GetUserProfileSuccessResponse = ApiResponse<UserProfile>;
 type UpdateUserProfileSuccessResponse = ApiResponse<null>;
 type SendCodeSuccessResponse =ApiResponse<null>;
 type ResetPasswordSuccessResponse =ApiResponse<null>;
+<<<<<<< Updated upstream
 
 type CreateCourseSuccessResponse =ApiResponse<number>;
 type GetCourseListSuccessResponse =ApiResponse<PageResult<CourseVO>>;
 
+=======
+>>>>>>> Stashed changes
 
 
 // 更新用户信息请求函数
@@ -156,6 +164,7 @@ export const getCurrentUser=async(
   
    apiClient.get(`/auth/${userId}/info`);
 
+<<<<<<< Updated upstream
 
 //公共接口，发送重置密码验证码
 export const sendPasswordResetCode =async(
@@ -182,12 +191,27 @@ export const getCourseList=async(
   apiClient.get('/course/list',{params});  
 
 
+=======
+>>>>>>> Stashed changes
  export const getCurrentUserProfile=async(
   
  ):Promise< GetUserProfileSuccessResponse>=>
   apiClient.get('/auth/me'); 
   
 
+<<<<<<< Updated upstream
+=======
+  //发送重置密码验证码
+  export const sendPasswordResetCode =async(
+    payload:SendCodePayload
+  ):Promise<SendCodeSuccessResponse>=>
+    apiClient.post('/auth/password-reset/send-code', payload);
+    //重置密码
+  export const resetPassword =async(
+    payload:ResetPasswordPayload
+  ):Promise<ResetPasswordSuccessResponse>=>
+    apiClient.post('/auth/password-reset/reset', payload);  
+>>>>>>> Stashed changes
   
 
 

@@ -5,10 +5,15 @@ import { useAuthForm } from '@/composables/userAuthForm'
 import { register } from '@/lib/api'
 import type { RegisterPayload } from '@/types' 
 import  { isPureString} from '@/utils/validate'
+<<<<<<< Updated upstream
 
 import { useUserStore} from '@/stores/user'
 import type { UserInfo } from '@/types';
 
+=======
+import { useUserStore} from '@/stores/user'
+import type { UserInfo } from '@/types'
+>>>>>>> Stashed changes
 
 // 引入 UI 组件
 import { Button } from '@/components/ui/button'
@@ -58,6 +63,7 @@ const handleRegister = async () => {
       console.log('注册成功: ', result.message);
       
       const {token,userId,role}=result.data;
+<<<<<<< Updated upstream
       const miniUserInfo:UserInfo={
       id: result.data.userId,
       username: username,
@@ -72,6 +78,23 @@ const handleRegister = async () => {
       ethnic: '',
       politicalStatus: '',
       description: ''
+=======
+        const miniUserInfo:UserInfo={
+        id:userId,
+        username:username,
+        sduId:formData.sduId,
+        realName:'',
+        role:role,
+        avatarUrl:null,
+        gender: 2, // 0=MALE, 1=FEMALE, 2=UNKNOWN
+        birthday: '',
+        phone: '',
+        email: '',
+        ethnic: '',
+        politicalStatus: '',
+        description: '',
+
+>>>>>>> Stashed changes
       }
 
       userStore.setUser({

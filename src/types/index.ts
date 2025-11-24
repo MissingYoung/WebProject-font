@@ -106,6 +106,7 @@ export interface UpdateProfilePayload {
   avatarUrl?: string;
   description?: string;
 }
+<<<<<<< Updated upstream
 
 
 //课程类型
@@ -164,6 +165,8 @@ export interface CourseQueryParams{
 
 }
 
+=======
+>>>>>>> Stashed changes
 //邮箱验证码
 export interface SendCodePayload{
   email:string;
@@ -172,4 +175,8 @@ export interface ResetPasswordPayload{
   email:string;
   verificationCode:string;
   newPassword:string;
+<<<<<<< Updated upstream
 }
+=======
+}
+>>>>>>> Stashed changes
