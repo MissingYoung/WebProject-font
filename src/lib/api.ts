@@ -74,6 +74,7 @@ apiClient.interceptors.response.use(
 
 // 定义通用的成功响应类型
 type LoginSuccessResponse = ApiResponse<AuthResponseData>;
+type LogoutSuccessResponse =ApiResponse<null>
 type RegisterSuccessResponse = ApiResponse<AuthResponseData>;
 type ChangePasswordSuccessResponse =ApiResponse<null>;
 type GetUserSuccessResponse =ApiResponse<UserInfo>;
@@ -121,7 +122,9 @@ export const login = async (payload: LoginPayload): Promise<LoginSuccessResponse
   
      apiClient.post('/auth/login', payload);
 
-
+//更新登出请求函数
+export const logout =async():Promise<LogoutSuccessResponse>=>
+  apiClient.post('auth/logout');
 
 //  更新注册请求函数
 export const register = async (payload: RegisterPayload): Promise<RegisterSuccessResponse> => 

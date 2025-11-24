@@ -6,7 +6,7 @@ import { useRouter } from 'vue-router';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-
+import {logout} from '@/lib/api'
 
 const userStore = useUserStore();
 const router=useRouter();
@@ -16,7 +16,7 @@ const goToChangePassword=()=>{
 };
 
 const handleSwitchAccount=async()=>{
-    userStore.softLogout();
+    await userStore.logout();
     alert('您是否退出当前账号？')
     router.push({name:'Login'});
      

@@ -2,18 +2,7 @@
 <script setup lang="ts">
 import Header from '@/components/HomePage/Header.vue';
 import Slidebar from '@/components/HomePage/Slidebar.vue';
-import { useUserStore } from '@/stores/user';
-import { watchEffect } from 'vue';
-import { useRouter } from 'vue-router';
-const userStore=useUserStore();
-const router =useRouter();
-//防御性验证
-watchEffect(()=>{
-    if(!userStore.isLoggedIn){
-        alert('您还未登录，请先登录')
-        router.replace({name:'Login'})
-    }
-})
+
 
 </script>
 

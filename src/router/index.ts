@@ -21,11 +21,13 @@ const routes: Array<RouteRecordRaw> = [
     path: '/login',
     name: 'Login',
     component: LoginView,
+    meta:{requiresAuth:false}
   },
   {
     path: '/register',
     name: 'Register',
     component: RegisterView,
+    meta:{requiresAuth:false}
   },
     {
     path: '/change-password',
@@ -39,6 +41,7 @@ const routes: Array<RouteRecordRaw> = [
     path:'/find-password',
     name:'FindPassword',
     component:ForgotPassword,
+    meta:{requiresAuth:false}
   },
 
 
@@ -46,11 +49,13 @@ const routes: Array<RouteRecordRaw> = [
     path: '/update-info',
     name: 'UpdateInfo',
     component: UpdateUserInfoView,
+    meta:{requiresAuth:true}
   },
   {
     path: '/update-profile',
     name: 'UpdateProfile',
     component: UpdateProfileView,
+    meta:{requiresAuth:true}
   },
   {
     path: '/',
@@ -75,10 +80,10 @@ const routes: Array<RouteRecordRaw> = [
 
   },
 
-  // 捕获所有未匹配路径并重定向到根路径（或定向到其它页面）
+  // 捕获所有未匹配路径并重定向到登录页
   {
     path: '/:pathMatch(.*)*',
-    redirect: '/',
+    redirect: '/login',
   },
 
 ]
@@ -97,28 +102,20 @@ router.beforeEach((to, from, next) => {
   const isLoggedIn = userStore.isLoggedIn;
   const isAuthPage = to.name === 'Login' || to.name === 'Register';
   console.log(`导航守卫: 目标路径 ${to.path}, 登录状态: ${isLoggedIn}`);
-  if (userStore.isSoftLoggedOut && !isAuthPage) {
-    userStore.isSoftLoggedOut = false;
-  }
 
   if (to.meta.requiresAuth && !isLoggedIn) {
     // 1. 需要认证但未登录 -> 跳转登录页
-    next({ name: 'Login', query: { redirect: to.fullPath } }); // 建议加上 redirect 参数
+    next({ 
+      name: 'Login', 
+      query: { redirect: to.fullPath } 
+    }); 
+    return;
   } else if (isAuthPage && isLoggedIn) {
-    // 2. 已登录且访问登录/注册页
-    if (userStore.isSoftLoggedOut) {
-      // 如果是“软登出”状态，允许访问登录页
-      next();
-    } else {
-      // 否则，重定向到仪表盘
       next({ name: 'Dashboard' });
-    }
+      return;
   } else {
-    // 3. 其他所有情况
     next();
   }
-
-
 
 });
 

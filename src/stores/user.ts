@@ -1,8 +1,8 @@
 import {defineStore} from 'pinia'
 import {ref ,computed} from 'vue'
-import { getCurrentUser } from '@/lib/api';
+import { getCurrentUser,logout as apiLogout } from '@/lib/api';
 import type { UserInfo } from '@/types';
-
+import { useRouter } from 'vue-router';
 
 //定义store
 export const useUserStore=defineStore('user',()=>{
@@ -12,7 +12,7 @@ export const useUserStore=defineStore('user',()=>{
    const isInitialized =ref(false);
    const isLoggedIn=computed(()=>!!token.value&&!!userInfo.value);//判断用户是否登录
    const userRealName=computed(()=>userInfo.value?.username||userInfo.value?.realName||'访客')
-   const isSoftLoggedOut =ref();
+   const isSoftLoggedOut =ref(false);
 
    //计算用户姓名首字母，用于 Avatar Fallbac
     const userInitial = computed(() => {
@@ -40,33 +40,44 @@ export const useUserStore=defineStore('user',()=>{
     }
 
 
-   function logout(){
-       token.value=null;
-       userInfo.value=null;
-       //localStorage.removeItem('token');
-      // localStorage.removeItem('userInfo');
-       //router.push('/login');
-   }
-
-   function softLogout(){
-    isSoftLoggedOut.value=true;
-   }
-
-   //初始化当前用户的action
-   async function initializeUser(){
-    //如果有token但无用户信息，尝试获取
-    if(token.value&&userInfo.value?.id){
-        try{
-            const result =await getCurrentUser(userInfo.value.id);
-                userInfo.value=result.data
-        }catch (error){
-            console.error('初始化用户失败',error);
-            logout();
+    async function logout(){
+       try{
+        if(token.value){
+            await apiLogout();
         }
-    }
-    isInitialized.value =true;
+       }catch(error){
+         console.warn('后端登出失败（可能是Token已过期），继续执行本地清理:', error);
+       }finally{
+        token.value=null;
+        userInfo.value=null;
+      
+       }
+      
+       
    }
 
+  
+
+    // 初始化当前用户的 action
+    async function initializeUser() {
+        // 如果有 token 且还没初始化过，才尝试获取
+        if (token.value && !isInitialized.value) {
+            try {
+                // 只有当 store 里存了 id 才去取
+                if (userInfo.value?.id) {
+                    const result = await getCurrentUser(userInfo.value.id);
+                    // 只有成功获取才更新
+                    if (result && result.data) {
+                         userInfo.value = result.data;
+                    }
+                }
+            } catch (error) {
+                console.error('初始化用户失败，Token 可能已失效', error);
+                await logout(); 
+            }
+        }
+        isInitialized.value = true;
+    }
     
 
 
@@ -82,7 +93,7 @@ export const useUserStore=defineStore('user',()=>{
        isInitialized,
        initializeUser,
        isSoftLoggedOut,
-       softLogout,
+       
    };
 
 },
