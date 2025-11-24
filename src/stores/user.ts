@@ -3,7 +3,6 @@ import {ref ,computed} from 'vue'
 import { getCurrentUser } from '@/lib/api';
 import type { UserInfo } from '@/types';
 
-import type { UserInfo } from '@/types';
 
 
 
