@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Loader2 } from 'lucide-vue-next'
+import IdentifyCode from './IdentifyCode.vue'
 
 
 
@@ -21,15 +22,24 @@ const route = useRoute();
 const userStore = useUserStore();
 
 
-const formData = reactive<LoginPayload>({
+
+const formData = reactive({
   sduId: '',
   password: '',
+  verifyCode: '',
 })
 
 
 
 const isLoading = ref(false);
 const error = ref<string | null>(null);
+const correctCode = ref('');
+// 获取验证码组件的实例（用于手动触发刷新
+const verifyCodeRef = ref<InstanceType<typeof IdentifyCode> | null>(null)
+//接收生成的验证码
+const handleCode = (code: string) => {
+  correctCode.value = code
+}
 
 const submit = async (payload: LoginPayload) => {
   return await login(payload);
@@ -37,14 +47,22 @@ const submit = async (payload: LoginPayload) => {
 
 const handleLogin = async () => {
 
-  const {sduId, password} = formData;
-  if (!sduId || !password) {
-    error.value = '用户名和密码均为必填项，请完整填写后重试';
+  const { sduId, password,verifyCode } = formData;
+  if (!sduId || !password || !verifyCode) {
+    error.value = '用户名,密码和验证码均为必填项，请完整填写后重试';
     return;
   }
+  if (formData.verifyCode.toLowerCase() !== correctCode.value.toLowerCase()) {
+    error.value='验证码错误，请重试'
 
-  isLoading.value=true;
-  error.value='';
+    // 验证失败后，清空输入框并刷新验证码
+    formData.verifyCode = ''
+    verifyCodeRef.value?.refresh()
+    return
+  }
+
+  isLoading.value = true;
+  error.value = '';
 
 
   try {
@@ -71,7 +89,7 @@ const handleLogin = async () => {
       ethnic: '',
       politicalStatus: '',
       description: ''
-      
+
 
     }
 
@@ -117,6 +135,18 @@ const handleLogin = async () => {
       <div class="grid gap-2">
         <Label for="password">密码</Label>
         <Input id="password" type="password" v-model="formData.password" />
+      </div>
+      <!-- 验证码区域  -->
+      <div class="grid gap-2">
+        <Label for="verifyCode">验证码</Label>
+        <div class="flex items-center gap-3">
+          <!-- 输入框占据剩余空间 -->
+          <Input id="verifyCode" class="flex-1" type="text" placeholder="输入右侧字符" v-model="formData.verifyCode"
+            @keyup.enter="handleLogin" maxlength="4" />
+
+          <!-- 验证码组件 -->
+          <IdentifyCode ref="verifyCodeRef" :width="120" :height="40" @update:code="handleCode" />
+        </div>
       </div>
     </CardContent>
     <CardFooter>

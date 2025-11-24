@@ -61,11 +61,13 @@ const handleChangePassword = async () => {
       router.push({ name: 'Login' }); // 确保你的登录路由 name 是 'Login'
     } else {
       // API 返回的业务错误
-      error.value = result.message || '修改失败，请检查您的旧密码是否正确。';
+      error.value = result.message ;
     }
-  } catch (err) {
+  } catch (err:any) {
     // 网络或其他异常
-    error.value = '请求失败，请检查您的网络连接或稍后重试。';
+    const errorMessage = err.message || '请求失败，请检查您的网络连接或稍后重试。';
+    
+    error.value = errorMessage;
     console.error('修改密码异常:', err);
   } finally {
     isLoading.value = false;
