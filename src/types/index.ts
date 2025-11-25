@@ -121,8 +121,21 @@ export interface ResetPasswordPayload{
 
 //课程类型
 export type CourseType ='REQUIRED' | 'LIMITED_ELECTIVE' | 'OPEN_ELECTIVE';
-//课程参数
+//课程创建参数
 export interface CreateCoursePayload{
+  code: string;           // 课程编号 (必需)
+  name: string;           // 课程名称 (必需)
+  departmentId?: number;  // 开课学院ID
+  defaultCourseType?: CourseType; // 课程类型
+  credit?: number;        // 学分
+  totalHours?: number;    // 总学时
+  lectureHours?: number;  // 理论学时
+  labHours?: number;      // 实验学时
+  repeatable?: boolean;   // 是否可重复修读
+  description?: string;   // 简介
+}
+//课程编辑参数
+export interface updateCoursePayload{
   code: string;           // 课程编号 (必需)
   name: string;           // 课程名称 (必需)
   departmentId?: number;  // 开课学院ID

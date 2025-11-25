@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
-import { createCourse } from '@/lib/api'
-import type { CreateCoursePayload, CourseType  } from '@/types'
-import { Loader2, Plus } from 'lucide-vue-next'
+import { createCourse,updateCourse } from '@/lib/api'
+import type { CreateCoursePayload, CourseVO  } from '@/types'
+import { Loader2 } from 'lucide-vue-next'
 
 // 引入 Shadcn UI 组件 (根据你的项目结构路径可能不同)
 import { Button } from '@/components/ui/button'
@@ -13,7 +13,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
+  //DialogTrigger,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -35,6 +35,10 @@ const open = ref(false) // 控制弹窗开关
 const isLoading = ref(false)
 const error = ref<string | null>(null)
 
+//添加状态：是否为编辑模式
+const isEditMode=ref(false)
+const currentId =ref<number|null>(null)
+
 // 初始表单数据
 const initialState: CreateCoursePayload = {
   code: '',
@@ -50,15 +54,34 @@ const initialState: CreateCoursePayload = {
 }
 
 const formData = reactive<CreateCoursePayload>({ ...initialState })
-
-// 打开弹窗时的重置逻辑
-const handleOpenChange = (val: boolean) => {
-  open.value = val
-  if (!val) {
-    // 关闭时清空错误，保留数据或清空数据取决于需求，这里不清空数据方便修改
-    error.value = null
+// 如果传入 course 对象，则是编辑模式；否则是新增模式
+const openDialog =(course?:CourseVO)=>{
+  open.value=true
+  error.value=null
+  if(course){
+    isEditMode.value=true;
+    currentId.value=course.id;
+    // 数据回显：将表格行的数据填入表单
+    Object.assign(formData,{
+      code: course.code,
+      name: course.name,
+      departmentId: course.departmentId,
+      defaultCourseType: course.defaultCourseType,
+      credit: course.credit,
+      totalHours: course.totalHours,
+      lectureHours: course.lectureHours,
+      labHours: course.labHours,
+      repeatable: course.repeatable,
+      description: course.description || ''
+    })
+  }else{
+    isEditMode.value=false
+    currentId.value=null
+    Object.assign(formData,initialState)// 重置表单为空
   }
 }
+//暴露方法，让父组件通过ref调用
+defineExpose({openDialog})
 
 // 提交表单
 const handleSubmit = async () => {
@@ -83,19 +106,19 @@ const handleSubmit = async () => {
   error.value = null
 
   try {
-    const res = await createCourse(payload)
-    // 根据拦截器逻辑，这里没报错就是成功
-    console.log('创建成功', res)
-    
-    // 关闭弹窗
-    open.value = false
-    // 重置表单
-    Object.assign(formData, initialState)
-    // 通知父组件刷新
-    emit('success')
+    if(isEditMode.value&&currentId.value){
+      //编辑模式，调用更新接口
+      await updateCourse(currentId.value,payload)
+      console.log('更新成功')
+      //创建模式，调用创建接口
+      }else{  await createCourse(payload)
+      console.log('创建成功')
+    }
+    open.value=false;
+    emit('success')//通知父组件刷新
     
   } catch (err: any) {
-    error.value = err.message || '创建课程失败'
+    error.value = err.message || (isEditMode.value?'更新失败':'创建失败')
   } finally {
     isLoading.value = false
   }
@@ -103,20 +126,13 @@ const handleSubmit = async () => {
 </script>
 
 <template>
-  <Dialog :open="open" @update:open="handleOpenChange">
-    <!-- 触发按钮 -->
-    <DialogTrigger as-child>
-      <Button>
-        <Plus class="mr-2 h-4 w-4" />
-        添加课程
-      </Button>
-    </DialogTrigger>
+  <Dialog :open="open" @update:open="(val)=>open=val">
 
     <DialogContent class="sm:max-w-[600px] max-h-[85vh] overflow-y-auto">
       <DialogHeader>
-        <DialogTitle>添加新课程</DialogTitle>
+        <DialogTitle>{{ isEditMode?'编辑课程':'添加课程' }}</DialogTitle>
         <DialogDescription>
-          请填写课程的基本信息，点击保存提交。
+         {{ isEditMode?'修改课程信息后点击保存':' 请填写课程的基本信息，点击保存提交。' }}
         </DialogDescription>
       </DialogHeader>
 
@@ -130,7 +146,7 @@ const handleSubmit = async () => {
         <div class="grid grid-cols-2 gap-4">
           <div class="grid gap-2">
             <Label for="code" class="text-red-500">课程编号 *</Label>
-            <Input id="code" v-model="formData.code" placeholder="例如: sdu001" />
+            <Input id="code" v-model="formData.code" placeholder="例如: sdu001" :disabled="isEditMode"/>
           </div>
           <div class="grid gap-2">
             <Label for="name" class="text-red-500">课程名称 *</Label>
@@ -142,7 +158,9 @@ const handleSubmit = async () => {
         <div class="grid grid-cols-2 gap-4">
           <div class="grid gap-2">
             <Label>课程类型</Label>
-            <Select v-model="formData.defaultCourseType">
+            <!--修复 Select 类型报错，强制转为 string -->
+            <Select :model-value="formData.defaultCourseType"
+            @update:model-value="(v)=>formData.defaultCourseType=v as any">
               <SelectTrigger>
                 <SelectValue placeholder="选择类型" />
               </SelectTrigger>
@@ -201,7 +219,7 @@ const handleSubmit = async () => {
         <Button variant="outline" @click="open = false" :disabled="isLoading">取消</Button>
         <Button type="submit" @click="handleSubmit" :disabled="isLoading">
           <Loader2 v-if="isLoading" class="mr-2 h-4 w-4 animate-spin" />
-          {{ isLoading ? '提交中' : '保存课程' }}
+          {{ isLoading ? '提交中' : (isEditMode ? '保存修改' : '立即创建') }}
         </Button>
       </DialogFooter>
     </DialogContent>

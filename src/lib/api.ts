@@ -12,6 +12,7 @@ import type {
   UserProfile,
   UpdateProfilePayload,
   CreateCoursePayload,
+  updateCoursePayload,
   PageResult,
   CourseQueryParams,
   CourseVO ,
@@ -86,6 +87,10 @@ type SendCodeSuccessResponse =ApiResponse<null>;
 type ResetPasswordSuccessResponse =ApiResponse<null>;
 type CreateCourseSuccessResponse =ApiResponse<number>;
 type GetCourseListSuccessResponse =ApiResponse<PageResult<CourseVO>>;
+type UpdateCourseSuccessResponse =ApiResponse<null>;
+type DeleteCourseSuccessResponse =ApiResponse<null>;
+
+
 
 
 
@@ -182,7 +187,18 @@ export const createCourse=async(
 export const getCourseList=async(
   params:CourseQueryParams
 ):Promise<GetCourseListSuccessResponse>=>
-  apiClient.get('/course/list',{params});  
+  apiClient.get('/course/list',{params});
+//更新课程
+export const updateCourse=async(
+  id:number,
+  payload:updateCoursePayload
+):Promise<UpdateCourseSuccessResponse>=>
+  apiClient.post(`/course/${id}/update`, payload); 
+//删除课程
+export const deleteCourse =async(
+  id:number,
+):Promise<DeleteCourseSuccessResponse>=>
+  apiClient.post(`/course/${id}/delete`)     
   
 
 

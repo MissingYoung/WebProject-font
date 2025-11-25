@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { reactive, ref, onMounted } from 'vue'
-import { getCourseList } from '@/lib/api'
+import { getCourseList,deleteCourse } from '@/lib/api'
 import type { CourseVO, CourseQueryParams } from '@/types'
-import CreateCourseDialog from '@/components/Course/CreateCourseDialog.vue' 
+import CourseEditDialog from '@/components/Course/CourseEditDialog.vue' 
 
 // UI 组件
 import { Button } from '@/components/ui/button'
@@ -22,13 +22,31 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge' 
-import { Loader2, Search, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-vue-next'
+import { Loader2, Search, RotateCcw, ChevronLeft, ChevronRight,Plus,Pencil,AlertTriangle,Trash2 } from 'lucide-vue-next'
+import dayjs from 'dayjs'
 
 // --- 状态管理 ---
 const isLoading = ref(false)
 const tableData = ref<CourseVO[]>([])
 const total = ref(0)
+//删除相关状态
+const deleteDialogOpen = ref(false)
+const courseToDelete = ref<CourseVO | null>(null) // 暂存要删除的课程对象
+const isDeleting = ref(false)
+
+//定义弹窗组件引用，用于调用子组件方法
+const dialogRef =ref<InstanceType<typeof CourseEditDialog>|null>(null)
 
 // 查询参数
 const queryParams = reactive<CourseQueryParams>({
@@ -89,6 +107,46 @@ const handleReset = () => {
   handleSearch()
 }
 
+//点击创建按钮
+const handleCreate=()=>{
+  dialogRef.value?.openDialog();
+} 
+
+//点击编辑按钮
+const handleEdit=(row:CourseVO)=>{
+  dialogRef.value?.openDialog(row);
+}
+//刷新列表，统一由弹窗的success事件触发
+const handleRefresh=()=>{
+  fetchData();
+}
+
+//点击删除按钮(打开弹窗，实际上还未删)
+const handleDeleteClick=(row:CourseVO)=>{
+  courseToDelete.value = row;
+  deleteDialogOpen.value = true;
+}
+// 确认删除（点击弹窗的“继续”后触发）
+const handleConfirmDelete = async () => {
+  if (!courseToDelete.value) return
+
+  isDeleting.value = true
+  try {
+    await deleteCourse(courseToDelete.value.id)
+    console.log('删除成功')
+    
+    // 关闭弹窗
+    deleteDialogOpen.value = false
+    // 刷新列表
+    fetchData()
+  } catch (err: any) {
+    console.error('删除失败', err)
+    alert(err.message || '删除失败，请稍后重试')
+  } finally {
+    isDeleting.value = false
+  }
+}
+
 // 分页：上一页
 const prevPage = () => {
   if (queryParams.pageNum > 1) {
@@ -107,13 +165,15 @@ const nextPage = () => {
 }
 
 // 辅助：格式化时间 
-const formatTime = (time: any) => {
-  if (!time) return '-'
-  if (typeof time === 'string') return time.replace('T', ' ')
-  if (typeof time === 'object' && time.dateTime) return time.dateTime.replace('T', ' ')
-  return '-'
+const formatTime = (dateVal: string | Date | undefined | null | { dateTime: string }) => {
+  if (!dateVal) {
+    return '--' 
+  }
+  if (typeof dateVal === 'object' && 'dateTime' in dateVal) {
+    return dayjs(dateVal.dateTime).format('YYYY-MM-DD HH:mm:ss')
+  }
+  return dayjs(dateVal).format('YYYY-MM-DD HH:mm:ss')
 }
-
 // 初始化
 onMounted(() => {
   fetchData()
@@ -128,8 +188,10 @@ onMounted(() => {
         <h2 class="text-2xl font-bold tracking-tight">课程管理</h2>
         <p class="text-muted-foreground">管理系统内的所有课程信息</p>
       </div>
-      <!-- 引入添加课程弹窗，监听 success 事件刷新列表 -->
-      <CreateCourseDialog @success="handleSearch" />
+      <Button @click="handleCreate">
+        <Plus class="mr-2 h-4 w-4" />
+        添加课程
+      </Button>
     </div>
 
     <!-- 2. 筛选区域 -->
@@ -138,7 +200,7 @@ onMounted(() => {
         <label class="text-sm font-medium">课程编号</label>
         <Input v-model="queryParams.code" placeholder="输入编号" @keyup.enter="handleSearch" />
       </div>
-      
+
       <div class="grid gap-2 w-[150px]">
         <label class="text-sm font-medium">课程名称</label>
         <Input v-model="queryParams.name" placeholder="输入名称" @keyup.enter="handleSearch" />
@@ -146,7 +208,8 @@ onMounted(() => {
 
       <div class="grid gap-2 w-[150px]">
         <label class="text-sm font-medium">课程类型</label>
-        <Select :model-value="queryParams.defaultCourseType" @update:model-value= "(v) => queryParams.defaultCourseType = v as string">
+        <Select :model-value="queryParams.defaultCourseType"
+          @update:model-value="(v) => queryParams.defaultCourseType = v as string">
           <SelectTrigger>
             <SelectValue placeholder="全部" />
           </SelectTrigger>
@@ -188,14 +251,14 @@ onMounted(() => {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead class="w-[100px]">课程编号</TableHead>
-            <TableHead>课程名称</TableHead>
-            <TableHead>类型</TableHead>
-            <TableHead>学分/学时</TableHead>
-            <TableHead>学院</TableHead>
-            <TableHead>状态</TableHead>
-            <TableHead>更新时间</TableHead>
-            <!-- <TableHead class="text-right">操作</TableHead> -->
+            <TableHead class="w-[100px] font-bold">课程编号</TableHead>
+            <TableHead class="font-bold">课程名称</TableHead>
+            <TableHead class="font-bold">类型</TableHead>
+            <TableHead class="font-bold">学分/学时</TableHead>
+            <TableHead class="font-bold">学院</TableHead>
+            <TableHead class="font-bold">状态</TableHead>
+            <TableHead class="font-bold">更新时间</TableHead>
+            <TableHead class="text-right font-bold">操作</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -207,7 +270,7 @@ onMounted(() => {
               </div>
             </TableCell>
           </TableRow>
-          
+
           <!-- 空数据状态 -->
           <TableRow v-else-if="tableData.length === 0">
             <TableCell colspan="7" class="h-24 text-center text-muted-foreground">
@@ -237,40 +300,66 @@ onMounted(() => {
             <TableCell class="text-sm text-muted-foreground">
               {{ formatTime(item.updateTime) }}
             </TableCell>
-            <!-- 操作列预留
             <TableCell class="text-right">
-              <Button variant="ghost" size="sm">编辑</Button>
-            </TableCell> 
-            -->
+              <div class="flex justify-end gap-2">
+                <Button variant="ghost" size="sm" @click="handleEdit(item)" title="编辑课程">
+                  <Pencil class="h-4 w-4 text-blue-600" />
+                  <span class="ml-2 hidden sm:inline">编辑</span>
+                </Button>
+                <Button variant="ghost" size="icon" title="删除课程" class="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  @click="handleDeleteClick(item)">
+                  <Trash2 class="h-4 w-4" />删除
+                </Button>
+              </div>
+            </TableCell>
           </TableRow>
         </TableBody>
       </Table>
     </div>
 
     <!-- 4. 分页控件 -->
-    <div class="flex items-center justify-end space-x-2 py-4">
+    <div class="flex items-center justify-center space-x-2 py-4">
       <div class="text-sm text-muted-foreground mr-4">
         共 {{ total }} 条记录
       </div>
-      <Button 
-        variant="outline" 
-        size="sm" 
-        :disabled="queryParams.pageNum <= 1 || isLoading"
-        @click="prevPage"
-      >
+      <Button variant="outline" size="sm" :disabled="queryParams.pageNum <= 1 || isLoading" @click="prevPage">
         <ChevronLeft class="h-4 w-4" /> 上一页
       </Button>
       <div class="text-sm font-medium">
         第 {{ queryParams.pageNum }} 页
       </div>
-      <Button 
-        variant="outline" 
-        size="sm" 
-        :disabled="tableData.length < queryParams.pageSize || isLoading"
-        @click="nextPage"
-      >
-        下一页 <ChevronRight class="h-4 w-4" />
+      <Button variant="outline" size="sm" :disabled="tableData.length < queryParams.pageSize || isLoading"
+        @click="nextPage">
+        下一页
+        <ChevronRight class="h-4 w-4" />
       </Button>
     </div>
+    <!-- 挂载弹窗组件，放到 template 底部 -->
+    <!--删除确认弹窗-->
+    <AlertDialog :open="deleteDialogOpen" @update:open="(v) => deleteDialogOpen = v">
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle class="flex items-center gap-2 text-red-600">
+            <AlertTriangle class="h-5 w-5" />
+            确认删除该课程吗？
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            <!-- 动态显示课程名称，防止误删 -->
+            您正在尝试删除课程：<span class="font-bold text-black">{{ courseToDelete?.name }}</span> ({{ courseToDelete?.code }})。
+            <br>
+            此操作无法撤销，将会永久移除该课程及相关数据。
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel :disabled="isDeleting">取消</AlertDialogCancel>
+          <AlertDialogAction @click.prevent="handleConfirmDelete" :disabled="isDeleting"
+            class="bg-red-600 hover:bg-red-700 text-white focus:ring-red-600">
+            {{ isDeleting ? '删除中...' : '确认删除' }}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    <!--编辑功能弹窗-->
+    <CourseEditDialog ref="dialogRef" @success="handleRefresh" />
   </div>
 </template>
