@@ -114,7 +114,7 @@ export interface SendCodePayload{
 //邮箱重置密码
 export interface ResetPasswordPayload{
   email:string;
-  veriflicationCode:string;
+  verificationCode:string;
   newPassword:string;
 }
 
