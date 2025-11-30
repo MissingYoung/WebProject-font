@@ -15,7 +15,8 @@ import type {
   updateCoursePayload,
   PageResult,
   CourseQueryParams,
-  CourseVO ,
+  CourseVO, 
+ 
 
 
 } from '@/types';
@@ -24,7 +25,7 @@ import { useUserStore } from '@/stores/user';
 
 
 const apiClient = axios.create({
-  baseURL: 'http://localhost:8081', 
+  baseURL: 'https://webapi.foofish.work', 
   headers: {
     'Content-Type': 'application/json',
   },
@@ -89,6 +90,10 @@ type CreateCourseSuccessResponse =ApiResponse<number>;
 type GetCourseListSuccessResponse =ApiResponse<PageResult<CourseVO>>;
 type UpdateCourseSuccessResponse =ApiResponse<null>;
 type DeleteCourseSuccessResponse =ApiResponse<null>;
+type ActivateCourseSuccessResponse =ApiResponse<null>;
+type DeactivateCourseSuccessResponse =ApiResponse<null>;
+type ArchiveCourseSuccessResponse =ApiResponse<null>;
+type GetCourseDetailSuccessResponse =ApiResponse<CourseVO>;
 
 
 
@@ -118,9 +123,6 @@ export const updateUserProfile = async (
     payload: UpdateProfilePayload,
     userId: string): Promise<UpdateUserProfileSuccessResponse> =>
     apiClient.post(`/user/${userId}/update-profile`, payload)
-
-
-
 
 //  更新登录请求函数
 export const login = async (payload: LoginPayload): Promise<LoginSuccessResponse> => 
@@ -198,7 +200,26 @@ export const updateCourse=async(
 export const deleteCourse =async(
   id:number,
 ):Promise<DeleteCourseSuccessResponse>=>
-  apiClient.post(`/course/${id}/delete`)     
+  apiClient.post(`/course/${id}/delete`) 
+//启用课程
+export const activateCourse =async(
+  id:number,
+):Promise<ActivateCourseSuccessResponse>=>
+  apiClient.post(`/course/${id}/activate`);
+//弃用课程
+export const deactivateCourse =async(
+  id:number
+):Promise<DeactivateCourseSuccessResponse>=>
+  apiClient.post(`/course/${id}/deactivate`);
+//归档课程
+export const archiveCourse =async(
+  id:number
+):Promise<ArchiveCourseSuccessResponse>=>
+  apiClient.post(`/course/${id}/archive`);
+//获取课程详情
+export const getCourseDetail = async (id: number): Promise<GetCourseDetailSuccessResponse> => {
+  return apiClient.get(`/course/${id}/detail`);
+};         
   
 
 
