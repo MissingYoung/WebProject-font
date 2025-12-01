@@ -363,32 +363,32 @@ onMounted(() => {
             <TableCell class="text-right">
               <div class="flex justify-end gap-2 pr-2">
                 <!--查看详情按钮  -->
-                <Button variant="ghost" size="icon" title="查看详情" @click="handleViewDetail(item)">
-                  <Eye class="h-4 w-4 text-gray-500 mr-6" />
+                <Button variant="ghost" size="sm" title="查看详情" @click="handleViewDetail(item)">
+                  <Eye class="h-4 w-4 text-gray-500 mr-2" />详情
                 </Button>
 
                 <!-- 归档按钮 -->
                 <!-- 只有没归档的才能归档 -->
-                <Button v-if="item.status !== 'ARCHIVED'" variant="ghost" size="icon" title="归档课程"
+                <Button v-if="item.status !== 'ARCHIVED'" variant="ghost" size="sm" title="归档课程"
                   class="text-purple-600 hover:text-purple-700 hover:bg-purple-50 mr-4" @click="handleArchive(item)">
                   <Archive class="h-4 w-4" />归档
                 </Button>
                 <!-- 启用按钮 -->
                 <!-- 只有当状态不是 ACTIVE 时才显示 -->
-                <Button v-if="item.status !== 'ACTIVE'" variant="ghost" size="icon" title="发布/启用课程"
+                <Button v-if="item.status !== 'ACTIVE'" variant="ghost" size="sm" title="发布/启用课程"
                   class="text-green-600 hover:text-green-700 hover:bg-green-50" @click="handleActivate(item)">
                   <Play class="h-4 w-4" />发布
                 </Button>
                 <!-- 停用按钮 (只在 ACTIVE 状态显示) -->
-                <Button v-else variant="ghost" size="icon" title="停用/下架课程"
+                <Button v-else variant="ghost" size="sm" title="停用/下架课程"
                   class="text-orange-500 hover:text-orange-600 hover:bg-orange-50" @click="handleDeactivate(item)">
                   <PauseCircle class="h-4 w-4" />停用
                 </Button>
-                <Button variant="ghost" size="sm" @click="handleEdit(item)" title="编辑课程">
+                <Button v-if="item.status !== 'ARCHIVED'"variant="ghost" size="sm" @click="handleEdit(item)" title="编辑课程">
                   <Pencil class="h-4 w-4 text-blue-600" />
                   <span class="ml-2 hidden sm:inline">编辑</span>
                 </Button>
-                <Button variant="ghost" size="icon" title="删除课程"
+                <Button variant="ghost" size="sm" title="删除课程"
                   class="text-red-600 hover:text-red-700 hover:bg-red-50 mr-2" @click="handleDeleteClick(item)">
                   <Trash2 class="h-4 w-4" />删除
                 </Button>
