@@ -6,9 +6,9 @@ export interface AuthResponseData {
   token: string;
   userId: number;
   username: string;
-  role: string; 
-  realName:string;
-  
+  role: string;
+  realName: string;
+
 }
 
 // 通用的 API 响应体结构
@@ -25,13 +25,13 @@ export interface ApiResponse<T> {
 
 // 登录接口的请求体 (Payload) 类型
 export interface LoginPayload {
-  sduId?: string; 
+  sduId?: string;
   password?: string;
 }
 
 //登出
-export interface LogoutPayload{
-  
+export interface LogoutPayload {
+
 }
 
 
@@ -43,13 +43,13 @@ export interface RegisterPayload {
   password?: string;
   realName?: string;
   username?: string;
-  email:string;
+  email: string;
 }
 
 //修改密码接口请求体类型（changePassword)
-export interface ChangePasswordPayload{
- oldPassword?:string;
- newPassword?:string;
+export interface ChangePasswordPayload {
+  oldPassword?: string;
+  newPassword?: string;
 }
 
 
@@ -75,7 +75,7 @@ export interface UpdateUserInfoPayload {
 // 用户信息数据类型
 export interface UserInfo {
   sduId?: string;
-  id:number;
+  id: number;
   username: string;
   realName: string;
   gender: 0 | 1 | 2; // 0=MALE, 1=FEMALE, 2=UNKNOWN
@@ -108,21 +108,21 @@ export interface UpdateProfilePayload {
 }
 
 //发送验证码
-export interface SendCodePayload{
-  email:string;
+export interface SendCodePayload {
+  email: string;
 }
 //邮箱重置密码
-export interface ResetPasswordPayload{
-  email:string;
-  verificationCode:string;
-  newPassword:string;
+export interface ResetPasswordPayload {
+  email: string;
+  verificationCode: string;
+  newPassword: string;
 }
 
 
 //课程类型
-export type CourseType ='REQUIRED' | 'LIMITED_ELECTIVE' | 'OPEN_ELECTIVE';
+export type CourseType = 'REQUIRED' | 'LIMITED_ELECTIVE' | 'OPEN_ELECTIVE';
 //课程创建参数
-export interface CreateCoursePayload{
+export interface CreateCoursePayload {
   code: string;           // 课程编号 (必需)
   name: string;           // 课程名称 (必需)
   departmentId?: number;  // 开课学院ID
@@ -135,7 +135,7 @@ export interface CreateCoursePayload{
   description?: string;   // 简介
 }
 //课程编辑参数
-export interface updateCoursePayload{
+export interface updateCoursePayload {
   code: string;           // 课程编号 (必需)
   name: string;           // 课程名称 (必需)
   departmentId?: number;  // 开课学院ID
@@ -149,7 +149,7 @@ export interface updateCoursePayload{
 }
 
 //课程状态
-export type CourseStatus='DRAFT' | 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
+export type CourseStatus = 'DRAFT' | 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
 //课程视图对象
 export interface CourseVO {
   id: number;
@@ -165,24 +165,64 @@ export interface CourseVO {
   repeatable: boolean;
   description?: string;
   status: CourseStatus;
-  createTime?: string | { dateTime: string }; 
+  createTime?: string | { dateTime: string };
   updateTime?: string | { dateTime: string };
 }
 //分页响应通用泛型
-export interface PageResult<T>{
-  records:T[];
-  total:number;
-  pageNum:number;
-  pageSize:number;
-  pages:number;
+export interface PageResult<T> {
+  records: T[];
+  total: number;
+  pageNum: number;
+  pageSize: number;
+  pages: number;
 }
 //查询参数类型
-export interface CourseQueryParams{
-  code?:string;
-  name?:string;
-  departmentId?:number;
-  defaultCourseType?:string;
-  status?:string;
-  pageNum:number;
-  pageSize:number;
+export interface CourseQueryParams {
+  code?: string;
+  name?: string;
+  departmentId?: number;
+  defaultCourseType?: string;
+  status?: string;
+  pageNum: number;
+  pageSize: number;
+}
+
+//创建部门参数
+export interface CreateDepartmentPayload {
+  parentId?: number;    // 上级部门ID (可选，0或空表示顶级)
+  code: string;         // 部门编码 (必需)
+  name: string;         // 部门名称 (必需)
+  shortName?: string;   // 简称
+  description?: string; // 描述
+}
+//部门状态枚举
+export type DepartmentStatus = 'ACTIVE' | 'DISABLED';
+//部门视图对象
+export interface DepartmentVO {
+  id: number;
+  parentId: number;
+  code: string;
+  name: string;
+  shortName?: string;
+  description?: string;
+  status: DepartmentStatus;
+  createTime?: string | { dateTime: string };
+  updateTime?: string | { dateTime: string };
+}
+//部门查询参数
+export interface DepartmentQueryParams {
+  pageNum: number;
+  pageSize: number;
+  code?: string;
+  name?: string;
+  parentId?: number;
+  status?: string; // ACTIVE or DISABLE
+}
+//更新部门参数
+export interface UpdateDepartmentPayload {
+  parentId?: number;
+  code?: string;
+  name?: string;
+  shortName?: string;
+  description?: string;
 }

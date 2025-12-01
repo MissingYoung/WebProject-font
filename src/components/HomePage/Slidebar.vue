@@ -1,11 +1,17 @@
 <!--主页侧边导航栏样式-->
 <script setup lang="ts">
 import { shallowRef } from 'vue';
-import {Button}from '@/components/ui/button'
-import { Home,GraduationCap,Command} from 'lucide-vue-next';
-const menuItems=shallowRef([
-    {name:'我的桌面',routeName:'Dashboard',icon:Home},
-    {name:'课程列表',routeName:'CourseList',icon:GraduationCap}
+import { Button } from '@/components/ui/button'
+import {
+  Home,
+  GraduationCap,
+  Command,
+  Building2,
+} from 'lucide-vue-next'
+const menuItems = shallowRef([
+  { name: '我的桌面', routeName: 'Dashboard', icon: Home },
+  { name: '课程列表', routeName: 'CourseList', icon: GraduationCap },
+  { name: '部门管理', routeName: 'DepartmentList', icon: Building2 },
 
 
 ])
@@ -24,23 +30,14 @@ const menuItems=shallowRef([
     <!-- 2. 导航菜单区域 -->
     <div class="flex-1">
       <nav class="grid items-start px-2 text-sm font-medium lg:px-4 mt-4 gap-2">
-        
+
         <!-- 循环渲染菜单项 -->
-        <router-link 
-          v-for="item in menuItems" 
-          :key="item.routeName"
-          :to="{ name: item.routeName }"
-          custom
-          v-slot="{ href, navigate, isActive }"
-        >
-          <a 
-            :href="href" 
-            @click="navigate"
-            :class="[
-              'flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-primary',
-              isActive ? 'bg-muted text-primary' : 'text-muted-foreground'
-            ]"
-          >
+        <router-link v-for="item in menuItems" :key="item.routeName" :to="{ name: item.routeName }" custom
+          v-slot="{ href, navigate, isActive }">
+          <a :href="href" @click="navigate" :class="[
+            'flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-primary',
+            isActive ? 'bg-muted text-primary' : 'text-muted-foreground'
+          ]">
             <component :is="item.icon" class="h-4 w-4" />
             {{ item.name }}
           </a>

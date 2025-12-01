@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
-import { createCourse,updateCourse } from '@/lib/api'
-import type { CreateCoursePayload, CourseVO  } from '@/types'
+import { reactive, ref, onMounted } from 'vue'
+import { createCourse, updateCourse, getDepartmentList } from '@/lib/api'
+import type { CreateCoursePayload, CourseVO, DepartmentVO } from '@/types'
 import { Loader2 } from 'lucide-vue-next'
 
 // 引入 Shadcn UI 组件 (根据你的项目结构路径可能不同)
@@ -36,8 +36,8 @@ const isLoading = ref(false)
 const error = ref<string | null>(null)
 
 //添加状态：是否为编辑模式
-const isEditMode=ref(false)
-const currentId =ref<number|null>(null)
+const isEditMode = ref(false)
+const currentId = ref<number | null>(null)
 
 // 初始表单数据
 const initialState: CreateCoursePayload = {
@@ -55,14 +55,14 @@ const initialState: CreateCoursePayload = {
 
 const formData = reactive<CreateCoursePayload>({ ...initialState })
 // 如果传入 course 对象，则是编辑模式；否则是新增模式
-const openDialog =(course?:CourseVO)=>{
-  open.value=true
-  error.value=null
-  if(course){
-    isEditMode.value=true;
-    currentId.value=course.id;
+const openDialog = (course?: CourseVO) => {
+  open.value = true
+  error.value = null
+  if (course) {
+    isEditMode.value = true;
+    currentId.value = course.id;
     // 数据回显：将表格行的数据填入表单
-    Object.assign(formData,{
+    Object.assign(formData, {
       code: course.code,
       name: course.name,
       departmentId: course.departmentId,
@@ -74,14 +74,14 @@ const openDialog =(course?:CourseVO)=>{
       repeatable: course.repeatable,
       description: course.description || ''
     })
-  }else{
-    isEditMode.value=false
-    currentId.value=null
-    Object.assign(formData,initialState)// 重置表单为空
+  } else {
+    isEditMode.value = false
+    currentId.value = null
+    Object.assign(formData, initialState)// 重置表单为空
   }
 }
 //暴露方法，让父组件通过ref调用
-defineExpose({openDialog})
+defineExpose({ openDialog })
 
 // 提交表单
 const handleSubmit = async () => {
@@ -90,9 +90,9 @@ const handleSubmit = async () => {
     error.value = '课程编号和课程名称为必填项'
     return
   }
-  
+
   // 2. 数据格式转换 
-  
+
   const payload: CreateCoursePayload = {
     ...formData,
     departmentId: formData.departmentId ? Number(formData.departmentId) : undefined,
@@ -106,33 +106,59 @@ const handleSubmit = async () => {
   error.value = null
 
   try {
-    if(isEditMode.value&&currentId.value){
+    if (isEditMode.value && currentId.value) {
       //编辑模式，调用更新接口
-      await updateCourse(currentId.value,payload)
+      await updateCourse(currentId.value, payload)
       console.log('更新成功')
       //创建模式，调用创建接口
-      }else{  await createCourse(payload)
+    } else {
+      await createCourse(payload)
       console.log('创建成功')
     }
-    open.value=false;
+    open.value = false;
     emit('success')//通知父组件刷新
-    
+
   } catch (err: any) {
-    error.value = err.message || (isEditMode.value?'更新失败':'创建失败')
+    error.value = err.message || (isEditMode.value ? '更新失败' : '创建失败')
   } finally {
     isLoading.value = false
   }
 }
+
+//储存部门下拉选项
+const departmentOptions = ref<DepartmentVO[]>([])
+//获取部门列表的方法
+const fetchDepartments = async () => {
+  try {
+    // 这里 pageSize 设大一点，确保能拉取到所有部门
+    // 并且只查询 status 为 'ACTIVE' 的部门
+    const res = await getDepartmentList({
+      pageNum: 1,
+      pageSize: 100,
+      status: 'ACTIVE'
+    })
+    if (res && res.data) {
+      departmentOptions.value = res.data.records
+    }
+  } catch (error) {
+    console.error('加载部门列表失败', error)
+  }
+}
+
+// 组件挂载时自动加载部门数据
+onMounted(() => {
+  fetchDepartments()
+})
 </script>
 
 <template>
-  <Dialog :open="open" @update:open="(val)=>open=val">
+  <Dialog :open="open" @update:open="(val) => open = val">
 
     <DialogContent class="sm:max-w-[600px] max-h-[85vh] overflow-y-auto">
       <DialogHeader>
-        <DialogTitle>{{ isEditMode?'编辑课程':'添加课程' }}</DialogTitle>
+        <DialogTitle>{{ isEditMode ? '编辑课程' : '添加课程' }}</DialogTitle>
         <DialogDescription>
-         {{ isEditMode?'修改课程信息后点击保存':' 请填写课程的基本信息，点击保存提交。' }}
+          {{ isEditMode ? '修改课程信息后点击保存' : ' 请填写课程的基本信息，点击保存提交。' }}
         </DialogDescription>
       </DialogHeader>
 
@@ -146,7 +172,7 @@ const handleSubmit = async () => {
         <div class="grid grid-cols-2 gap-4">
           <div class="grid gap-2">
             <Label for="code" class="text-red-500">课程编号 *</Label>
-            <Input id="code" v-model="formData.code" placeholder="例如: sdu001" :disabled="isEditMode"/>
+            <Input id="code" v-model="formData.code" placeholder="例如: sdu001" :disabled="isEditMode" />
           </div>
           <div class="grid gap-2">
             <Label for="name" class="text-red-500">课程名称 *</Label>
@@ -160,7 +186,7 @@ const handleSubmit = async () => {
             <Label>课程类型</Label>
             <!--修复 Select 类型报错，强制转为 string -->
             <Select :model-value="formData.defaultCourseType"
-            @update:model-value="(v)=>formData.defaultCourseType=v as any">
+              @update:model-value="(v) => formData.defaultCourseType = v as any">
               <SelectTrigger>
                 <SelectValue placeholder="选择类型" />
               </SelectTrigger>
@@ -172,8 +198,22 @@ const handleSubmit = async () => {
             </Select>
           </div>
           <div class="grid gap-2">
-            <Label for="deptId">学院ID</Label>
-            <Input id="deptId" type="number" v-model="formData.departmentId" placeholder="输入数字ID" />
+            <Label for="deptId">所属学院</Label>
+
+            <Select :model-value="formData.departmentId?.toString()"
+              @update:model-value="(v) => formData.departmentId = Number(v)">
+              <SelectTrigger>
+                <!-- 显示选中的部门名称，如果没有选中则显示 placeholder -->
+                <SelectValue placeholder="请选择学院" />
+              </SelectTrigger>
+
+              <SelectContent>
+                <!-- 循环渲染部门选项 -->
+                <SelectItem v-for="dept in departmentOptions" :key="dept.id" :value="dept.id.toString()">
+                  {{ dept.name }}
+                </SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
@@ -201,11 +241,8 @@ const handleSubmit = async () => {
         <div class="flex items-center justify-between border p-3 rounded-md">
           <Label for="repeatable" class="cursor-pointer">是否允许重复修读</Label>
           <!-- Switch 组件处理 boolean -->
-          <Switch 
-            id="repeatable" 
-            :checked="formData.repeatable"
-            @update:checked="(checked:boolean) => formData.repeatable = checked"
-          />
+          <Switch id="repeatable" :checked="formData.repeatable"
+            @update:checked="(checked: boolean) => formData.repeatable = checked" />
         </div>
 
         <!-- 第五行：简介 -->

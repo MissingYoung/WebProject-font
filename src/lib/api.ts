@@ -15,7 +15,11 @@ import type {
   updateCoursePayload,
   PageResult,
   CourseQueryParams,
-  CourseVO, 
+  CourseVO,
+  CreateDepartmentPayload,
+  DepartmentVO,
+  DepartmentQueryParams,
+  UpdateDepartmentPayload,
  
 
 
@@ -94,7 +98,13 @@ type ActivateCourseSuccessResponse =ApiResponse<null>;
 type DeactivateCourseSuccessResponse =ApiResponse<null>;
 type ArchiveCourseSuccessResponse =ApiResponse<null>;
 type GetCourseDetailSuccessResponse =ApiResponse<CourseVO>;
-
+type CreateDepartmentSuccessResponse =ApiResponse<number>;
+type GetDepartmentSuccessResponse =ApiResponse<PageResult<DepartmentVO>>
+type UpdateDepartmentSuccessResponse =ApiResponse<null>;
+type DeleteDepartmentSuccessResponse =ApiResponse<null>;
+type GetDepartmentByIdSuccessResponse =ApiResponse<DepartmentVO>;
+type EnableDepartmentSuccessResponse =ApiResponse<null>
+type DisableDepartmentSuccessResponse =ApiResponse<null>
 
 
 
@@ -219,7 +229,44 @@ export const archiveCourse =async(
 //获取课程详情
 export const getCourseDetail = async (id: number): Promise<GetCourseDetailSuccessResponse> => {
   return apiClient.get(`/course/${id}/detail`);
-};         
+}; 
+
+//创建部门
+export const createDepartment =async(
+  payload:CreateDepartmentPayload,
+):Promise<CreateDepartmentSuccessResponse>=>
+  apiClient.post('/department/create', payload);
+//获取部门列表
+export const getDepartmentList =async(
+  params:DepartmentQueryParams
+):Promise<GetDepartmentSuccessResponse>=>
+  apiClient.get('/department/list', { params });
+//更新部门信息
+export const updateDepartment = async (
+  id: number, 
+  payload: UpdateDepartmentPayload
+): Promise<UpdateDepartmentSuccessResponse>=>
+   apiClient.post(`/department/${id}/update`, payload);
+ //删除部门
+ export const deleteDepartment =async(
+  id:number,
+ ):Promise<DeleteDepartmentSuccessResponse>=>
+  apiClient.post(`/department/${id}/delete`); 
+//通过id搜索部门
+export const getDepartmentById=async(
+  id:number,
+):Promise<GetDepartmentByIdSuccessResponse>=>
+  apiClient.get(`/department/${id}`);
+ //启用部门
+export const enableDepartment=async(
+  id:number,
+):Promise<EnableDepartmentSuccessResponse>=>
+  apiClient.post(`/department/${id}/enable`);   
+//弃用部门
+export const disableDepartment=async(
+  id:number,
+):Promise<DisableDepartmentSuccessResponse>=>
+  apiClient.post(`/department/${id}/disable`); 
   
 
 
