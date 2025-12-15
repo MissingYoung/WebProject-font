@@ -2,7 +2,6 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { getCurrentUser, logout as apiLogout } from '@/lib/api'
 import type { UserInfo } from '@/types'
-import { useRouter } from 'vue-router'
 
 //定义store
 export const useUserStore = defineStore(
@@ -31,15 +30,12 @@ export const useUserStore = defineStore(
       token.value = data.token
       userInfo.value = data.user
       isSoftLoggedOut.value = false
-      // localStorage.setItem('token',data.token);
-      //localStorage.setItem('userInfo',JSON.stringify(data.user));
     }
 
     //用于更新用户头像
     function setAvatar(url: string) {
       if (userInfo.value) {
         userInfo.value.avatarUrl = url
-        //localStorage.setItem('userInfo', JSON.stringify(userInfo.value));
       }
     }
 

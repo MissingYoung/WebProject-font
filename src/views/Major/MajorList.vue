@@ -1,15 +1,10 @@
 <script setup lang="ts">
 import { reactive, ref, onMounted } from 'vue'
-import {
-  getDepartmentList,
-  deleteDepartment,
-  getDepartmentById,
-  enableDepartment,
-  disableDepartment,
-} from '@/lib/api'
-import type { DepartmentVO } from '@/types'
+import { getMajorList, deleteMajor, enableMajor, disableMajor, getDepartmentList } from '@/lib/api'
+import type { MajorVO, MajorQueryParams, DegreeLevel, DepartmentVO } from '@/types'
 import { formatDate } from '@/lib/date'
-import DepartmentEditDialog from '@/components/Department/DepartmentEditDialog.vue'
+import MajorEditDialog from '@/components/Major/MajorEditDialog.vue'
+import { toast } from 'vue-sonner'
 
 // UI 组件
 import { Button } from '@/components/ui/button'
@@ -36,7 +31,7 @@ import {
   Search,
   RotateCcw,
   Pencil,
-  Building2,
+  GraduationCap,
   ChevronLeft,
   ChevronRight,
   Trash2,
@@ -57,70 +52,90 @@ import {
 
 // --- 状态管理 ---
 const isLoading = ref(false)
-const tableData = ref<DepartmentVO[]>([])
+const tableData = ref<MajorVO[]>([])
 const total = ref(0)
-const editDialogRef = ref<InstanceType<typeof DepartmentEditDialog> | null>(null)
+const editDialogRef = ref<InstanceType<typeof MajorEditDialog> | null>(null)
+
+// 部门列表（用于筛选）
+const departmentList = ref<DepartmentVO[]>([])
+
 // 删除相关的状态
 const deleteDialogOpen = ref(false)
-const deptToDelete = ref<DepartmentVO | null>(null)
+const majorToDelete = ref<MajorVO | null>(null)
 const isDeleting = ref(false)
 
 // 查询参数
-const queryParams = reactive({
+const queryParams = reactive<MajorQueryParams>({
   pageNum: 1,
   pageSize: 10,
+  departmentId: undefined,
   code: '',
   name: '',
-  status: undefined as string | undefined,
-  id: '',
-  // parentId: undefined // 暂时不放父级ID筛选，通常用左侧树选择
+  degreeLevel: undefined,
+  status: undefined,
 })
+
+// 学位等级映射
+const degreeLevelMap: Record<DegreeLevel, string> = {
+  ASSOCIATE: '专科',
+  BACHELOR: '本科',
+  MASTER: '硕士',
+  DOCTOR: '博士',
+}
 
 // 状态映射字典
 const statusMap: Record<
   string,
   { label: string; variant: 'default' | 'secondary' | 'destructive' }
 > = {
-  ACTIVE: { label: '正常', variant: 'default' }, // 黑色/绿色
-  DISABLED: { label: '禁用', variant: 'destructive' }, // 红色
+  ACTIVE: { label: '正常', variant: 'default' },
+  DISABLED: { label: '禁用', variant: 'destructive' },
 }
 
 // --- 方法 ---
+
+// 获取部门列表
+const fetchDepartments = async () => {
+  try {
+    const res = await getDepartmentList({
+      pageNum: 1,
+      pageSize: 100,
+      status: 'ACTIVE',
+    })
+    if (res && res.data) {
+      departmentList.value = res.data.records
+    }
+  } catch (err: unknown) {
+    console.error('获取部门列表失败', err)
+  }
+}
 
 // 获取数据
 const fetchData = async () => {
   isLoading.value = true
   tableData.value = []
   try {
-    if (queryParams.id) {
-      const id = Number(queryParams.id)
-      if (isNaN(id)) {
-        // 如果输入的不是数字，直接算查不到
-        tableData.value = []
-        total.value = 0
-        isLoading.value = false
-        return
-      }
-      const res = await getDepartmentById(id)
-      if (res.data) {
-        tableData.value = [res.data]
-        total.value = 1
-      } else {
-        tableData.value = []
-        total.value = 0
-      }
-    } else {
-      // 构造符合 DepartmentQueryParams 类型的参数（排除 id）
-      const { id, ...apiParams } = queryParams
-      const res = await getDepartmentList(apiParams)
-
-      if (res && res.data) {
-        tableData.value = res.data.records
-        total.value = res.data.total
-      }
+    // 构造查询参数，排除空值
+    const params: MajorQueryParams = {
+      pageNum: queryParams.pageNum,
+      pageSize: queryParams.pageSize,
     }
-  } catch (error) {
-    console.error('获取部门数据失败', error)
+    if (queryParams.departmentId) params.departmentId = queryParams.departmentId
+    if (queryParams.code) params.code = queryParams.code
+    if (queryParams.name) params.name = queryParams.name
+    if (queryParams.degreeLevel) params.degreeLevel = queryParams.degreeLevel
+    if (queryParams.status) params.status = queryParams.status
+
+    const res = await getMajorList(params)
+
+    if (res && res.data) {
+      tableData.value = res.data.records
+      total.value = res.data.total
+    }
+  } catch (error: unknown) {
+    console.error('获取专业数据失败', error)
+    const message = error instanceof Error ? error.message : '获取专业列表失败'
+    toast.error(message)
     tableData.value = []
     total.value = 0
   } finally {
@@ -136,9 +151,10 @@ const handleSearch = () => {
 
 // 重置
 const handleReset = () => {
-  queryParams.id = ''
+  queryParams.departmentId = undefined
   queryParams.code = ''
   queryParams.name = ''
+  queryParams.degreeLevel = undefined
   queryParams.status = undefined
   handleSearch()
 }
@@ -164,67 +180,61 @@ const handleCreate = () => {
 }
 
 // 操作：编辑
-const handleEdit = (row: DepartmentVO) => {
+const handleEdit = (row: MajorVO) => {
   editDialogRef.value?.openDialog(row)
 }
 
 // 点击删除按钮
-const handleDeleteClick = (row: DepartmentVO) => {
-  deptToDelete.value = row
+const handleDeleteClick = (row: MajorVO) => {
+  majorToDelete.value = row
   deleteDialogOpen.value = true
 }
 
 // 确认删除
 const handleConfirmDelete = async () => {
-  if (!deptToDelete.value) return
+  if (!majorToDelete.value) return
 
   isDeleting.value = true
   try {
-    await deleteDepartment(deptToDelete.value.id)
-    console.log('删除成功')
+    await deleteMajor(majorToDelete.value.id)
+    toast.success('专业删除成功')
     deleteDialogOpen.value = false
-    alert('删除成功')
-    // 刷新列表
     fetchData()
-  } catch (err: any) {
-    console.error('删除失败', err)
-    // 这里可以用 Toast，或者简单的 alert
-    alert(err.message || '删除失败，该部门下可能还有子部门或关联数据')
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : '删除失败'
+    toast.error(message)
   } finally {
     isDeleting.value = false
   }
 }
-//启用部门逻辑
-const handleEnable = async (row: DepartmentVO) => {
-  try {
-    // 调用接口
-    await enableDepartment(row.id)
-    console.log('部门启用成功')
-    alert('部门启用成功')
 
-    // 刷新列表，状态应变为 ACTIVE
+// 启用专业
+const handleEnable = async (row: MajorVO) => {
+  try {
+    await enableMajor(row.id)
+    toast.success('专业启用成功')
     fetchData()
-  } catch (err: any) {
-    console.error('启用失败', err)
-    alert(err.message || '启用失败')
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : '启用失败'
+    toast.error(message)
   }
 }
-//弃用部门逻辑
-const handleDisable = async (row: DepartmentVO) => {
-  if (!confirm('确定要禁用该部门吗？')) return
 
+// 禁用专业
+const handleDisable = async (row: MajorVO) => {
   try {
-    await disableDepartment(row.id)
-    console.log('部门禁用成功')
-    fetchData() // 刷新列表，状态变为 DISABLED
-  } catch (err: any) {
-    console.error('禁用失败', err)
-    alert(err.message || '禁用失败')
+    await disableMajor(row.id)
+    toast.success('专业禁用成功')
+    fetchData()
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : '禁用失败'
+    toast.error(message)
   }
 }
 
 // 初始化
 onMounted(() => {
+  fetchDepartments()
   fetchData()
 })
 </script>
@@ -235,53 +245,71 @@ onMounted(() => {
     <div class="flex items-center justify-between">
       <div>
         <h2 class="text-2xl font-bold tracking-tight flex items-center gap-2">
-          <Building2 class="h-6 w-6" /> 部门管理
+          <GraduationCap class="h-6 w-6" /> 专业管理
         </h2>
-        <p class="text-muted-foreground">管理学校的学院及部门架构</p>
+        <p class="text-muted-foreground">管理学校的专业信息</p>
       </div>
 
       <Button @click="handleCreate">
         <Plus class="mr-2 h-4 w-4" />
-        添加部门
+        添加专业
       </Button>
     </div>
 
     <!-- 2. 筛选区域 -->
     <div class="flex flex-wrap gap-4 items-end border p-4 rounded-lg bg-card">
-      <div class="grid gap-2 w-[120px]">
-        <label class="text-sm font-medium">部门 ID</label>
-        <Input
-          v-model="queryParams.id"
-          placeholder="精确查找"
-          type="number"
-          @keyup.enter="handleSearch"
-        />
-      </div>
       <div class="grid gap-2 w-[180px]">
-        <label class="text-sm font-medium">部门编码</label>
-        <Input
-          v-model="queryParams.code"
-          placeholder="输入编码"
-          :disabled="!!queryParams.id"
-          @keyup.enter="handleSearch"
-        />
-      </div>
-
-      <div class="grid gap-2 w-[180px]">
-        <label class="text-sm font-medium">部门名称</label>
-        <Input
-          v-model="queryParams.name"
-          placeholder="输入名称"
-          :disabled="!!queryParams.id"
-          @keyup.enter="handleSearch"
-        />
+        <label class="text-sm font-medium">所属学院</label>
+        <Select
+          :model-value="queryParams.departmentId ? String(queryParams.departmentId) : undefined"
+          @update:model-value="(v) => (queryParams.departmentId = v ? Number(v) : undefined)"
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="全部" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem v-for="dept in departmentList" :key="dept.id" :value="String(dept.id)">
+              {{ dept.name }}
+            </SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div class="grid gap-2 w-[150px]">
+        <label class="text-sm font-medium">专业编码</label>
+        <Input v-model="queryParams.code" placeholder="输入编码" @keyup.enter="handleSearch" />
+      </div>
+
+      <div class="grid gap-2 w-[150px]">
+        <label class="text-sm font-medium">专业名称</label>
+        <Input v-model="queryParams.name" placeholder="输入名称" @keyup.enter="handleSearch" />
+      </div>
+
+      <div class="grid gap-2 w-[120px]">
+        <label class="text-sm font-medium">学位等级</label>
+        <Select
+          :model-value="queryParams.degreeLevel"
+          @update:model-value="(v) => (queryParams.degreeLevel = (v as DegreeLevel) || undefined)"
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="全部" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ASSOCIATE">专科</SelectItem>
+            <SelectItem value="BACHELOR">本科</SelectItem>
+            <SelectItem value="MASTER">硕士</SelectItem>
+            <SelectItem value="DOCTOR">博士</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div class="grid gap-2 w-[120px]">
         <label class="text-sm font-medium">状态</label>
         <Select
           :model-value="queryParams.status"
-          @update:model-value="(v) => (queryParams.status = v as string)"
+          @update:model-value="
+            (v) => (queryParams.status = (v as 'ACTIVE' | 'DISABLED') || undefined)
+          "
         >
           <SelectTrigger>
             <SelectValue placeholder="全部" />
@@ -306,11 +334,12 @@ onMounted(() => {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead class="w-[100px]">ID</TableHead>
-            <TableHead>部门编码</TableHead>
-            <TableHead>部门名称</TableHead>
-            <TableHead>简称</TableHead>
-            <TableHead>上级ID</TableHead>
+            <TableHead class="w-[80px]">ID</TableHead>
+            <TableHead>专业编码</TableHead>
+            <TableHead>专业名称</TableHead>
+            <TableHead>所属学院</TableHead>
+            <TableHead>学位等级</TableHead>
+            <TableHead>学制</TableHead>
             <TableHead>状态</TableHead>
             <TableHead>创建时间</TableHead>
             <TableHead class="text-right">操作</TableHead>
@@ -319,16 +348,16 @@ onMounted(() => {
         <TableBody>
           <!-- Loading -->
           <TableRow v-if="isLoading">
-            <TableCell colspan="8" class="h-24 text-center">
+            <TableCell colspan="9" class="h-24 text-center">
               <div class="flex items-center justify-center gap-2">
                 <Loader2 class="h-4 w-4 animate-spin" /> 加载中...
               </div>
             </TableCell>
           </TableRow>
 
-          <!--空表格 -->
+          <!-- 空表格 -->
           <TableRow v-else-if="tableData.length === 0">
-            <TableCell colspan="8" class="h-24 text-center text-muted-foreground">
+            <TableCell colspan="9" class="h-24 text-center text-muted-foreground">
               暂无数据
             </TableCell>
           </TableRow>
@@ -338,10 +367,9 @@ onMounted(() => {
             <TableCell class="font-medium">{{ item.id }}</TableCell>
             <TableCell>{{ item.code }}</TableCell>
             <TableCell>{{ item.name }}</TableCell>
-            <TableCell>{{ item.shortName || '-' }}</TableCell>
-            <TableCell class="text-muted-foreground">
-              {{ item.parentId === 0 ? '顶级' : item.parentId }}
-            </TableCell>
+            <TableCell>{{ item.departmentName || '-' }}</TableCell>
+            <TableCell>{{ degreeLevelMap[item.degreeLevel] || item.degreeLevel }}</TableCell>
+            <TableCell>{{ item.durationYears ? `${item.durationYears}年` : '-' }}</TableCell>
             <TableCell>
               <Badge v-if="statusMap[item.status]" :variant="statusMap[item.status]?.variant">
                 {{ statusMap[item.status]?.label }}
@@ -359,33 +387,34 @@ onMounted(() => {
                   v-if="item.status === 'DISABLED'"
                   variant="ghost"
                   size="sm"
-                  title="启用部门"
+                  title="启用专业"
                   class="text-green-600 hover:text-green-700 hover:bg-green-50"
                   @click="handleEnable(item)"
                 >
                   <Play class="h-4 w-4" />启用
                 </Button>
-                <!--禁用按钮 (状态不为 DISABLED，即 ACTIVE 时显示) -->
+                <!-- 禁用按钮 (状态不为 DISABLED，即 ACTIVE 时显示) -->
                 <Button
                   v-else
                   variant="ghost"
                   size="sm"
-                  title="禁用部门"
+                  title="禁用专业"
                   class="text-orange-500 hover:text-orange-600 hover:bg-orange-50"
                   @click="handleDisable(item)"
                 >
                   <PauseCircle class="h-4 w-4" />禁用
                 </Button>
+
                 <!-- 编辑按钮 -->
                 <Button variant="ghost" size="sm" title="编辑" @click="handleEdit(item)">
                   <Pencil class="h-4 w-4 text-blue-600" />编辑
                 </Button>
 
-                <!--  删除按钮 -->
+                <!-- 删除按钮 -->
                 <Button
                   variant="ghost"
                   size="sm"
-                  title="删除部门"
+                  title="删除专业"
                   class="text-red-600 hover:text-red-700 hover:bg-red-50"
                   @click="handleDeleteClick(item)"
                 >
@@ -421,21 +450,20 @@ onMounted(() => {
       </Button>
     </div>
 
-    <!-- 挂载弹窗，success 事件触发刷新 -->
     <!-- 删除确认弹窗 -->
     <AlertDialog :open="deleteDialogOpen" @update:open="(v) => (deleteDialogOpen = v)">
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle class="flex items-center gap-2 text-red-600">
             <AlertTriangle class="h-5 w-5" />
-            确认删除该部门吗？
+            确认删除该专业吗？
           </AlertDialogTitle>
           <AlertDialogDescription>
-            您正在尝试删除部门：<span class="font-bold text-black">{{ deptToDelete?.name }}</span>
-            ({{ deptToDelete?.code }})。
+            您正在尝试删除专业：<span class="font-bold text-black">{{ majorToDelete?.name }}</span>
+            ({{ majorToDelete?.code }})。
             <br />
             <span class="text-red-500 text-xs mt-2 block"
-              >注意：通常需要先删除或转移该部门下的所有子部门和人员才能删除成功。</span
+              >注意：删除后可能影响相关的学生数据和培养方案。</span
             >
           </AlertDialogDescription>
         </AlertDialogHeader>
@@ -451,6 +479,8 @@ onMounted(() => {
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
-    <DepartmentEditDialog ref="editDialogRef" @success="fetchData" />
+
+    <!-- 编辑弹窗 -->
+    <MajorEditDialog ref="editDialogRef" @success="fetchData" />
   </div>
 </template>

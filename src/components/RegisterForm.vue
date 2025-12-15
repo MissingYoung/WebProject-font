@@ -61,7 +61,7 @@ const handleRegister = async () => {
     if (result && result.code === 200) {
       console.log('注册成功: ', result.message)
 
-      const { token, userId, role } = result.data
+      const { token } = result.data
 
       const miniUserInfo: UserInfo = {
         id: result.data.userId,

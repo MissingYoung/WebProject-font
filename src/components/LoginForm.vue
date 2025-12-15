@@ -1,9 +1,7 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import { useAuthForm } from '@/composables/userAuthForm'
+import { useRouter } from 'vue-router'
 import { login } from '@/lib/api'
-import type { LoginPayload } from '@/types'
 import { useUserStore } from '@/stores/user'
 import type { UserInfo } from '@/types'
 
@@ -23,7 +21,6 @@ import { Loader2 } from 'lucide-vue-next'
 import IdentifyCode from './IdentifyCode.vue'
 
 const router = useRouter()
-const route = useRoute()
 const userStore = useUserStore()
 
 const formData = reactive({
@@ -40,10 +37,6 @@ const verifyCodeRef = ref<InstanceType<typeof IdentifyCode> | null>(null)
 //接收生成的验证码
 const handleCode = (code: string) => {
   correctCode.value = code
-}
-
-const submit = async (payload: LoginPayload) => {
-  return await login(payload)
 }
 
 const handleLogin = async () => {
@@ -71,7 +64,7 @@ const handleLogin = async () => {
       throw new Error('登录服务响应异常，请稍后重试')
     }
     console.log('登录成功: ', result)
-    const { token, username, userId, realName, role } = result.data
+    const { token, username } = result.data
 
     const miniUserInfo: UserInfo = {
       id: result.data.userId,

@@ -1,15 +1,9 @@
 <script setup lang="ts">
 import { reactive, ref, onMounted } from 'vue'
-import {
-  getDepartmentList,
-  deleteDepartment,
-  getDepartmentById,
-  enableDepartment,
-  disableDepartment,
-} from '@/lib/api'
-import type { DepartmentVO } from '@/types'
-import { formatDate } from '@/lib/date'
-import DepartmentEditDialog from '@/components/Department/DepartmentEditDialog.vue'
+import { getSemesterList, deleteSemester, setCurrentSemester } from '@/lib/api'
+import type { SemesterVO, SemesterQueryParams } from '@/types'
+import SemesterEditDialog from '@/components/Semester/SemesterEditDialog.vue'
+import { toast } from 'vue-sonner'
 
 // UI 组件
 import { Button } from '@/components/ui/button'
@@ -36,13 +30,12 @@ import {
   Search,
   RotateCcw,
   Pencil,
-  Building2,
+  Calendar,
   ChevronLeft,
   ChevronRight,
   Trash2,
   AlertTriangle,
-  Play,
-  PauseCircle,
+  CheckCircle,
 } from 'lucide-vue-next'
 import {
   AlertDialog,
@@ -57,32 +50,35 @@ import {
 
 // --- 状态管理 ---
 const isLoading = ref(false)
-const tableData = ref<DepartmentVO[]>([])
+const tableData = ref<SemesterVO[]>([])
 const total = ref(0)
-const editDialogRef = ref<InstanceType<typeof DepartmentEditDialog> | null>(null)
+const editDialogRef = ref<InstanceType<typeof SemesterEditDialog> | null>(null)
+
 // 删除相关的状态
 const deleteDialogOpen = ref(false)
-const deptToDelete = ref<DepartmentVO | null>(null)
+const semesterToDelete = ref<SemesterVO | null>(null)
 const isDeleting = ref(false)
 
+// 设置当前学期相关的状态
+const setCurrentDialogOpen = ref(false)
+const semesterToSetCurrent = ref<SemesterVO | null>(null)
+const isSettingCurrent = ref(false)
+
 // 查询参数
-const queryParams = reactive({
+const queryParams = reactive<SemesterQueryParams & { id?: string }>({
   pageNum: 1,
   pageSize: 10,
-  code: '',
+  academicYear: '',
+  termOrder: undefined,
   name: '',
-  status: undefined as string | undefined,
   id: '',
-  // parentId: undefined // 暂时不放父级ID筛选，通常用左侧树选择
 })
 
-// 状态映射字典
-const statusMap: Record<
-  string,
-  { label: string; variant: 'default' | 'secondary' | 'destructive' }
-> = {
-  ACTIVE: { label: '正常', variant: 'default' }, // 黑色/绿色
-  DISABLED: { label: '禁用', variant: 'destructive' }, // 红色
+// 学期序号映射
+const termOrderMap: Record<number, string> = {
+  1: '秋季学期',
+  2: '春季学期',
+  3: '夏季学期',
 }
 
 // --- 方法 ---
@@ -92,35 +88,25 @@ const fetchData = async () => {
   isLoading.value = true
   tableData.value = []
   try {
-    if (queryParams.id) {
-      const id = Number(queryParams.id)
-      if (isNaN(id)) {
-        // 如果输入的不是数字，直接算查不到
-        tableData.value = []
-        total.value = 0
-        isLoading.value = false
-        return
-      }
-      const res = await getDepartmentById(id)
-      if (res.data) {
-        tableData.value = [res.data]
-        total.value = 1
-      } else {
-        tableData.value = []
-        total.value = 0
-      }
-    } else {
-      // 构造符合 DepartmentQueryParams 类型的参数（排除 id）
-      const { id, ...apiParams } = queryParams
-      const res = await getDepartmentList(apiParams)
-
-      if (res && res.data) {
-        tableData.value = res.data.records
-        total.value = res.data.total
-      }
+    // 构造查询参数，排除空值和 id
+    const params: SemesterQueryParams = {
+      pageNum: queryParams.pageNum,
+      pageSize: queryParams.pageSize,
     }
-  } catch (error) {
-    console.error('获取部门数据失败', error)
+    if (queryParams.academicYear) params.academicYear = queryParams.academicYear
+    if (queryParams.termOrder) params.termOrder = queryParams.termOrder
+    if (queryParams.name) params.name = queryParams.name
+
+    const res = await getSemesterList(params)
+
+    if (res && res.data) {
+      tableData.value = res.data.records
+      total.value = res.data.total
+    }
+  } catch (error: unknown) {
+    console.error('获取学期数据失败', error)
+    const message = error instanceof Error ? error.message : '获取学期列表失败'
+    toast.error(message)
     tableData.value = []
     total.value = 0
   } finally {
@@ -137,9 +123,9 @@ const handleSearch = () => {
 // 重置
 const handleReset = () => {
   queryParams.id = ''
-  queryParams.code = ''
+  queryParams.academicYear = ''
+  queryParams.termOrder = undefined
   queryParams.name = ''
-  queryParams.status = undefined
   handleSearch()
 }
 
@@ -164,62 +150,55 @@ const handleCreate = () => {
 }
 
 // 操作：编辑
-const handleEdit = (row: DepartmentVO) => {
+const handleEdit = (row: SemesterVO) => {
   editDialogRef.value?.openDialog(row)
 }
 
 // 点击删除按钮
-const handleDeleteClick = (row: DepartmentVO) => {
-  deptToDelete.value = row
+const handleDeleteClick = (row: SemesterVO) => {
+  semesterToDelete.value = row
   deleteDialogOpen.value = true
 }
 
 // 确认删除
 const handleConfirmDelete = async () => {
-  if (!deptToDelete.value) return
+  if (!semesterToDelete.value) return
 
   isDeleting.value = true
   try {
-    await deleteDepartment(deptToDelete.value.id)
-    console.log('删除成功')
+    await deleteSemester(semesterToDelete.value.id)
+    toast.success('学期删除成功')
     deleteDialogOpen.value = false
-    alert('删除成功')
-    // 刷新列表
     fetchData()
-  } catch (err: any) {
-    console.error('删除失败', err)
-    // 这里可以用 Toast，或者简单的 alert
-    alert(err.message || '删除失败，该部门下可能还有子部门或关联数据')
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : '删除失败'
+    toast.error(message)
   } finally {
     isDeleting.value = false
   }
 }
-//启用部门逻辑
-const handleEnable = async (row: DepartmentVO) => {
-  try {
-    // 调用接口
-    await enableDepartment(row.id)
-    console.log('部门启用成功')
-    alert('部门启用成功')
 
-    // 刷新列表，状态应变为 ACTIVE
-    fetchData()
-  } catch (err: any) {
-    console.error('启用失败', err)
-    alert(err.message || '启用失败')
-  }
+// 点击设为当前学期按钮
+const handleSetCurrentClick = (row: SemesterVO) => {
+  semesterToSetCurrent.value = row
+  setCurrentDialogOpen.value = true
 }
-//弃用部门逻辑
-const handleDisable = async (row: DepartmentVO) => {
-  if (!confirm('确定要禁用该部门吗？')) return
 
+// 确认设为当前学期
+const handleConfirmSetCurrent = async () => {
+  if (!semesterToSetCurrent.value) return
+
+  isSettingCurrent.value = true
   try {
-    await disableDepartment(row.id)
-    console.log('部门禁用成功')
-    fetchData() // 刷新列表，状态变为 DISABLED
-  } catch (err: any) {
-    console.error('禁用失败', err)
-    alert(err.message || '禁用失败')
+    await setCurrentSemester(semesterToSetCurrent.value.id)
+    toast.success('当前学期设置成功')
+    setCurrentDialogOpen.value = false
+    fetchData()
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : '设置失败'
+    toast.error(message)
+  } finally {
+    isSettingCurrent.value = false
   }
 }
 
@@ -235,60 +214,46 @@ onMounted(() => {
     <div class="flex items-center justify-between">
       <div>
         <h2 class="text-2xl font-bold tracking-tight flex items-center gap-2">
-          <Building2 class="h-6 w-6" /> 部门管理
+          <Calendar class="h-6 w-6" /> 学期管理
         </h2>
-        <p class="text-muted-foreground">管理学校的学院及部门架构</p>
+        <p class="text-muted-foreground">管理学校的学期信息</p>
       </div>
 
       <Button @click="handleCreate">
         <Plus class="mr-2 h-4 w-4" />
-        添加部门
+        添加学期
       </Button>
     </div>
 
     <!-- 2. 筛选区域 -->
     <div class="flex flex-wrap gap-4 items-end border p-4 rounded-lg bg-card">
-      <div class="grid gap-2 w-[120px]">
-        <label class="text-sm font-medium">部门 ID</label>
+      <div class="grid gap-2 w-[150px]">
+        <label class="text-sm font-medium">学年</label>
         <Input
-          v-model="queryParams.id"
-          placeholder="精确查找"
-          type="number"
-          @keyup.enter="handleSearch"
-        />
-      </div>
-      <div class="grid gap-2 w-[180px]">
-        <label class="text-sm font-medium">部门编码</label>
-        <Input
-          v-model="queryParams.code"
-          placeholder="输入编码"
-          :disabled="!!queryParams.id"
+          v-model="queryParams.academicYear"
+          placeholder="例如: 2024-2025"
           @keyup.enter="handleSearch"
         />
       </div>
 
       <div class="grid gap-2 w-[180px]">
-        <label class="text-sm font-medium">部门名称</label>
-        <Input
-          v-model="queryParams.name"
-          placeholder="输入名称"
-          :disabled="!!queryParams.id"
-          @keyup.enter="handleSearch"
-        />
+        <label class="text-sm font-medium">学期名称</label>
+        <Input v-model="queryParams.name" placeholder="输入名称" @keyup.enter="handleSearch" />
       </div>
 
       <div class="grid gap-2 w-[150px]">
-        <label class="text-sm font-medium">状态</label>
+        <label class="text-sm font-medium">学期序号</label>
         <Select
-          :model-value="queryParams.status"
-          @update:model-value="(v) => (queryParams.status = v as string)"
+          :model-value="queryParams.termOrder ? String(queryParams.termOrder) : undefined"
+          @update:model-value="(v) => (queryParams.termOrder = v ? Number(v) : undefined)"
         >
           <SelectTrigger>
             <SelectValue placeholder="全部" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="ACTIVE">正常</SelectItem>
-            <SelectItem value="DISABLED">禁用</SelectItem>
+            <SelectItem value="1">秋季学期</SelectItem>
+            <SelectItem value="2">春季学期</SelectItem>
+            <SelectItem value="3">夏季学期</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -306,29 +271,30 @@ onMounted(() => {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead class="w-[100px]">ID</TableHead>
-            <TableHead>部门编码</TableHead>
-            <TableHead>部门名称</TableHead>
-            <TableHead>简称</TableHead>
-            <TableHead>上级ID</TableHead>
+            <TableHead class="w-[80px]">ID</TableHead>
+            <TableHead>学年</TableHead>
+            <TableHead>学期名称</TableHead>
+            <TableHead>学期类型</TableHead>
+            <TableHead>开始日期</TableHead>
+            <TableHead>结束日期</TableHead>
+            <TableHead>周数</TableHead>
             <TableHead>状态</TableHead>
-            <TableHead>创建时间</TableHead>
             <TableHead class="text-right">操作</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           <!-- Loading -->
           <TableRow v-if="isLoading">
-            <TableCell colspan="8" class="h-24 text-center">
+            <TableCell colspan="9" class="h-24 text-center">
               <div class="flex items-center justify-center gap-2">
                 <Loader2 class="h-4 w-4 animate-spin" /> 加载中...
               </div>
             </TableCell>
           </TableRow>
 
-          <!--空表格 -->
+          <!-- 空表格 -->
           <TableRow v-else-if="tableData.length === 0">
-            <TableCell colspan="8" class="h-24 text-center text-muted-foreground">
+            <TableCell colspan="9" class="h-24 text-center text-muted-foreground">
               暂无数据
             </TableCell>
           </TableRow>
@@ -336,56 +302,43 @@ onMounted(() => {
           <!-- Data -->
           <TableRow v-for="item in tableData" v-else :key="item.id">
             <TableCell class="font-medium">{{ item.id }}</TableCell>
-            <TableCell>{{ item.code }}</TableCell>
+            <TableCell>{{ item.academicYear }}</TableCell>
             <TableCell>{{ item.name }}</TableCell>
-            <TableCell>{{ item.shortName || '-' }}</TableCell>
-            <TableCell class="text-muted-foreground">
-              {{ item.parentId === 0 ? '顶级' : item.parentId }}
-            </TableCell>
+            <TableCell>{{ termOrderMap[item.termOrder] || `第${item.termOrder}学期` }}</TableCell>
+            <TableCell class="text-sm">{{ item.startDate }}</TableCell>
+            <TableCell class="text-sm">{{ item.endDate }}</TableCell>
+            <TableCell>{{ item.weekCount || '-' }}</TableCell>
             <TableCell>
-              <Badge v-if="statusMap[item.status]" :variant="statusMap[item.status]?.variant">
-                {{ statusMap[item.status]?.label }}
+              <Badge v-if="item.currentTerm" variant="default" class="bg-green-600">
+                当前学期
               </Badge>
-              <span v-else>{{ item.status }}</span>
-            </TableCell>
-            <TableCell class="text-sm text-muted-foreground">
-              {{ formatDate(item.createTime) }}
+              <Badge v-else variant="secondary"> 非当前 </Badge>
             </TableCell>
 
             <TableCell class="text-right">
               <div class="flex justify-end gap-2 items-center">
-                <!-- 启用按钮 (只在 DISABLED 状态显示) -->
+                <!-- 设为当前学期按钮 (只在非当前学期时显示) -->
                 <Button
-                  v-if="item.status === 'DISABLED'"
+                  v-if="!item.currentTerm"
                   variant="ghost"
                   size="sm"
-                  title="启用部门"
+                  title="设为当前学期"
                   class="text-green-600 hover:text-green-700 hover:bg-green-50"
-                  @click="handleEnable(item)"
+                  @click="handleSetCurrentClick(item)"
                 >
-                  <Play class="h-4 w-4" />启用
+                  <CheckCircle class="h-4 w-4 mr-1" />设为当前
                 </Button>
-                <!--禁用按钮 (状态不为 DISABLED，即 ACTIVE 时显示) -->
-                <Button
-                  v-else
-                  variant="ghost"
-                  size="sm"
-                  title="禁用部门"
-                  class="text-orange-500 hover:text-orange-600 hover:bg-orange-50"
-                  @click="handleDisable(item)"
-                >
-                  <PauseCircle class="h-4 w-4" />禁用
-                </Button>
+
                 <!-- 编辑按钮 -->
                 <Button variant="ghost" size="sm" title="编辑" @click="handleEdit(item)">
                   <Pencil class="h-4 w-4 text-blue-600" />编辑
                 </Button>
 
-                <!--  删除按钮 -->
+                <!-- 删除按钮 -->
                 <Button
                   variant="ghost"
                   size="sm"
-                  title="删除部门"
+                  title="删除学期"
                   class="text-red-600 hover:text-red-700 hover:bg-red-50"
                   @click="handleDeleteClick(item)"
                 >
@@ -421,21 +374,22 @@ onMounted(() => {
       </Button>
     </div>
 
-    <!-- 挂载弹窗，success 事件触发刷新 -->
     <!-- 删除确认弹窗 -->
     <AlertDialog :open="deleteDialogOpen" @update:open="(v) => (deleteDialogOpen = v)">
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle class="flex items-center gap-2 text-red-600">
             <AlertTriangle class="h-5 w-5" />
-            确认删除该部门吗？
+            确认删除该学期吗？
           </AlertDialogTitle>
           <AlertDialogDescription>
-            您正在尝试删除部门：<span class="font-bold text-black">{{ deptToDelete?.name }}</span>
-            ({{ deptToDelete?.code }})。
+            您正在尝试删除学期：<span class="font-bold text-black">{{
+              semesterToDelete?.name
+            }}</span>
+            ({{ semesterToDelete?.academicYear }})。
             <br />
             <span class="text-red-500 text-xs mt-2 block"
-              >注意：通常需要先删除或转移该部门下的所有子部门和人员才能删除成功。</span
+              >注意：删除后可能影响相关的课程开设和选课数据。</span
             >
           </AlertDialogDescription>
         </AlertDialogHeader>
@@ -451,6 +405,38 @@ onMounted(() => {
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
-    <DepartmentEditDialog ref="editDialogRef" @success="fetchData" />
+
+    <!-- 设为当前学期确认弹窗 -->
+    <AlertDialog :open="setCurrentDialogOpen" @update:open="(v) => (setCurrentDialogOpen = v)">
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle class="flex items-center gap-2 text-green-600">
+            <CheckCircle class="h-5 w-5" />
+            确认设为当前学期吗？
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            您正在将学期 <span class="font-bold text-black">{{ semesterToSetCurrent?.name }}</span>
+            设为当前学期。
+            <br />
+            <span class="text-muted-foreground text-xs mt-2 block"
+              >设置后，原当前学期将自动取消。</span
+            >
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel :disabled="isSettingCurrent">取消</AlertDialogCancel>
+          <AlertDialogAction
+            :disabled="isSettingCurrent"
+            class="bg-green-600 hover:bg-green-700 text-white"
+            @click.prevent="handleConfirmSetCurrent"
+          >
+            {{ isSettingCurrent ? '设置中...' : '确认设置' }}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+
+    <!-- 编辑弹窗 -->
+    <SemesterEditDialog ref="editDialogRef" @success="fetchData" />
   </div>
 </template>

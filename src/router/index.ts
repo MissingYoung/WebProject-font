@@ -58,13 +58,13 @@ const routes: Array<RouteRecordRaw> = [
       {
         path: 'dashboard',
         name: 'Dashboard',
-        component: () => import('src/views/DashboardView.vue'),
+        component: () => import('@/views/DashboardView.vue'),
         meta: { title: '我的桌面' },
       },
       {
         path: 'course-list',
         name: 'CourseList',
-        component: () => import('src/views/Course/CourseList.vue'),
+        component: () => import('@/views/Course/CourseList.vue'),
         meta: { title: '课程管理' },
       },
       {
@@ -72,6 +72,104 @@ const routes: Array<RouteRecordRaw> = [
         name: 'DepartmentList',
         component: () => import('@/views/Department/DepartmentList.vue'),
         meta: { title: '部门管理' },
+      },
+      {
+        path: 'semesters',
+        name: 'SemesterList',
+        component: () => import('@/views/Semester/SemesterList.vue'),
+        meta: { title: '学期管理' },
+      },
+      {
+        path: 'majors',
+        name: 'MajorList',
+        component: () => import('@/views/Major/MajorList.vue'),
+        meta: { title: '专业管理' },
+      },
+      {
+        path: 'students',
+        name: 'StudentList',
+        component: () => import('@/views/Student/StudentList.vue'),
+        meta: { title: '学生管理' },
+      },
+      {
+        path: 'teachers',
+        name: 'TeacherList',
+        component: () => import('@/views/Teacher/TeacherList.vue'),
+        meta: { title: '教师管理' },
+      },
+      {
+        path: 'family-members',
+        name: 'FamilyMemberList',
+        component: () => import('@/views/FamilyMember/FamilyMemberList.vue'),
+        meta: { title: '家庭成员管理' },
+      },
+      {
+        path: 'permissions',
+        name: 'PermissionList',
+        component: () => import('@/views/Permission/PermissionList.vue'),
+        meta: { title: '权限管理' },
+      },
+      {
+        path: 'roles',
+        name: 'RoleList',
+        component: () => import('@/views/Role/RoleList.vue'),
+        meta: { title: '角色管理' },
+      },
+      // 行政班管理
+      {
+        path: 'administrative-classes',
+        name: 'AdministrativeClassList',
+        component: () => import('@/views/AdministrativeClass/AdministrativeClassList.vue'),
+        meta: { title: '行政班管理' },
+      },
+      // 开课管理
+      {
+        path: 'course-offerings',
+        name: 'CourseOfferingList',
+        component: () => import('@/views/CourseOffering/CourseOfferingList.vue'),
+        meta: { title: '开课管理' },
+      },
+      // 教学班管理
+      {
+        path: 'teaching-classes',
+        name: 'TeachingClassList',
+        component: () => import('@/views/TeachingClass/TeachingClassList.vue'),
+        meta: { title: '教学班管理' },
+      },
+      // 排课管理
+      {
+        path: 'schedules',
+        name: 'ScheduleList',
+        component: () => import('@/views/TeachingClassSchedule/ScheduleList.vue'),
+        meta: { title: '排课管理' },
+      },
+      // 选课窗口管理
+      {
+        path: 'selection-windows',
+        name: 'SelectionWindowList',
+        component: () => import('@/views/CourseSelectionWindow/CourseSelectionWindowList.vue'),
+        meta: { title: '选课窗口管理' },
+      },
+      // 培养计划管理
+      {
+        path: 'program-requirements',
+        name: 'ProgramRequirementList',
+        component: () => import('@/views/ProgramCourseRequirement/ProgramRequirementList.vue'),
+        meta: { title: '培养计划管理' },
+      },
+      // 选课 - 可选课程
+      {
+        path: 'available-courses',
+        name: 'AvailableCourseList',
+        component: () => import('@/views/CourseEnrollment/AvailableCourseList.vue'),
+        meta: { title: '可选课程' },
+      },
+      // 选课 - 我的选课
+      {
+        path: 'my-enrollments',
+        name: 'MyEnrollments',
+        component: () => import('@/views/CourseEnrollment/MyEnrollments.vue'),
+        meta: { title: '我的选课' },
       },
     ],
   },
@@ -89,7 +187,7 @@ const router = createRouter({
 })
 
 //全局前置守卫
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, _from, next) => {
   const userStore = useUserStore()
   const isLoggedIn = userStore.isLoggedIn
   const isAuthPage = to.name === 'Login' || to.name === 'Register'

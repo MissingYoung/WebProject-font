@@ -2,6 +2,7 @@
 import { onMounted } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { Loader2 } from 'lucide-vue-next'
+import { Toaster } from '@/components/ui/sonner'
 const userStore = useUserStore()
 
 // 当组件挂载时，执行初始化检查
@@ -20,6 +21,9 @@ onMounted(() => {
   </div>
 
   <RouterView v-else />
+
+  <!-- 全局 Toast 通知组件 -->
+  <Toaster rich-colors position="top-right" />
 </template>
 
 <style scoped>

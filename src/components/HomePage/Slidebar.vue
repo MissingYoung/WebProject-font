@@ -1,12 +1,43 @@
 <!--主页侧边导航栏样式-->
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import { Button } from '@/components/ui/button'
-import { Home, GraduationCap, Command, Building2 } from 'lucide-vue-next'
+import {
+  Home,
+  GraduationCap,
+  Command,
+  Building2,
+  Calendar,
+  BookOpen,
+  Users,
+  Users2,
+  Shield,
+  UserCog,
+  UsersRound,
+  BookMarked,
+  Clock,
+  FileText,
+  CalendarRange,
+  BookCheck,
+} from 'lucide-vue-next'
 const menuItems = shallowRef([
   { name: '我的桌面', routeName: 'Dashboard', icon: Home },
   { name: '课程列表', routeName: 'CourseList', icon: GraduationCap },
   { name: '部门管理', routeName: 'DepartmentList', icon: Building2 },
+  { name: '学期管理', routeName: 'SemesterList', icon: Calendar },
+  { name: '专业管理', routeName: 'MajorList', icon: BookOpen },
+  { name: '学生管理', routeName: 'StudentList', icon: GraduationCap },
+  { name: '教师管理', routeName: 'TeacherList', icon: Users },
+  { name: '家庭成员', routeName: 'FamilyMemberList', icon: Users2 },
+  { name: '权限管理', routeName: 'PermissionList', icon: Shield },
+  { name: '角色管理', routeName: 'RoleList', icon: UserCog },
+  { name: '行政班管理', routeName: 'AdministrativeClassList', icon: UsersRound },
+  { name: '开课管理', routeName: 'CourseOfferingList', icon: BookOpen },
+  { name: '教学班管理', routeName: 'TeachingClassList', icon: GraduationCap },
+  { name: '排课管理', routeName: 'ScheduleList', icon: Clock },
+  { name: '选课窗口', routeName: 'SelectionWindowList', icon: CalendarRange },
+  { name: '培养计划', routeName: 'ProgramRequirementList', icon: FileText },
+  { name: '可选课程', routeName: 'AvailableCourseList', icon: BookMarked },
+  { name: '我的选课', routeName: 'MyEnrollments', icon: BookCheck },
 ])
 </script>
 
