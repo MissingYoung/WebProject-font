@@ -1,10 +1,9 @@
-
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
 
 const props = defineProps({
   width: { type: Number, default: 120 },
-  height: { type: Number, default: 40 }
+  height: { type: Number, default: 40 },
 })
 
 const emit = defineEmits(['update:code'])
@@ -42,11 +41,11 @@ const draw = () => {
   for (let i = 0; i < 4; i++) {
     const text = pool[randomNum(0, pool.length)]!
     imgCode += text
-    
+
     // 随机字体大小和旋转
     const fontSize = randomNum(20, 30)
     const deg = randomNum(-30, 30)
-    
+
     ctx.font = `${fontSize}px SimHei`
     ctx.textBaseline = 'top'
     ctx.fillStyle = randomColor(80, 150) // 深色文字
@@ -57,7 +56,7 @@ const draw = () => {
     ctx.fillText(text, -10, -10)
     ctx.restore()
   }
-  
+
   // 更新生成的验证码给父组件
   code.value = imgCode
   emit('update:code', imgCode)
@@ -96,12 +95,12 @@ defineExpose({ refresh })
 </script>
 
 <template>
-  <canvas 
-    ref="canvasRef" 
-    :width="props.width" 
+  <canvas
+    ref="canvasRef"
+    :width="props.width"
     :height="props.height"
     class="cursor-pointer border rounded-md hover:shadow-sm transition-all"
-    @click="refresh"
     title="看不清？点击刷新"
+    @click="refresh"
   ></canvas>
 </template>

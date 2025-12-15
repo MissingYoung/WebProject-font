@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { reactive, ref, onMounted } from 'vue'
-import { getDepartmentList, deleteDepartment, getDepartmentById, enableDepartment, disableDepartment, } from '@/lib/api'
+import {
+  getDepartmentList,
+  deleteDepartment,
+  getDepartmentById,
+  enableDepartment,
+  disableDepartment,
+} from '@/lib/api'
 import type { DepartmentVO, DepartmentQueryParams } from '@/types'
 import { formatDate } from '@/lib/date'
 import DepartmentEditDialog from '@/components/Department/DepartmentEditDialog.vue'
@@ -71,9 +77,12 @@ const queryParams = reactive({
 })
 
 // 状态映射字典
-const statusMap: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' }> = {
-  'ACTIVE': { label: '正常', variant: 'default' }, // 黑色/绿色
-  'DISABLED': { label: '禁用', variant: 'destructive' } // 红色
+const statusMap: Record<
+  string,
+  { label: string; variant: 'default' | 'secondary' | 'destructive' }
+> = {
+  ACTIVE: { label: '正常', variant: 'default' }, // 黑色/绿色
+  DISABLED: { label: '禁用', variant: 'destructive' }, // 红色
 }
 
 // --- 方法 ---
@@ -100,8 +109,7 @@ const fetchData = async () => {
         tableData.value = []
         total.value = 0
       }
-    }
-    else {
+    } else {
       // 构造符合 DepartmentQueryParams 类型的参数（排除 id）
       const { id, ...apiParams } = queryParams
       const res = await getDepartmentList(apiParams)
@@ -203,7 +211,7 @@ const handleEnable = async (row: DepartmentVO) => {
 }
 //弃用部门逻辑
 const handleDisable = async (row: DepartmentVO) => {
-  if (!confirm('确定要禁用该部门吗？')) return;
+  if (!confirm('确定要禁用该部门吗？')) return
 
   try {
     await disableDepartment(row.id)
@@ -242,21 +250,39 @@ onMounted(() => {
     <div class="flex flex-wrap gap-4 items-end border p-4 rounded-lg bg-card">
       <div class="grid gap-2 w-[120px]">
         <label class="text-sm font-medium">部门 ID</label>
-        <Input v-model="queryParams.id" placeholder="精确查找" type="number" @keyup.enter="handleSearch" />
+        <Input
+          v-model="queryParams.id"
+          placeholder="精确查找"
+          type="number"
+          @keyup.enter="handleSearch"
+        />
       </div>
       <div class="grid gap-2 w-[180px]">
         <label class="text-sm font-medium">部门编码</label>
-        <Input v-model="queryParams.code" placeholder="输入编码" :disabled="!!queryParams.id" @keyup.enter="handleSearch" />
+        <Input
+          v-model="queryParams.code"
+          placeholder="输入编码"
+          :disabled="!!queryParams.id"
+          @keyup.enter="handleSearch"
+        />
       </div>
 
       <div class="grid gap-2 w-[180px]">
         <label class="text-sm font-medium">部门名称</label>
-        <Input v-model="queryParams.name" placeholder="输入名称" :disabled="!!queryParams.id" @keyup.enter="handleSearch" />
+        <Input
+          v-model="queryParams.name"
+          placeholder="输入名称"
+          :disabled="!!queryParams.id"
+          @keyup.enter="handleSearch"
+        />
       </div>
 
       <div class="grid gap-2 w-[150px]">
         <label class="text-sm font-medium">状态</label>
-        <Select :model-value="queryParams.status" @update:model-value="(v) => queryParams.status = v as string">
+        <Select
+          :model-value="queryParams.status"
+          @update:model-value="(v) => (queryParams.status = v as string)"
+        >
           <SelectTrigger>
             <SelectValue placeholder="全部" />
           </SelectTrigger>
@@ -268,9 +294,7 @@ onMounted(() => {
       </div>
 
       <div class="flex gap-2 pb-0.5">
-        <Button @click="handleSearch">
-          <Search class="mr-2 h-4 w-4" /> 搜索
-        </Button>
+        <Button @click="handleSearch"> <Search class="mr-2 h-4 w-4" /> 搜索 </Button>
         <Button variant="outline" @click="handleReset">
           <RotateCcw class="mr-2 h-4 w-4" /> 重置
         </Button>
@@ -310,7 +334,7 @@ onMounted(() => {
           </TableRow>
 
           <!-- Data -->
-          <TableRow v-else v-for="item in tableData" :key="item.id">
+          <TableRow v-for="item in tableData" v-else :key="item.id">
             <TableCell class="font-medium">{{ item.id }}</TableCell>
             <TableCell>{{ item.code }}</TableCell>
             <TableCell>{{ item.name }}</TableCell>
@@ -331,13 +355,25 @@ onMounted(() => {
             <TableCell class="text-right">
               <div class="flex justify-end gap-2 items-center">
                 <!-- 启用按钮 (只在 DISABLED 状态显示) -->
-                <Button v-if="item.status === 'DISABLED'" variant="ghost" size="sm" title="启用部门"
-                  class="text-green-600 hover:text-green-700 hover:bg-green-50" @click="handleEnable(item)">
+                <Button
+                  v-if="item.status === 'DISABLED'"
+                  variant="ghost"
+                  size="sm"
+                  title="启用部门"
+                  class="text-green-600 hover:text-green-700 hover:bg-green-50"
+                  @click="handleEnable(item)"
+                >
                   <Play class="h-4 w-4" />启用
                 </Button>
                 <!--禁用按钮 (状态不为 DISABLED，即 ACTIVE 时显示) -->
-                <Button v-else variant="ghost" size="sm" title="禁用部门"
-                  class="text-orange-500 hover:text-orange-600 hover:bg-orange-50" @click="handleDisable(item)">
+                <Button
+                  v-else
+                  variant="ghost"
+                  size="sm"
+                  title="禁用部门"
+                  class="text-orange-500 hover:text-orange-600 hover:bg-orange-50"
+                  @click="handleDisable(item)"
+                >
                   <PauseCircle class="h-4 w-4" />禁用
                 </Button>
                 <!-- 编辑按钮 -->
@@ -346,11 +382,15 @@ onMounted(() => {
                 </Button>
 
                 <!--  删除按钮 -->
-                <Button variant="ghost" size="sm" title="删除部门" class="text-red-600 hover:text-red-700 hover:bg-red-50"
-                  @click="handleDeleteClick(item)">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  title="删除部门"
+                  class="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  @click="handleDeleteClick(item)"
+                >
                   <Trash2 class="h-4 w-4" />删除
                 </Button>
-
               </div>
             </TableCell>
           </TableRow>
@@ -360,17 +400,22 @@ onMounted(() => {
 
     <!-- 4. 分页控件 -->
     <div class="flex items-center justify-end space-x-2 py-4">
-      <div class="text-sm text-muted-foreground mr-4">
-        共 {{ total }} 条记录
-      </div>
-      <Button variant="outline" size="sm" :disabled="queryParams.pageNum <= 1 || isLoading" @click="prevPage">
+      <div class="text-sm text-muted-foreground mr-4">共 {{ total }} 条记录</div>
+      <Button
+        variant="outline"
+        size="sm"
+        :disabled="queryParams.pageNum <= 1 || isLoading"
+        @click="prevPage"
+      >
         <ChevronLeft class="h-4 w-4" /> 上一页
       </Button>
-      <div class="text-sm font-medium">
-        第 {{ queryParams.pageNum }} 页
-      </div>
-      <Button variant="outline" size="sm" :disabled="tableData.length < queryParams.pageSize || isLoading"
-        @click="nextPage">
+      <div class="text-sm font-medium">第 {{ queryParams.pageNum }} 页</div>
+      <Button
+        variant="outline"
+        size="sm"
+        :disabled="tableData.length < queryParams.pageSize || isLoading"
+        @click="nextPage"
+      >
         下一页
         <ChevronRight class="h-4 w-4" />
       </Button>
@@ -378,7 +423,7 @@ onMounted(() => {
 
     <!-- 挂载弹窗，success 事件触发刷新 -->
     <!-- 删除确认弹窗 -->
-    <AlertDialog :open="deleteDialogOpen" @update:open="(v) => deleteDialogOpen = v">
+    <AlertDialog :open="deleteDialogOpen" @update:open="(v) => (deleteDialogOpen = v)">
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle class="flex items-center gap-2 text-red-600">
@@ -386,15 +431,21 @@ onMounted(() => {
             确认删除该部门吗？
           </AlertDialogTitle>
           <AlertDialogDescription>
-            您正在尝试删除部门：<span class="font-bold text-black">{{ deptToDelete?.name }}</span> ({{ deptToDelete?.code }})。
-            <br>
-            <span class="text-red-500 text-xs mt-2 block">注意：通常需要先删除或转移该部门下的所有子部门和人员才能删除成功。</span>
+            您正在尝试删除部门：<span class="font-bold text-black">{{ deptToDelete?.name }}</span>
+            ({{ deptToDelete?.code }})。
+            <br />
+            <span class="text-red-500 text-xs mt-2 block"
+              >注意：通常需要先删除或转移该部门下的所有子部门和人员才能删除成功。</span
+            >
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel :disabled="isDeleting">取消</AlertDialogCancel>
-          <AlertDialogAction @click.prevent="handleConfirmDelete" :disabled="isDeleting"
-            class="bg-red-600 hover:bg-red-700 text-white">
+          <AlertDialogAction
+            :disabled="isDeleting"
+            class="bg-red-600 hover:bg-red-700 text-white"
+            @click.prevent="handleConfirmDelete"
+          >
             {{ isDeleting ? '删除中...' : '确认删除' }}
           </AlertDialogAction>
         </AlertDialogFooter>

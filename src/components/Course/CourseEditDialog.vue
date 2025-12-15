@@ -50,7 +50,7 @@ const initialState: CreateCoursePayload = {
   lectureHours: 0,
   labHours: 0,
   repeatable: false,
-  description: ''
+  description: '',
 }
 
 const formData = reactive<CreateCoursePayload>({ ...initialState })
@@ -59,8 +59,8 @@ const openDialog = (course?: CourseVO) => {
   open.value = true
   error.value = null
   if (course) {
-    isEditMode.value = true;
-    currentId.value = course.id;
+    isEditMode.value = true
+    currentId.value = course.id
     // 数据回显：将表格行的数据填入表单
     Object.assign(formData, {
       code: course.code,
@@ -72,12 +72,12 @@ const openDialog = (course?: CourseVO) => {
       lectureHours: course.lectureHours,
       labHours: course.labHours,
       repeatable: course.repeatable,
-      description: course.description || ''
+      description: course.description || '',
     })
   } else {
     isEditMode.value = false
     currentId.value = null
-    Object.assign(formData, initialState)// 重置表单为空
+    Object.assign(formData, initialState) // 重置表单为空
   }
 }
 //暴露方法，让父组件通过ref调用
@@ -91,7 +91,7 @@ const handleSubmit = async () => {
     return
   }
 
-  // 2. 数据格式转换 
+  // 2. 数据格式转换
 
   const payload: CreateCoursePayload = {
     ...formData,
@@ -115,9 +115,8 @@ const handleSubmit = async () => {
       await createCourse(payload)
       console.log('创建成功')
     }
-    open.value = false;
-    emit('success')//通知父组件刷新
-
+    open.value = false
+    emit('success') //通知父组件刷新
   } catch (err: any) {
     error.value = err.message || (isEditMode.value ? '更新失败' : '创建失败')
   } finally {
@@ -135,7 +134,7 @@ const fetchDepartments = async () => {
     const res = await getDepartmentList({
       pageNum: 1,
       pageSize: 100,
-      status: 'ACTIVE'
+      status: 'ACTIVE',
     })
     if (res && res.data) {
       departmentOptions.value = res.data.records
@@ -152,8 +151,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <Dialog :open="open" @update:open="(val) => open = val">
-
+  <Dialog :open="open" @update:open="(val) => (open = val)">
     <DialogContent class="sm:max-w-[600px] max-h-[85vh] overflow-y-auto">
       <DialogHeader>
         <DialogTitle>{{ isEditMode ? '编辑课程' : '添加课程' }}</DialogTitle>
@@ -172,7 +170,12 @@ onMounted(() => {
         <div class="grid grid-cols-2 gap-4">
           <div class="grid gap-2">
             <Label for="code" class="text-red-500">课程编号 *</Label>
-            <Input id="code" v-model="formData.code" placeholder="例如: sdu001" :disabled="isEditMode" />
+            <Input
+              id="code"
+              v-model="formData.code"
+              placeholder="例如: sdu001"
+              :disabled="isEditMode"
+            />
           </div>
           <div class="grid gap-2">
             <Label for="name" class="text-red-500">课程名称 *</Label>
@@ -185,8 +188,10 @@ onMounted(() => {
           <div class="grid gap-2">
             <Label>课程类型</Label>
             <!--修复 Select 类型报错，强制转为 string -->
-            <Select :model-value="formData.defaultCourseType"
-              @update:model-value="(v) => formData.defaultCourseType = v as any">
+            <Select
+              :model-value="formData.defaultCourseType"
+              @update:model-value="(v) => (formData.defaultCourseType = v as any)"
+            >
               <SelectTrigger>
                 <SelectValue placeholder="选择类型" />
               </SelectTrigger>
@@ -200,8 +205,10 @@ onMounted(() => {
           <div class="grid gap-2">
             <Label for="deptId">所属学院</Label>
 
-            <Select :model-value="formData.departmentId?.toString()"
-              @update:model-value="(v) => formData.departmentId = Number(v)">
+            <Select
+              :model-value="formData.departmentId?.toString()"
+              @update:model-value="(v) => (formData.departmentId = Number(v))"
+            >
               <SelectTrigger>
                 <!-- 显示选中的部门名称，如果没有选中则显示 placeholder -->
                 <SelectValue placeholder="请选择学院" />
@@ -209,7 +216,11 @@ onMounted(() => {
 
               <SelectContent>
                 <!-- 循环渲染部门选项 -->
-                <SelectItem v-for="dept in departmentOptions" :key="dept.id" :value="dept.id.toString()">
+                <SelectItem
+                  v-for="dept in departmentOptions"
+                  :key="dept.id"
+                  :value="dept.id.toString()"
+                >
                   {{ dept.name }}
                 </SelectItem>
               </SelectContent>
@@ -221,19 +232,19 @@ onMounted(() => {
         <div class="grid grid-cols-4 gap-4">
           <div class="grid gap-2">
             <Label for="credit">学分</Label>
-            <Input id="credit" type="number" step="0.5" v-model.number="formData.credit" />
+            <Input id="credit" v-model.number="formData.credit" type="number" step="0.5" />
           </div>
           <div class="grid gap-2">
             <Label for="total">总学时</Label>
-            <Input id="total" type="number" v-model.number="formData.totalHours" />
+            <Input id="total" v-model.number="formData.totalHours" type="number" />
           </div>
           <div class="grid gap-2">
             <Label for="lecture">理论学时</Label>
-            <Input id="lecture" type="number" v-model.number="formData.lectureHours" />
+            <Input id="lecture" v-model.number="formData.lectureHours" type="number" />
           </div>
           <div class="grid gap-2">
             <Label for="lab">实验学时</Label>
-            <Input id="lab" type="number" v-model.number="formData.labHours" />
+            <Input id="lab" v-model.number="formData.labHours" type="number" />
           </div>
         </div>
 
@@ -241,8 +252,11 @@ onMounted(() => {
         <div class="flex items-center justify-between border p-3 rounded-md">
           <Label for="repeatable" class="cursor-pointer">是否允许重复修读</Label>
           <!-- Switch 组件处理 boolean -->
-          <Switch id="repeatable" :checked="formData.repeatable"
-            @update:checked="(checked: boolean) => formData.repeatable = checked" />
+          <Switch
+            id="repeatable"
+            :checked="formData.repeatable"
+            @update:checked="(checked: boolean) => (formData.repeatable = checked)"
+          />
         </div>
 
         <!-- 第五行：简介 -->
@@ -253,10 +267,10 @@ onMounted(() => {
       </div>
 
       <DialogFooter>
-        <Button variant="outline" @click="open = false" :disabled="isLoading">取消</Button>
-        <Button type="submit" @click="handleSubmit" :disabled="isLoading">
+        <Button variant="outline" :disabled="isLoading" @click="open = false">取消</Button>
+        <Button type="submit" :disabled="isLoading" @click="handleSubmit">
           <Loader2 v-if="isLoading" class="mr-2 h-4 w-4 animate-spin" />
-          {{ isLoading ? '提交中' : (isEditMode ? '保存修改' : '立即创建') }}
+          {{ isLoading ? '提交中' : isEditMode ? '保存修改' : '立即创建' }}
         </Button>
       </DialogFooter>
     </DialogContent>

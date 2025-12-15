@@ -3,24 +3,29 @@ import { reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthForm } from '@/composables/userAuthForm'
 import { register } from '@/lib/api'
-import type { RegisterPayload } from '@/types' 
-import  { isPureString} from '@/utils/validate'
+import type { RegisterPayload } from '@/types'
+import { isPureString } from '@/utils/validate'
 
-
-import { useUserStore} from '@/stores/user'
-import type { UserInfo } from '@/types';
-
+import { useUserStore } from '@/stores/user'
+import type { UserInfo } from '@/types'
 
 // 引入 UI 组件
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Loader2 } from 'lucide-vue-next'
 
 const router = useRouter()
-const userStore =useUserStore();
+const userStore = useUserStore()
 
 // 1. 更新 formData 以匹配 RegisterPayload 类型和后端 API 要求
 const formData = reactive<RegisterPayload>({
@@ -28,68 +33,66 @@ const formData = reactive<RegisterPayload>({
   password: '',
   sduId: '',
   realName: '',
-  email:'',
+  email: '',
 })
 
 // 复用完全相同的 Composable，只传入不同的 API 函数
 const { isLoading, error, submit } = useAuthForm(register)
 
-
-
 const handleRegister = async () => {
-  const {username, password, sduId, realName} = formData;
-  if (!username|| !password|| !sduId || !realName) {
-    error.value = '所有字段均为必填项，请完整填写后重试';
-    return;
+  const { username, password, sduId, realName } = formData
+  if (!username || !password || !sduId || !realName) {
+    error.value = '所有字段均为必填项，请完整填写后重试'
+    return
   }
   if (!isPureString(sduId)) {
-    error.value = '学工号格式不正确，请输入有效的学工号';
-    return;
+    error.value = '学工号格式不正确，请输入有效的学工号'
+    return
   }
-    // 简单的邮箱格式校验
+  // 简单的邮箱格式校验
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   if (!emailRegex.test(formData.email)) {
     error.value = '请输入有效的邮箱地址'
     return
   }
-  
+
   try {
     const result = await submit(formData)
     if (result && result.code === 200) {
-      console.log('注册成功: ', result.message);
-      
-      const {token,userId,role}=result.data;
+      console.log('注册成功: ', result.message)
 
-      const miniUserInfo:UserInfo={
-      id: result.data.userId,
-      username: username,
-      sduId: formData.sduId,
-      realName: result.data.realName || '',
-      role: result.data.role,
-      avatarUrl: '',
-      gender: 2,// 0=MALE, 1=FEMALE, 2=UNKNOWN
-      birthday: '',
-      phone: '',
-      email: '',
-      ethnic: '',
-      politicalStatus: '',
-      description: ''
+      const { token, userId, role } = result.data
+
+      const miniUserInfo: UserInfo = {
+        id: result.data.userId,
+        username: username,
+        sduId: formData.sduId,
+        realName: result.data.realName || '',
+        role: result.data.role,
+        avatarUrl: '',
+        gender: 2, // 0=MALE, 1=FEMALE, 2=UNKNOWN
+        birthday: '',
+        phone: '',
+        email: '',
+        ethnic: '',
+        politicalStatus: '',
+        description: '',
       }
 
       userStore.setUser({
-        token:token,
-        user:miniUserInfo,
-      });
+        token: token,
+        user: miniUserInfo,
+      })
       alert('注册成功！即将跳转到首页...')
       error.value = ''
-      router.push({name:'Dashboard'})
+      router.push({ name: 'Dashboard' })
     } else if (result && result.code === 400) {
       error.value = '注册失败: ' + result.message
-      console.error('注册失败:(Code:400) ', result.message);
+      console.error('注册失败:(Code:400) ', result.message)
     }
   } catch (err) {
     error.value = '注册过程中出现错误，请检查你的网络或稍后重试'
-    console.error('注册异常: ', err);
+    console.error('注册异常: ', err)
   }
 }
 </script>
@@ -105,32 +108,33 @@ const handleRegister = async () => {
         <AlertDescription>{{ error }}</AlertDescription>
       </Alert>
 
-      
       <div class="grid gap-2">
         <Label for="username">用户名</Label>
-        <Input id="username" type="text" placeholder="请输入用户名" v-model="formData.username" />
+        <Input id="username" v-model="formData.username" type="text" placeholder="请输入用户名" />
       </div>
       <div class="grid gap-2">
         <Label for="realName">真实姓名</Label>
-        <Input id="realName" type="text" placeholder="请输入真实姓名" v-model="formData.realName" />
+        <Input id="realName" v-model="formData.realName" type="text" placeholder="请输入真实姓名" />
       </div>
       <div class="grid gap-2">
         <Label for="sduId">学工号</Label>
-        <Input id="sduId" type="text" placeholder="请输入学工号" v-model="formData.sduId" />
+        <Input id="sduId" v-model="formData.sduId" type="text" placeholder="请输入学工号" />
       </div>
       <div class="grid gap-2">
         <Label for="password">密码</Label>
-        <Input id="password" type="password" placeholder="请输入密码" v-model="formData.password" />
+        <Input id="password" v-model="formData.password" type="password" placeholder="请输入密码" />
       </div>
       <div class="grid gap-2">
         <Label for="password">邮箱</Label>
-        <Input id="email" type="email" placeholder="请输入有效邮箱" v-model="formData.email" />
+        <Input id="email" v-model="formData.email" type="email" placeholder="请输入有效邮箱" />
       </div>
     </CardContent>
     <CardFooter>
-      <Button class="w-full  bg-black text-white hover:bg-blue-600 focus-visible:ring-blue-500" 
-      :disabled="isLoading" 
-      @click="handleRegister">
+      <Button
+        class="w-full bg-black text-white hover:bg-blue-600 focus-visible:ring-blue-500"
+        :disabled="isLoading"
+        @click="handleRegister"
+      >
         <Loader2 v-if="isLoading" class="mr-2 h-4 w-4 animate-spin" />
         {{ isLoading ? '创建中...' : '创建账户' }}
       </Button>

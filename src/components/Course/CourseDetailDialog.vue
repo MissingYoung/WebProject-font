@@ -11,24 +11,27 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator' 
+import { Separator } from '@/components/ui/separator'
 import { formatDate } from '@/lib/date'
 const open = ref(false)
 const isLoading = ref(false)
 const course = ref<CourseVO | null>(null)
 
 // 状态字典
-const statusMap: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
-  'DRAFT': { label: '草稿', variant: 'secondary' },
-  'ACTIVE': { label: '已发布', variant: 'default' },
-  'INACTIVE': { label: '停用', variant: 'destructive' },
-  'ARCHIVED': { label: '归档', variant: 'outline' }
+const statusMap: Record<
+  string,
+  { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }
+> = {
+  DRAFT: { label: '草稿', variant: 'secondary' },
+  ACTIVE: { label: '已发布', variant: 'default' },
+  INACTIVE: { label: '停用', variant: 'destructive' },
+  ARCHIVED: { label: '归档', variant: 'outline' },
 }
 
 const typeMap: Record<string, string> = {
-  'REQUIRED': '必修',
-  'LIMITED_ELECTIVE': '限选',
-  'OPEN_ELECTIVE': '任选'
+  REQUIRED: '必修',
+  LIMITED_ELECTIVE: '限选',
+  OPEN_ELECTIVE: '任选',
 }
 
 // 暴露给父组件的方法
@@ -50,7 +53,7 @@ defineExpose({ openDialog })
 </script>
 
 <template>
-  <Dialog v-model:open="open" >
+  <Dialog v-model:open="open">
     <DialogContent class="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
       <DialogHeader>
         <DialogTitle>课程详情</DialogTitle>
@@ -85,7 +88,9 @@ defineExpose({ openDialog })
           </div>
           <div class="space-y-1">
             <span class="text-sm text-muted-foreground">课程类型</span>
-            <p class="font-medium">{{ typeMap[course.defaultCourseType] || course.defaultCourseType }}</p>
+            <p class="font-medium">
+              {{ typeMap[course.defaultCourseType] || course.defaultCourseType }}
+            </p>
           </div>
           <div class="space-y-1">
             <span class="text-sm text-muted-foreground">学分</span>

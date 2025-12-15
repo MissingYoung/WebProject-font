@@ -7,12 +7,25 @@ import type { UpdateUserInfoPayload } from '@/types'
 
 // 引入 UI 组件
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Loader2 } from 'lucide-vue-next'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 
 const router = useRouter()
@@ -36,7 +49,9 @@ const formData = reactive<UpdateUserInfoPayload>({
 
 const userRole = ref('')
 const hasPermission = ref(false)
-const { isLoading, error, submit } = useAuthForm((data) => updateUserInfo(data as UpdateUserInfoPayload, userId))
+const { isLoading, error, submit } = useAuthForm((data) =>
+  updateUserInfo(data as UpdateUserInfoPayload, userId)
+)
 const isLoadingUserInfo = ref(false)
 
 // 仅从后端获取 role，并判断是否允许提交
@@ -108,21 +123,38 @@ const handleUpdate = async () => {
 
       <div class="flex flex-col items-center">
         <div class="w-full max-w-2xl grid gap-5">
-
           <div class="grid gap-3">
             <Label for="username">用户名</Label>
-            <Input id="username" type="text" v-model="formData.username" placeholder="请输入用户名" class="h-9 pl-6" />
+            <Input
+              id="username"
+              v-model="formData.username"
+              type="text"
+              placeholder="请输入用户名"
+              class="h-9 pl-6"
+            />
           </div>
 
           <div class="grid grid-cols-3 gap-32">
             <div class="grid gap-3">
               <Label for="realName">真实姓名</Label>
-              <Input id="realName" type="text" v-model="formData.realName" placeholder="请输入真实姓名" class="h-9 pl-6" />
+              <Input
+                id="realName"
+                v-model="formData.realName"
+                type="text"
+                placeholder="请输入真实姓名"
+                class="h-9 pl-6"
+              />
             </div>
 
             <div class="grid gap-3">
               <Label for="gender">性别</Label>
-              <Select :model-value="formData.gender?.toString()" @update:model-value="(val) => formData.gender = val ? parseInt(String(val)) as (0 | 1 | 2) : undefined">
+              <Select
+                :model-value="formData.gender?.toString()"
+                @update:model-value="
+                  (val) =>
+                    (formData.gender = val ? (parseInt(String(val)) as 0 | 1 | 2) : undefined)
+                "
+              >
                 <SelectTrigger id="gender" class="h-9 pl-6">
                   <SelectValue placeholder="选择性别" />
                 </SelectTrigger>
@@ -136,37 +168,71 @@ const handleUpdate = async () => {
 
             <div class="grid gap-3">
               <Label for="birthday">生日</Label>
-              <Input id="birthday" type="date" v-model="formData.birthday" class="h-9 pl-6" />
+              <Input id="birthday" v-model="formData.birthday" type="date" class="h-9 pl-6" />
             </div>
           </div>
 
           <div class="grid grid-cols-2 gap-4">
             <div class="grid gap-3">
               <Label for="ethnic">民族</Label>
-              <Input id="ethnic" type="text" v-model="formData.ethnic" placeholder="请输入民族" class="h-9 pl-6" />
+              <Input
+                id="ethnic"
+                v-model="formData.ethnic"
+                type="text"
+                placeholder="请输入民族"
+                class="h-9 pl-6"
+              />
             </div>
 
             <div class="grid gap-3">
               <Label for="politicalStatus">政治面貌</Label>
-              <Input id="politicalStatus" type="text" v-model="formData.politicalStatus" placeholder="请输入政治面貌" class="h-9 pl-6" />
+              <Input
+                id="politicalStatus"
+                v-model="formData.politicalStatus"
+                type="text"
+                placeholder="请输入政治面貌"
+                class="h-9 pl-6"
+              />
             </div>
           </div>
 
           <div class="grid gap-3">
             <Label for="phone">电话</Label>
-            <Input id="phone" type="tel" v-model="formData.phone" placeholder="请输入电话号码" class="h-9 pl-6" />
+            <Input
+              id="phone"
+              v-model="formData.phone"
+              type="tel"
+              placeholder="请输入电话号码"
+              class="h-9 pl-6"
+            />
           </div>
 
           <div class="grid gap-3">
             <Label for="email">邮箱</Label>
-            <Input id="email" type="email" v-model="formData.email" placeholder="请输入邮箱" class="h-9 pl-6" />
+            <Input
+              id="email"
+              v-model="formData.email"
+              type="email"
+              placeholder="请输入邮箱"
+              class="h-9 pl-6"
+            />
           </div>
 
           <div class="grid gap-3">
             <Label for="avatarUrl">头像 URL</Label>
-            <Input id="avatarUrl" type="url" v-model="formData.avatarUrl" placeholder="请输入头像 URL" class="h-9 pl-6" />
+            <Input
+              id="avatarUrl"
+              v-model="formData.avatarUrl"
+              type="url"
+              placeholder="请输入头像 URL"
+              class="h-9 pl-6"
+            />
             <div v-if="formData.avatarUrl" class="mt-3 flex justify-center">
-              <img :src="formData.avatarUrl" :alt="formData.username" class="h-24 w-24 rounded-full object-cover border-2 border-gray-200" />
+              <img
+                :src="formData.avatarUrl"
+                :alt="formData.username"
+                class="h-24 w-24 rounded-full object-cover border-2 border-gray-200"
+              />
             </div>
           </div>
 
@@ -197,13 +263,9 @@ const handleUpdate = async () => {
       <Button variant="outline" class="h-8 w-20" @click="router.push('/update-profile')">
         资料编辑
       </Button>
-      <Button variant="outline" class="h-8 w-20" @click="router.back()">
-        取消
-      </Button>
+      <Button variant="outline" class="h-8 w-20" @click="router.back()"> 取消 </Button>
     </CardFooter>
   </Card>
 </template>
 
-<style scoped>
-
-</style>
+<style scoped></style>

@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { reactive, ref, onMounted } from 'vue'
-import { getCourseList, deleteCourse, activateCourse, deactivateCourse, archiveCourse } from '@/lib/api'
+import {
+  getCourseList,
+  deleteCourse,
+  activateCourse,
+  deactivateCourse,
+  archiveCourse,
+} from '@/lib/api'
 import type { CourseVO, CourseQueryParams } from '@/types'
 import CourseEditDialog from '@/components/Course/CourseEditDialog.vue'
 
@@ -35,7 +41,8 @@ import {
 import { Badge } from '@/components/ui/badge'
 import {
   Loader2,
-  Search, RotateCcw,
+  Search,
+  RotateCcw,
   ChevronLeft,
   ChevronRight,
   Plus,
@@ -77,16 +84,19 @@ const queryParams = reactive<CourseQueryParams>({
 
 // --- 字典/枚举 映射 ---
 const courseTypeMap: Record<string, string> = {
-  'REQUIRED': '必修',
-  'LIMITED_ELECTIVE': '限选',
-  'OPEN_ELECTIVE': '任选'
+  REQUIRED: '必修',
+  LIMITED_ELECTIVE: '限选',
+  OPEN_ELECTIVE: '任选',
 }
 
-const statusMap: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
-  'DRAFT': { label: '草稿', variant: 'secondary' },
-  'ACTIVE': { label: '已发布', variant: 'default' },
-  'INACTIVE': { label: '停用', variant: 'destructive' },
-  'ARCHIVED': { label: '归档', variant: 'outline' }
+const statusMap: Record<
+  string,
+  { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }
+> = {
+  DRAFT: { label: '草稿', variant: 'secondary' },
+  ACTIVE: { label: '已发布', variant: 'default' },
+  INACTIVE: { label: '停用', variant: 'destructive' },
+  ARCHIVED: { label: '归档', variant: 'outline' },
 }
 
 // --- 方法 ---
@@ -99,7 +109,6 @@ const fetchData = async () => {
     if (res && res.data) {
       tableData.value = res.data.records
       total.value = res.data.total
-
     }
   } catch (error) {
     console.error('获取课程列表失败', error)
@@ -125,22 +134,22 @@ const handleReset = () => {
 
 //点击创建按钮
 const handleCreate = () => {
-  dialogRef.value?.openDialog();
+  dialogRef.value?.openDialog()
 }
 
 //点击编辑按钮
 const handleEdit = (row: CourseVO) => {
-  dialogRef.value?.openDialog(row);
+  dialogRef.value?.openDialog(row)
 }
 //刷新列表，统一由弹窗的success事件触发
 const handleRefresh = () => {
-  fetchData();
+  fetchData()
 }
 
 //点击删除按钮(打开弹窗，实际上还未删)
 const handleDeleteClick = (row: CourseVO) => {
-  courseToDelete.value = row;
-  deleteDialogOpen.value = true;
+  courseToDelete.value = row
+  deleteDialogOpen.value = true
 }
 // 确认删除（点击弹窗的“继续”后触发）
 const handleConfirmDelete = async () => {
@@ -204,16 +213,16 @@ const handleArchive = async (row: CourseVO) => {
 }
 //点击查看课程详情
 const handleViewDetail = (row: CourseVO) => {
-    // 1. 检查点击是否生效
-  console.log('>>> 父组件点击了详情按钮，ID:', row.id) 
-  
+  // 1. 检查点击是否生效
+  console.log('>>> 父组件点击了详情按钮，ID:', row.id)
+
   // 2. 检查 ref 是否连接成功
   console.log('>>> detailSheetRef 的值:', detailDialogRef.value)
 
   if (detailDialogRef.value) {
-  detailDialogRef.value?.openDialog(row.id)
-  }else{
-     console.error('>>> 严重错误：无法找到子组件实例！请检查 ref 绑定。')
+    detailDialogRef.value?.openDialog(row.id)
+  } else {
+    console.error('>>> 严重错误：无法找到子组件实例！请检查 ref 绑定。')
   }
 }
 
@@ -268,8 +277,10 @@ onMounted(() => {
 
       <div class="grid gap-2 w-[150px]">
         <label class="text-sm font-medium">课程类型</label>
-        <Select :model-value="queryParams.defaultCourseType"
-          @update:model-value="(v) => queryParams.defaultCourseType = v as string">
+        <Select
+          :model-value="queryParams.defaultCourseType"
+          @update:model-value="(v) => (queryParams.defaultCourseType = v as string)"
+        >
           <SelectTrigger>
             <SelectValue placeholder="全部" />
           </SelectTrigger>
@@ -283,7 +294,10 @@ onMounted(() => {
 
       <div class="grid gap-2 w-[150px]">
         <label class="text-sm font-medium">状态</label>
-        <Select :model-value="queryParams.status" @update:model-value="(v) => queryParams.status = v as string">
+        <Select
+          :model-value="queryParams.status"
+          @update:model-value="(v) => (queryParams.status = v as string)"
+        >
           <SelectTrigger>
             <SelectValue placeholder="全部" />
           </SelectTrigger>
@@ -297,9 +311,7 @@ onMounted(() => {
       </div>
 
       <div class="flex gap-2 pb-0.5">
-        <Button @click="handleSearch">
-          <Search class="mr-2 h-4 w-4" /> 搜索
-        </Button>
+        <Button @click="handleSearch"> <Search class="mr-2 h-4 w-4" /> 搜索 </Button>
         <Button variant="outline" @click="handleReset">
           <RotateCcw class="mr-2 h-4 w-4" /> 重置
         </Button>
@@ -339,15 +351,13 @@ onMounted(() => {
           </TableRow>
 
           <!-- 正常数据 -->
-          <TableRow v-else v-for="item in tableData" :key="item.id">
+          <TableRow v-for="item in tableData" v-else :key="item.id">
             <TableCell class="font-medium">{{ item.code }}</TableCell>
             <TableCell>{{ item.name }}</TableCell>
             <TableCell>
               {{ courseTypeMap[item.defaultCourseType] || item.defaultCourseType }}
             </TableCell>
-            <TableCell>
-              {{ item.credit }} 学分 / {{ item.totalHours }} 学时
-            </TableCell>
+            <TableCell> {{ item.credit }} 学分 / {{ item.totalHours }} 学时 </TableCell>
             <TableCell>
               {{ item.departmentName || item.departmentId }}
             </TableCell>
@@ -369,27 +379,56 @@ onMounted(() => {
 
                 <!-- 归档按钮 -->
                 <!-- 只有没归档的才能归档 -->
-                <Button v-if="item.status !== 'ARCHIVED'" variant="ghost" size="sm" title="归档课程"
-                  class="text-purple-600 hover:text-purple-700 hover:bg-purple-50 mr-4" @click="handleArchive(item)">
+                <Button
+                  v-if="item.status !== 'ARCHIVED'"
+                  variant="ghost"
+                  size="sm"
+                  title="归档课程"
+                  class="text-purple-600 hover:text-purple-700 hover:bg-purple-50 mr-4"
+                  @click="handleArchive(item)"
+                >
                   <Archive class="h-4 w-4" />归档
                 </Button>
                 <!-- 启用按钮 -->
                 <!-- 只有当状态不是 ACTIVE 时才显示 -->
-                <Button v-if="item.status !== 'ACTIVE'" variant="ghost" size="sm" title="发布/启用课程"
-                  class="text-green-600 hover:text-green-700 hover:bg-green-50" @click="handleActivate(item)">
+                <Button
+                  v-if="item.status !== 'ACTIVE'"
+                  variant="ghost"
+                  size="sm"
+                  title="发布/启用课程"
+                  class="text-green-600 hover:text-green-700 hover:bg-green-50"
+                  @click="handleActivate(item)"
+                >
                   <Play class="h-4 w-4" />发布
                 </Button>
                 <!-- 停用按钮 (只在 ACTIVE 状态显示) -->
-                <Button v-else variant="ghost" size="sm" title="停用/下架课程"
-                  class="text-orange-500 hover:text-orange-600 hover:bg-orange-50" @click="handleDeactivate(item)">
+                <Button
+                  v-else
+                  variant="ghost"
+                  size="sm"
+                  title="停用/下架课程"
+                  class="text-orange-500 hover:text-orange-600 hover:bg-orange-50"
+                  @click="handleDeactivate(item)"
+                >
                   <PauseCircle class="h-4 w-4" />停用
                 </Button>
-                <Button v-if="item.status !== 'ARCHIVED'"variant="ghost" size="sm" @click="handleEdit(item)" title="编辑课程">
+                <Button
+                  v-if="item.status !== 'ARCHIVED'"
+                  variant="ghost"
+                  size="sm"
+                  title="编辑课程"
+                  @click="handleEdit(item)"
+                >
                   <Pencil class="h-4 w-4 text-blue-600" />
                   <span class="ml-2 hidden sm:inline">编辑</span>
                 </Button>
-                <Button variant="ghost" size="sm" title="删除课程"
-                  class="text-red-600 hover:text-red-700 hover:bg-red-50 mr-2" @click="handleDeleteClick(item)">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  title="删除课程"
+                  class="text-red-600 hover:text-red-700 hover:bg-red-50 mr-2"
+                  @click="handleDeleteClick(item)"
+                >
                   <Trash2 class="h-4 w-4" />删除
                 </Button>
               </div>
@@ -401,24 +440,29 @@ onMounted(() => {
 
     <!-- 4. 分页控件 -->
     <div class="flex items-center justify-center space-x-2 py-4">
-      <div class="text-sm text-muted-foreground mr-4">
-        共 {{ total }} 条记录
-      </div>
-      <Button variant="outline" size="sm" :disabled="queryParams.pageNum <= 1 || isLoading" @click="prevPage">
+      <div class="text-sm text-muted-foreground mr-4">共 {{ total }} 条记录</div>
+      <Button
+        variant="outline"
+        size="sm"
+        :disabled="queryParams.pageNum <= 1 || isLoading"
+        @click="prevPage"
+      >
         <ChevronLeft class="h-4 w-4" /> 上一页
       </Button>
-      <div class="text-sm font-medium">
-        第 {{ queryParams.pageNum }} 页
-      </div>
-      <Button variant="outline" size="sm" :disabled="tableData.length < queryParams.pageSize || isLoading"
-        @click="nextPage">
+      <div class="text-sm font-medium">第 {{ queryParams.pageNum }} 页</div>
+      <Button
+        variant="outline"
+        size="sm"
+        :disabled="tableData.length < queryParams.pageSize || isLoading"
+        @click="nextPage"
+      >
         下一页
         <ChevronRight class="h-4 w-4" />
       </Button>
     </div>
     <!-- 挂载弹窗组件，放到 template 底部 -->
     <!--删除确认弹窗-->
-    <AlertDialog :open="deleteDialogOpen" @update:open="(v) => deleteDialogOpen = v">
+    <AlertDialog :open="deleteDialogOpen" @update:open="(v) => (deleteDialogOpen = v)">
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle class="flex items-center gap-2 text-red-600">
@@ -427,15 +471,19 @@ onMounted(() => {
           </AlertDialogTitle>
           <AlertDialogDescription>
             <!-- 动态显示课程名称，防止误删 -->
-            您正在尝试删除课程：<span class="font-bold text-black">{{ courseToDelete?.name }}</span> ({{ courseToDelete?.code }})。
-            <br>
+            您正在尝试删除课程：<span class="font-bold text-black">{{ courseToDelete?.name }}</span>
+            ({{ courseToDelete?.code }})。
+            <br />
             此操作无法撤销，将会永久移除该课程及相关数据。
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel :disabled="isDeleting">取消</AlertDialogCancel>
-          <AlertDialogAction @click.prevent="handleConfirmDelete" :disabled="isDeleting"
-            class="bg-red-600 hover:bg-red-700 text-white focus:ring-red-600">
+          <AlertDialogAction
+            :disabled="isDeleting"
+            class="bg-red-600 hover:bg-red-700 text-white focus:ring-red-600"
+            @click.prevent="handleConfirmDelete"
+          >
             {{ isDeleting ? '删除中...' : '确认删除' }}
           </AlertDialogAction>
         </AlertDialogFooter>

@@ -7,7 +7,14 @@ import type { UpdateProfilePayload } from '@/types'
 
 // 引入 UI 组件
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -27,9 +34,9 @@ const formData = reactive<UpdateProfilePayload>({
   description: '',
 })
 
-
-
-const { isLoading, error, submit } = useAuthForm((data) => updateUserProfile(data as UpdateProfilePayload, userId))
+const { isLoading, error, submit } = useAuthForm((data) =>
+  updateUserProfile(data as UpdateProfilePayload, userId)
+)
 const isLoadingProfile = ref(false)
 const userRole = ref('')
 const hasPermission = ref(false) // 这个页面只要有 userId 即可编辑（测试）
@@ -92,22 +99,43 @@ const handleUpdate = async () => {
 
       <div class="flex flex-col items-center">
         <div class="w-full max-w-2xl grid gap-5">
-
           <div class="grid gap-3">
             <Label for="username">用户名</Label>
-            <Input id="username" type="text" v-model="formData.username" placeholder="请输入用户名" class="h-9 pl-6" />
+            <Input
+              id="username"
+              v-model="formData.username"
+              type="text"
+              placeholder="请输入用户名"
+              class="h-9 pl-6"
+            />
           </div>
 
           <div class="grid gap-3">
             <Label for="email">邮箱</Label>
-            <Input id="email" type="email" v-model="formData.email" placeholder="请输入邮箱" class="h-9 pl-6" />
+            <Input
+              id="email"
+              v-model="formData.email"
+              type="email"
+              placeholder="请输入邮箱"
+              class="h-9 pl-6"
+            />
           </div>
 
           <div class="grid gap-3">
             <Label for="avatarUrl">头像 URL</Label>
-            <Input id="avatarUrl" type="url" v-model="formData.avatarUrl" placeholder="请输入头像 URL" class="h-9 pl-6" />
+            <Input
+              id="avatarUrl"
+              v-model="formData.avatarUrl"
+              type="url"
+              placeholder="请输入头像 URL"
+              class="h-9 pl-6"
+            />
             <div v-if="formData.avatarUrl" class="mt-3 flex justify-center">
-              <img :src="formData.avatarUrl" :alt="formData.username" class="h-24 w-24 rounded-full object-cover border-2 border-gray-200" />
+              <img
+                :src="formData.avatarUrl"
+                :alt="formData.username"
+                class="h-24 w-24 rounded-full object-cover border-2 border-gray-200"
+              />
             </div>
           </div>
 
@@ -134,13 +162,9 @@ const handleUpdate = async () => {
         <Loader2 v-if="isLoading" class="mr-2 h-4 w-4 animate-spin" />
         {{ isLoading ? '更新中...' : '更新资料' }}
       </Button>
-      <Button variant="outline" class="h-8 w-20" @click="router.back()">
-        取消
-      </Button>
+      <Button variant="outline" class="h-8 w-20" @click="router.back()"> 取消 </Button>
     </CardFooter>
   </Card>
 </template>
 
-<style scoped>
-
-</style>
+<style scoped></style>
