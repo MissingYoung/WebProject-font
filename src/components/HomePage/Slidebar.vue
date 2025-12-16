@@ -7,11 +7,13 @@ import {
   GraduationCap,
   Command,
   Building2,
+  BookMarked,
 } from 'lucide-vue-next'
 const menuItems = shallowRef([
   { name: '我的桌面', routeName: 'Dashboard', icon: Home },
   { name: '课程列表', routeName: 'CourseList', icon: GraduationCap },
   { name: '部门管理', routeName: 'DepartmentList', icon: Building2 },
+  {name:  '专业管理', routeName: 'MajorList',icon: BookMarked},
 
 
 ])

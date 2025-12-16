@@ -226,3 +226,51 @@ export interface UpdateDepartmentPayload {
   shortName?: string;
   description?: string;
 }
+
+//学位层次枚举
+export type DegreeLevel ='ASSOCIATE' | 'BACHELOR' | 'MASTER' | 'DOCTOR';
+//创建专业参数
+export interface CreateMajorPayload{
+  departmentId:number;
+  code: string;         // 必需，专业编码
+  name: string;         // 必需，专业名称
+  degreeLevel: DegreeLevel; // 必需，学位层次
+  durationYears?: number;   // 学制(年)
+  remark?: string;          // 备注
+}
+//专业状态枚举
+export type MajorStatus = 'ACTIVE' | 'DISABLED';
+//专业视图对象
+export interface MajorVO {
+  id: number;
+  departmentId: number;
+  departmentName?: string; 
+  code: string;
+  name: string;
+  degreeLevel: DegreeLevel;
+  durationYears: number;
+  remark?: string;
+  status: MajorStatus;
+  createTime?: string | { dateTime: string };
+  updateTime?: string | { dateTime: string };
+}
+
+//专业查询参数
+export interface MajorQueryParams {
+  pageNum: number;
+  pageSize: number;
+  code?: string;
+  name?: string;
+  departmentId?: number; 
+  degreeLevel?: string;  
+  status?: string;     
+}
+//更新专业参数
+export interface UpdateMajorPayload{
+  departmentId?:number;
+  code?: string;
+  name?: string;
+  degreeLevel?: DegreeLevel;
+  durationYears?: number;
+  remark?: string;
+}

@@ -20,8 +20,12 @@ import type {
   DepartmentVO,
   DepartmentQueryParams,
   UpdateDepartmentPayload,
- 
+  CreateMajorPayload,
+  MajorQueryParams,
+  MajorVO,
+  UpdateMajorPayload,
 
+ 
 
 } from '@/types';
 import { useUserStore } from '@/stores/user';
@@ -103,10 +107,15 @@ type GetDepartmentSuccessResponse =ApiResponse<PageResult<DepartmentVO>>
 type UpdateDepartmentSuccessResponse =ApiResponse<null>;
 type DeleteDepartmentSuccessResponse =ApiResponse<null>;
 type GetDepartmentByIdSuccessResponse =ApiResponse<DepartmentVO>;
-type EnableDepartmentSuccessResponse =ApiResponse<null>
-type DisableDepartmentSuccessResponse =ApiResponse<null>
-
-
+type EnableDepartmentSuccessResponse =ApiResponse<null>;
+type DisableDepartmentSuccessResponse =ApiResponse<null>;
+type CreateMajorSuccessResponse =ApiResponse<number>;
+type GetMajorListSuccessResponse =ApiResponse<PageResult<MajorVO>>;
+type GetMajorByIdSuccessResponse =ApiResponse<MajorVO>;
+type UpdateMajorSuccessResponse =ApiResponse<null>;
+type DeleteMajorSuccessResponse =ApiResponse<null>;
+type EnableMajorSuccessResponse =ApiResponse<null>;
+type DisableMajorSuccessResponse =ApiResponse<null>;
 
 
 // 更新用户信息请求函数
@@ -267,6 +276,44 @@ export const disableDepartment=async(
   id:number,
 ):Promise<DisableDepartmentSuccessResponse>=>
   apiClient.post(`/department/${id}/disable`); 
+
+
+//创建专业
+export const createMajor =async(
+  payload:CreateMajorPayload,
+):Promise<CreateMajorSuccessResponse>=>
+  apiClient.post('/major/create',payload);  
+// 获取专业列表
+export const getMajorList =async(
+  params:MajorQueryParams,
+):Promise<GetMajorListSuccessResponse>=>
+apiClient.get('/major/list', { params }); 
+//通过id搜索专业
+export const getMajorById=async(
+  id:number,
+):Promise<GetMajorByIdSuccessResponse>=>
+  apiClient.get(`/major/${id}`);
+//更新专业信息
+export const updateMajor = async (
+  id: number, 
+  payload: UpdateMajorPayload
+): Promise<UpdateMajorSuccessResponse>=>
+   apiClient.post(`/major/${id}/update`, payload);
+  //删除专业
+  export const deleteMajor =async(
+    id:number,
+   ):Promise<DeleteMajorSuccessResponse>=>
+    apiClient.post(`/major/${id}/delete`);
+  //启用专业
+  export const enableMajor=async(
+    id:number,
+  ):Promise<EnableMajorSuccessResponse>=>
+    apiClient.post(`/major/${id}/enable`);
+  //弃用专业
+  export const disableMajor=async(
+    id:number,
+  ):Promise<DisableMajorSuccessResponse>=>
+    apiClient.post(`/major/${id}/disable`);
   
 
 

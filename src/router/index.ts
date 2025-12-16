@@ -80,6 +80,14 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import('@/views/Department/DepartmentList.vue'),
         meta: { title: '部门管理' }
       },
+      {
+        path: 'majors',
+        name: 'MajorList',
+        component: () => import('@/views/Major/MajorList.vue'),
+        meta: { title: '专业管理' }
+
+
+      },
     ]
 
 
