@@ -83,7 +83,7 @@ const loadSemesters = async () => {
 const loadCourses = async () => {
   isLoadingCourses.value = true
   try {
-    const res = await getCourseList({ pageNum: 1, pageSize: 200, status: 'ACTIVE' })
+    const res = await getCourseList({ pageNum: 1, pageSize: 100, status: 'ACTIVE' })
     if (res?.data) {
       courses.value = res.data.records
     }

@@ -73,13 +73,14 @@ const formData = reactive<FormData>({ ...initialState })
 const loadTeachingClasses = async () => {
   isLoadingClasses.value = true
   try {
-    const res = await getTeachingClassList({ pageNum: 1, pageSize: 200 })
+    const res = await getTeachingClassList({ pageNum: 1, pageSize: 100 })
     if (res?.data) {
-      teachingClasses.value = res.data.records
+      teachingClasses.value = res.data.records || []
     }
   } catch (err: unknown) {
     console.error('加载教学班列表失败', err)
     toast.error('加载教学班列表失败')
+    teachingClasses.value = []
   } finally {
     isLoadingClasses.value = false
   }
@@ -89,6 +90,9 @@ const loadTeachingClasses = async () => {
 const openDialog = (item?: TeachingClassScheduleVO, teachingClassId?: number) => {
   open.value = true
   error.value = null
+
+  // 打开对话框时加载数据
+  loadTeachingClasses()
 
   if (item) {
     isEditMode.value = true
@@ -111,7 +115,17 @@ const openDialog = (item?: TeachingClassScheduleVO, teachingClassId?: number) =>
   }
 }
 
+// 关闭对话框
+const closeDialog = () => {
+  open.value = false
+}
+
 defineExpose({ openDialog })
+
+// 获取当前选中的教学班
+const getSelectedTeachingClass = () => {
+  return teachingClasses.value.find((tc) => tc.id === formData.teachingClassId)
+}
 
 // 提交表单
 const handleSubmit = async () => {
@@ -172,7 +186,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <Dialog :open="open" @update:open="(v) => (open = v)">
+  <Dialog :open="open" @update:open="closeDialog">
     <DialogContent class="sm:max-w-[550px]">
       <DialogHeader>
         <DialogTitle>{{ isEditMode ? '编辑排课' : '新增排课' }}</DialogTitle>
@@ -190,16 +204,29 @@ onMounted(() => {
         <div class="grid grid-cols-4 items-center gap-4">
           <Label class="text-right text-red-500">教学班 *</Label>
           <div class="col-span-3">
-            <Select v-model="formData.teachingClassId" :disabled="isLoadingClasses || isEditMode">
+            <Select
+              :model-value="String(formData.teachingClassId)"
+              :disabled="isLoadingClasses || isEditMode"
+              @update:model-value="(val) => (formData.teachingClassId = Number(val))"
+            >
               <SelectTrigger>
                 <SelectValue placeholder="选择教学班" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem v-for="tc in teachingClasses" :key="tc.id" :value="tc.id">
-                  {{ tc.code }} - {{ tc.name }}
+                <SelectItem v-for="tc in teachingClasses" :key="tc.id" :value="String(tc.id)">
+                  {{ tc.name }}
+                  <span class="text-xs text-muted-foreground ml-1">({{ tc.courseName }})</span>
                 </SelectItem>
               </SelectContent>
             </Select>
+          </div>
+        </div>
+
+        <!-- 课程名称（只读） -->
+        <div class="grid grid-cols-4 items-center gap-4">
+          <Label class="text-right">课程名称</Label>
+          <div class="col-span-3 px-3 py-2 bg-muted rounded-md text-sm">
+            {{ getSelectedTeachingClass()?.courseName || '-' }}
           </div>
         </div>
 

@@ -62,6 +62,14 @@ export default tseslint.config(
       // 通用规则
       'no-console': 'off',
       'no-debugger': 'warn',
+
+      // Prettier 规则 - 禁用行尾符警告
+      'prettier/prettier': [
+        'warn',
+        {
+          endOfLine: 'auto',
+        },
+      ],
     },
   },
 

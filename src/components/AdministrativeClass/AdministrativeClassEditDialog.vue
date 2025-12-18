@@ -62,13 +62,15 @@ const formData = reactive<CreateAdministrativeClassPayload>({ ...initialState })
 const loadMajors = async () => {
   isLoadingMajors.value = true
   try {
-    const res = await getMajorList({ pageNum: 1, pageSize: 200, status: 'ACTIVE' })
+    const res = await getMajorList({ pageNum: 1, pageSize: 100 })
     if (res?.data) {
-      majors.value = res.data.records
+      majors.value = res.data.records || []
+      console.log('加载专业列表成功:', majors.value)
     }
   } catch (err: unknown) {
     console.error('加载专业列表失败', err)
     toast.error('加载专业列表失败')
+    majors.value = []
   } finally {
     isLoadingMajors.value = false
   }
@@ -78,13 +80,15 @@ const loadMajors = async () => {
 const loadTeachers = async () => {
   isLoadingTeachers.value = true
   try {
-    const res = await getTeacherList({ pageNum: 1, pageSize: 200, status: 'ACTIVE' })
+    const res = await getTeacherList({ pageNum: 1, pageSize: 100 })
     if (res?.data) {
-      teachers.value = res.data.records
+      teachers.value = res.data.records || []
+      console.log('加载教师列表成功:', teachers.value)
     }
   } catch (err: unknown) {
     console.error('加载教师列表失败', err)
     toast.error('加载教师列表失败')
+    teachers.value = []
   } finally {
     isLoadingTeachers.value = false
   }
@@ -94,6 +98,10 @@ const loadTeachers = async () => {
 const openDialog = (item?: AdministrativeClassVO) => {
   open.value = true
   error.value = null
+
+  // 打开对话框时加载数据
+  loadMajors()
+  loadTeachers()
 
   if (item) {
     isEditMode.value = true
@@ -108,6 +116,11 @@ const openDialog = (item?: AdministrativeClassVO) => {
     currentId.value = null
     Object.assign(formData, initialState)
   }
+}
+
+// 关闭对话框
+const closeDialog = () => {
+  open.value = false
 }
 
 defineExpose({ openDialog })
@@ -168,7 +181,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <Dialog :open="open" @update:open="(v) => (open = v)">
+  <Dialog :open="open" @update:open="closeDialog">
     <DialogContent class="sm:max-w-[500px]">
       <DialogHeader>
         <DialogTitle>{{ isEditMode ? '编辑行政班' : '添加行政班' }}</DialogTitle>
@@ -186,12 +199,16 @@ onMounted(() => {
         <div class="grid grid-cols-4 items-center gap-4">
           <Label class="text-right text-red-500">所属专业 *</Label>
           <div class="col-span-3">
-            <Select v-model="formData.majorId" :disabled="isLoadingMajors">
+            <Select
+              :model-value="String(formData.majorId)"
+              :disabled="isLoadingMajors"
+              @update:model-value="(val) => (formData.majorId = Number(val))"
+            >
               <SelectTrigger>
                 <SelectValue placeholder="选择专业" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem v-for="major in majors" :key="major.id" :value="major.id">
+                <SelectItem v-for="major in majors" :key="major.id" :value="String(major.id)">
                   {{ major.name }}
                 </SelectItem>
               </SelectContent>
@@ -231,7 +248,13 @@ onMounted(() => {
         <div class="grid grid-cols-4 items-center gap-4">
           <Label class="text-right">班主任/辅导员</Label>
           <div class="col-span-3">
-            <Select v-model="formData.counselorTeacherId" :disabled="isLoadingTeachers">
+            <Select
+              :model-value="String(formData.counselorTeacherId || '')"
+              :disabled="isLoadingTeachers"
+              @update:model-value="
+                (val) => (formData.counselorTeacherId = val ? Number(val) : undefined)
+              "
+            >
               <SelectTrigger>
                 <SelectValue placeholder="选择班主任" />
               </SelectTrigger>
@@ -239,7 +262,7 @@ onMounted(() => {
                 <SelectItem
                   v-for="teacher in teachers"
                   :key="teacher.teacherId"
-                  :value="teacher.teacherId"
+                  :value="String(teacher.teacherId)"
                 >
                   {{ teacher.realName }} ({{ teacher.sduId }})
                 </SelectItem>
@@ -250,7 +273,7 @@ onMounted(() => {
       </div>
 
       <DialogFooter>
-        <Button variant="outline" :disabled="isLoading" @click="open = false"> 取消 </Button>
+        <Button variant="outline" :disabled="isLoading" @click="closeDialog"> 取消 </Button>
         <Button :disabled="isLoading" @click="handleSubmit">
           {{ isLoading ? '提交中...' : isEditMode ? '保存' : '创建' }}
         </Button>

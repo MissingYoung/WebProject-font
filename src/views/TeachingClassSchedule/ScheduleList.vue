@@ -89,7 +89,7 @@ const loadTeachingClasses = async () => {
   try {
     const params: { pageNum: number; pageSize: number; semesterId?: number } = {
       pageNum: 1,
-      pageSize: 200,
+      pageSize: 100,
     }
     if (queryParams.semesterId) {
       params.semesterId = queryParams.semesterId
@@ -201,6 +201,11 @@ const handleSemesterChange = () => {
   loadTeachingClasses()
 }
 
+// 根据teachingClassId查找教学班信息
+const findTeachingClass = (teachingClassId: number) => {
+  return teachingClasses.value.find((tc) => tc.id === teachingClassId)
+}
+
 // 格式化时间段
 const formatPeriod = (start: number, end: number) => {
   return `${start}-${end}节`
@@ -260,7 +265,7 @@ onMounted(() => {
           </SelectTrigger>
           <SelectContent>
             <SelectItem v-for="tc in teachingClasses" :key="tc.id" :value="tc.id">
-              {{ tc.code }} - {{ tc.name }}
+              {{ tc.name }} ({{ tc.courseName }})
             </SelectItem>
           </SelectContent>
         </Select>
@@ -323,8 +328,12 @@ onMounted(() => {
             </TableCell>
           </TableRow>
           <TableRow v-for="row in tableData" :key="row.id">
-            <TableCell class="font-medium">{{ row.teachingClassId }}</TableCell>
-            <TableCell>-</TableCell>
+            <TableCell class="font-medium">
+              {{ findTeachingClass(row.teachingClassId)?.name || row.teachingClassId }}
+            </TableCell>
+            <TableCell>
+              {{ findTeachingClass(row.teachingClassId)?.courseName || '-' }}
+            </TableCell>
             <TableCell>{{ weekDayMap[row.weekDay] }}</TableCell>
             <TableCell>{{ formatPeriod(row.startSection, row.endSection) }}</TableCell>
             <TableCell>{{ formatWeeks(row.startWeek, row.endWeek) }}</TableCell>

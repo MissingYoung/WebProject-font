@@ -73,7 +73,7 @@ const isDeleting = ref(false)
 // 加载专业列表
 const loadMajors = async () => {
   try {
-    const res = await getMajorList({ pageNum: 1, pageSize: 200, status: 'ACTIVE' })
+    const res = await getMajorList({ pageNum: 1, pageSize: 100, status: 'ACTIVE' })
     if (res?.data) {
       majors.value = res.data.records
     }

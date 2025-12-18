@@ -9,6 +9,8 @@ import type {
   UserInfo,
   SendCodePayload,
   ResetPasswordPayload,
+  SendEmailBindingCodePayload,
+  VerifyEmailCodePayload,
   UserProfile,
   UpdateProfilePayload,
   CreateCoursePayload,
@@ -129,7 +131,7 @@ type DisableDepartmentSuccessResponse = ApiResponse<null>
 export const updateUserInfo = async (
   payload: UpdateUserInfoPayload,
   userId: string
-): Promise<UpdateUserInfoSuccessResponse> => apiClient.post(`/user/${userId}/update-info`, payload)
+): Promise<UpdateUserInfoSuccessResponse> => apiClient.post(`/user/${userId}/info/update`, payload)
 
 // 获取当前用户信息(指定 userId)
 export const getUserInfo = async (userId: string): Promise<GetUserInfoSuccessResponse> =>
@@ -182,10 +184,23 @@ export const getCurrentUser = async (userId: number): Promise<GetUserSuccessResp
 export const sendPasswordResetCode = async (
   payload: SendCodePayload
 ): Promise<SendCodeSuccessResponse> => apiClient.post('/auth/password-reset/send-code', payload)
+
 //重置密码
 export const resetPassword = async (
   payload: ResetPasswordPayload
 ): Promise<ResetPasswordSuccessResponse> => apiClient.post('/auth/password-reset/reset', payload)
+
+//发送邮箱绑定验证码
+export const sendEmailBindingCode = async (
+  payload: SendEmailBindingCodePayload,
+  userId: string
+): Promise<SendCodeSuccessResponse> => apiClient.post(`/user/${userId}/email/send-code`, payload)
+
+//验证邮箱验证码
+export const verifyEmailCode = async (
+  payload: VerifyEmailCodePayload,
+  userId: string
+): Promise<SendCodeSuccessResponse> => apiClient.post(`/user/${userId}/email/verify`, payload)
 
 //创建课程
 export const createCourse = async (

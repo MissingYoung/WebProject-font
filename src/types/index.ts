@@ -103,6 +103,17 @@ export interface ResetPasswordPayload {
   newPassword: string
 }
 
+//邮箱验证码绑定
+export interface SendEmailBindingCodePayload {
+  email: string
+}
+
+export interface VerifyEmailCodePayload {
+  userId: string
+  email: string
+  verificationCode: string
+}
+
 //课程类型
 export type CourseType = 'REQUIRED' | 'LIMITED_ELECTIVE' | 'OPEN_ELECTIVE'
 //课程创建参数

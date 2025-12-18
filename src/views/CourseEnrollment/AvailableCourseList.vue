@@ -31,7 +31,12 @@ import {
 } from '@/components/ui/alert-dialog'
 import { toast } from 'vue-sonner'
 import type { AvailableTeachingClassVO, SemesterVO, CourseType } from '@/types'
-import { getAvailableTeachingClasses, enrollCourse, getSemesterList } from '@/lib/api'
+import {
+  getAvailableTeachingClasses,
+  enrollCourse,
+  getSemesterList,
+  getMyEnrollments,
+} from '@/lib/api'
 
 // 课程类型映射
 const courseTypeMap: Record<string, string> = {
@@ -45,6 +50,8 @@ const isLoading = ref(false)
 const tableData = ref<AvailableTeachingClassVO[]>([])
 const total = ref(0)
 const semesters = ref<SemesterVO[]>([])
+const enrolledCourseNames = ref<string[]>([])
+const droppedCourseNames = ref<string[]>([])
 
 // 查询参数
 const queryParams = reactive({
@@ -61,6 +68,10 @@ const enrollDialogOpen = ref(false)
 const itemToEnroll = ref<AvailableTeachingClassVO | null>(null)
 const isEnrolling = ref(false)
 
+// 错误提示对话框
+const errorDialogOpen = ref(false)
+const errorMessage = ref('')
+
 // 加载学期列表
 const loadSemesters = async () => {
   try {
@@ -69,7 +80,25 @@ const loadSemesters = async () => {
       semesters.value = res.data.records
     }
   } catch (err: unknown) {
-    console.error('加载学期列表失败', err)
+    // 学生可能没有权限查看学期列表，不显示错误提示
+    console.debug('加载学期列表失败', err)
+  }
+}
+
+// 加载已选课程
+const loadEnrolledCourses = async () => {
+  try {
+    const res = await getMyEnrollments({ pageNum: 1, pageSize: 100 })
+    if (res?.data) {
+      enrolledCourseNames.value = res.data.records
+        .filter((item: any) => item.status === 'SELECTED')
+        .map((item: any) => item.courseName)
+      droppedCourseNames.value = res.data.records
+        .filter((item: any) => item.status === 'DROPPED')
+        .map((item: any) => item.courseName)
+    }
+  } catch (err: unknown) {
+    console.error('加载选课信息失败', err)
   }
 }
 
@@ -89,7 +118,8 @@ const fetchData = async () => {
     }
   } catch (err: unknown) {
     console.error('获取可选课程列表失败', err)
-    toast.error('获取数据失败，请重试')
+    errorMessage.value = '获取数据失败，请重试'
+    errorDialogOpen.value = true
   } finally {
     isLoading.value = false
   }
@@ -129,6 +159,24 @@ const nextPage = () => {
 
 // 选课
 const handleEnrollClick = (row: AvailableTeachingClassVO) => {
+  // 检查是否已退
+  if (isCourseDrooped(row)) {
+    errorMessage.value = '你已退过这门课，不可再选'
+    errorDialogOpen.value = true
+    return
+  }
+  // 检查是否超过容量
+  if (!isSelectable(row)) {
+    errorMessage.value = '该课程已满，无法选课'
+    errorDialogOpen.value = true
+    return
+  }
+  // 检查是否已选
+  if (isCourseEnrolled(row)) {
+    errorMessage.value = '你已选过这门课，不可再选'
+    errorDialogOpen.value = true
+    return
+  }
   itemToEnroll.value = row
   enrollDialogOpen.value = true
 }
@@ -140,10 +188,13 @@ const handleConfirmEnroll = async () => {
     await enrollCourse({ teachingClassId: itemToEnroll.value.id })
     toast.success('选课成功')
     enrollDialogOpen.value = false
+    // 选课成功后重新加载已选课程，实时更新按钮状态
+    await loadEnrolledCourses()
     fetchData()
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : '选课失败'
-    toast.error(message)
+    errorMessage.value = message
+    errorDialogOpen.value = true
   } finally {
     isEnrolling.value = false
   }
@@ -153,6 +204,16 @@ const handleConfirmEnroll = async () => {
 const formatCapacity = (enrolled?: number, capacity?: number) => {
   if (!capacity) return `${enrolled || 0}/无限制`
   return `${enrolled || 0}/${capacity}`
+}
+
+// 检查课程是否已选
+const isCourseEnrolled = (row: AvailableTeachingClassVO): boolean => {
+  return enrolledCourseNames.value.includes(row.courseName)
+}
+
+// 检查课程是否已退
+const isCourseDrooped = (row: AvailableTeachingClassVO): boolean => {
+  return droppedCourseNames.value.includes(row.courseName)
 }
 
 // 是否可选
@@ -185,6 +246,7 @@ const formatScheduleInfo = (
 
 onMounted(() => {
   loadSemesters()
+  loadEnrolledCourses()
   fetchData()
 })
 </script>
@@ -299,9 +361,21 @@ onMounted(() => {
             </TableCell>
             <TableCell>{{ formatScheduleInfo(row.schedules) }}</TableCell>
             <TableCell class="text-right">
-              <Button size="sm" :disabled="!isSelectable(row)" @click="handleEnrollClick(row)">
+              <Button
+                size="sm"
+                :variant="
+                  isCourseEnrolled(row) || isCourseDrooped(row) || !isSelectable(row)
+                    ? 'outline'
+                    : 'default'
+                "
+                :class="{
+                  'opacity-50 cursor-not-allowed':
+                    isCourseEnrolled(row) || isCourseDrooped(row) || !isSelectable(row),
+                }"
+                @click="handleEnrollClick(row)"
+              >
                 <Plus class="mr-1 h-4 w-4" />
-                选课
+                {{ isCourseDrooped(row) ? '已退' : isCourseEnrolled(row) ? '已选' : '选课' }}
               </Button>
             </TableCell>
           </TableRow>
@@ -351,6 +425,21 @@ onMounted(() => {
           <AlertDialogAction :disabled="isEnrolling" @click.prevent="handleConfirmEnroll">
             {{ isEnrolling ? '选课中...' : '确认选课' }}
           </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+
+    <!-- 错误提示对话框 -->
+    <AlertDialog :open="errorDialogOpen" @update:open="(v) => (errorDialogOpen = v)">
+      <AlertDialogContent class="max-w-sm mx-auto">
+        <AlertDialogHeader>
+          <AlertDialogTitle>提示信息</AlertDialogTitle>
+        </AlertDialogHeader>
+        <AlertDialogDescription class="text-center text-base">
+          {{ errorMessage }}
+        </AlertDialogDescription>
+        <AlertDialogFooter class="flex justify-center">
+          <AlertDialogAction @click="errorDialogOpen = false">确定</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

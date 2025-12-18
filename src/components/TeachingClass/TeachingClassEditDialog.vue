@@ -62,7 +62,7 @@ const formData = reactive<CreateTeachingClassPayload>({ ...initialState })
 const loadCourseOfferings = async () => {
   isLoadingOfferings.value = true
   try {
-    const res = await getCourseOfferingList({ pageNum: 1, pageSize: 200 })
+    const res = await getCourseOfferingList({ pageNum: 1, pageSize: 100 })
     if (res?.data) {
       courseOfferings.value = res.data.records
     }
@@ -78,7 +78,7 @@ const loadCourseOfferings = async () => {
 const loadTeachers = async () => {
   isLoadingTeachers.value = true
   try {
-    const res = await getTeacherList({ pageNum: 1, pageSize: 200, status: 'ACTIVE' })
+    const res = await getTeacherList({ pageNum: 1, pageSize: 100, status: 'ACTIVE' })
     if (res?.data) {
       teachers.value = res.data.records
     }

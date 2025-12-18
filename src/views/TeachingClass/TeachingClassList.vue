@@ -102,7 +102,7 @@ const loadCourseOfferings = async () => {
   try {
     const params: { pageNum: number; pageSize: number; semesterId?: number } = {
       pageNum: 1,
-      pageSize: 200,
+      pageSize: 100,
     }
     if (queryParams.semesterId) {
       params.semesterId = queryParams.semesterId

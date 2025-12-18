@@ -63,6 +63,10 @@ const dropDialogOpen = ref(false)
 const itemToDrop = ref<CourseEnrollmentVO | null>(null)
 const isDropping = ref(false)
 
+// 错误提示对话框
+const errorDialogOpen = ref(false)
+const errorMessage = ref('')
+
 // 加载学期列表
 const loadSemesters = async () => {
   try {
@@ -91,7 +95,8 @@ const fetchData = async () => {
     }
   } catch (err: unknown) {
     console.error('获取选课记录失败', err)
-    toast.error('获取数据失败，请重试')
+    errorMessage.value = '获取数据失败，请重试'
+    errorDialogOpen.value = true
   } finally {
     isLoading.value = false
   }
@@ -143,7 +148,8 @@ const handleConfirmDrop = async () => {
     fetchData()
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : '退课失败'
-    toast.error(message)
+    errorMessage.value = message
+    errorDialogOpen.value = true
   } finally {
     isDropping.value = false
   }
@@ -319,6 +325,21 @@ onMounted(() => {
           >
             {{ isDropping ? '退课中...' : '确认退课' }}
           </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+
+    <!-- 错误提示对话框 -->
+    <AlertDialog :open="errorDialogOpen" @update:open="(v) => (errorDialogOpen = v)">
+      <AlertDialogContent class="max-w-sm mx-auto">
+        <AlertDialogHeader>
+          <AlertDialogTitle>提示信息</AlertDialogTitle>
+        </AlertDialogHeader>
+        <AlertDialogDescription class="text-center text-base">
+          {{ errorMessage }}
+        </AlertDialogDescription>
+        <AlertDialogFooter class="flex justify-center">
+          <AlertDialogAction @click="errorDialogOpen = false">确定</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

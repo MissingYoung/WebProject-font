@@ -171,6 +171,13 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import('@/views/CourseEnrollment/MyEnrollments.vue'),
         meta: { title: '我的选课' },
       },
+      // 个人中心
+      {
+        path: 'profile',
+        name: 'UserProfile',
+        component: () => import('@/views/UserProfileView.vue'),
+        meta: { title: '个人中心' },
+      },
     ],
   },
 
