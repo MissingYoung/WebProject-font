@@ -1,44 +1,21 @@
-<!--主页侧边导航栏样式-->
+<!--主页侧边导航栏样式 - 支持多层级菜单-->
 <script setup lang="ts">
-import { shallowRef } from 'vue'
-import {
-  Home,
-  GraduationCap,
-  Command,
-  Building2,
-  Calendar,
-  BookOpen,
-  Users,
-  Users2,
-  Shield,
-  UserCog,
-  UsersRound,
-  BookMarked,
-  Clock,
-  FileText,
-  CalendarRange,
-  BookCheck,
-} from 'lucide-vue-next'
-const menuItems = shallowRef([
-  { name: '我的桌面', routeName: 'Dashboard', icon: Home },
-  { name: '课程列表', routeName: 'CourseList', icon: GraduationCap },
-  { name: '部门管理', routeName: 'DepartmentList', icon: Building2 },
-  { name: '学期管理', routeName: 'SemesterList', icon: Calendar },
-  { name: '专业管理', routeName: 'MajorList', icon: BookOpen },
-  { name: '学生管理', routeName: 'StudentList', icon: GraduationCap },
-  { name: '教师管理', routeName: 'TeacherList', icon: Users },
-  { name: '家庭成员', routeName: 'FamilyMemberList', icon: Users2 },
-  { name: '权限管理', routeName: 'PermissionList', icon: Shield },
-  { name: '角色管理', routeName: 'RoleList', icon: UserCog },
-  { name: '行政班管理', routeName: 'AdministrativeClassList', icon: UsersRound },
-  { name: '开课管理', routeName: 'CourseOfferingList', icon: BookOpen },
-  { name: '教学班管理', routeName: 'TeachingClassList', icon: GraduationCap },
-  { name: '排课管理', routeName: 'ScheduleList', icon: Clock },
-  { name: '选课窗口', routeName: 'SelectionWindowList', icon: CalendarRange },
-  { name: '培养计划', routeName: 'ProgramRequirementList', icon: FileText },
-  { name: '可选课程', routeName: 'AvailableCourseList', icon: BookMarked },
-  { name: '我的选课', routeName: 'MyEnrollments', icon: BookCheck },
-])
+import { computed, onMounted } from 'vue'
+import { useUserStore } from '@/stores/user'
+import { Command } from 'lucide-vue-next'
+import MenuItem from './MenuItem.vue'
+
+const userStore = useUserStore()
+
+// 从 store 获取菜单树
+const menuTree = computed(() => userStore.menuTree)
+
+// 组件挂载时，如果菜单为空则尝试获取
+onMounted(async () => {
+  if (userStore.isLoggedIn && userStore.menuTree.length === 0) {
+    await userStore.fetchMenuTree()
+  }
+})
 </script>
 
 <template>
@@ -54,28 +31,10 @@ const menuItems = shallowRef([
     </div>
 
     <!-- 2. 导航菜单区域 -->
-    <div class="flex-1">
-      <nav class="grid items-start px-2 text-sm font-medium lg:px-4 mt-4 gap-2">
+    <div class="flex-1 overflow-y-auto">
+      <nav class="grid items-start px-2 text-sm font-medium lg:px-4 mt-4 gap-1">
         <!-- 循环渲染菜单项 -->
-        <router-link
-          v-for="item in menuItems"
-          :key="item.routeName"
-          v-slot="{ href, navigate, isActive }"
-          :to="{ name: item.routeName }"
-          custom
-        >
-          <a
-            :href="href"
-            :class="[
-              'flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-primary',
-              isActive ? 'bg-muted text-primary' : 'text-muted-foreground',
-            ]"
-            @click="navigate"
-          >
-            <component :is="item.icon" class="h-4 w-4" />
-            {{ item.name }}
-          </a>
-        </router-link>
+        <MenuItem v-for="item in menuTree" :key="item.id" :menu-item="item" />
       </nav>
     </div>
   </div>

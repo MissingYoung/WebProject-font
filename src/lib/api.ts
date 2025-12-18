@@ -46,6 +46,7 @@ import type {
   UpdateRolePayload,
   AssignPermissionsPayload,
   AssignUserRolePayload,
+  MenuVO,
 } from '@/types'
 import { useUserStore } from '@/stores/user'
 
@@ -1039,3 +1040,11 @@ export const uploadFile = async (file: File): Promise<UploadFileSuccessResponse>
     },
   })
 }
+
+// --- 菜单 (Menu) API ---
+
+type GetCurrentUserMenuSuccessResponse = ApiResponse<MenuVO[]>
+
+// 获取当前用户的菜单树
+export const getCurrentUserMenu = async (): Promise<GetCurrentUserMenuSuccessResponse> =>
+  apiClient.get('/menu/current')

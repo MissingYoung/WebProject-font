@@ -87,6 +87,9 @@ const handleLogin = async () => {
       user: miniUserInfo,
     })
 
+    // 获取用户菜单
+    await userStore.fetchMenuTree()
+
     alert('登陆成功，即将跳转到首页')
     await router.push({ name: 'Dashboard' })
     error.value = ''

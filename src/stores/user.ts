@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { getCurrentUser, logout as apiLogout } from '@/lib/api'
-import type { UserInfo } from '@/types'
+import { getCurrentUser, logout as apiLogout, getCurrentUserMenu } from '@/lib/api'
+import type { UserInfo, MenuVO } from '@/types'
 
 //定义store
 export const useUserStore = defineStore(
@@ -10,6 +10,7 @@ export const useUserStore = defineStore(
     //用户信息状态
     const token = ref<string | null>(null)
     const userInfo = ref<UserInfo | null>(null)
+    const menuTree = ref<MenuVO[]>([])
     const isInitialized = ref(false)
     const isLoggedIn = computed(() => !!token.value && !!userInfo.value) //判断用户是否登录
     const userRealName = computed(
@@ -49,6 +50,25 @@ export const useUserStore = defineStore(
       } finally {
         token.value = null
         userInfo.value = null
+        menuTree.value = []
+      }
+    }
+
+    // 获取当前用户的菜单树
+    async function fetchMenuTree() {
+      if (!token.value) {
+        console.warn('未登录，无法获取菜单')
+        return
+      }
+
+      try {
+        const result = await getCurrentUserMenu()
+        if (result && result.data) {
+          menuTree.value = result.data
+        }
+      } catch (error) {
+        console.error('获取菜单失败', error)
+        menuTree.value = []
       }
     }
 
@@ -65,6 +85,8 @@ export const useUserStore = defineStore(
               userInfo.value = result.data
             }
           }
+          // 获取菜单树
+          await fetchMenuTree()
         } catch (error) {
           console.error('初始化用户失败，Token 可能已失效', error)
           await logout()
@@ -76,6 +98,7 @@ export const useUserStore = defineStore(
     return {
       token,
       userInfo,
+      menuTree,
       isLoggedIn,
       setUser,
       logout,
@@ -84,6 +107,7 @@ export const useUserStore = defineStore(
       userInitial,
       isInitialized,
       initializeUser,
+      fetchMenuTree,
       isSoftLoggedOut,
     }
   },

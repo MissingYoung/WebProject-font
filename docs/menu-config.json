@@ -1,0 +1,216 @@
+[
+  {
+    "name": "我的桌面",
+    "key": "dashboard",
+    "type": "MENU",
+    "icon": "layout-dashboard",
+    "sort": 1,
+    "menuUrl": "/dashboard"
+  },
+  {
+    "name": "系统管理",
+    "key": "system",
+    "type": "DIRECTORY",
+    "icon": "settings",
+    "sort": 2,
+    "menuUrl": null,
+    "children": [
+      {
+        "name": "角色管理",
+        "key": "system:role",
+        "type": "MENU",
+        "icon": "shield",
+        "sort": 1,
+        "menuUrl": "/roles"
+      },
+      {
+        "name": "权限管理",
+        "key": "system:permission",
+        "type": "MENU",
+        "icon": "key",
+        "sort": 2,
+        "menuUrl": "/permissions"
+      },
+      {
+        "name": "部门管理",
+        "key": "system:department",
+        "type": "MENU",
+        "icon": "building",
+        "sort": 3,
+        "menuUrl": "/departments"
+      }
+    ]
+  },
+  {
+    "name": "基础数据",
+    "key": "basic-data",
+    "type": "DIRECTORY",
+    "icon": "database",
+    "sort": 3,
+    "menuUrl": null,
+    "children": [
+      {
+        "name": "学期管理",
+        "key": "basic-data:semester",
+        "type": "MENU",
+        "icon": "calendar",
+        "sort": 1,
+        "menuUrl": "/semesters"
+      },
+      {
+        "name": "专业管理",
+        "key": "basic-data:major",
+        "type": "MENU",
+        "icon": "graduation-cap",
+        "sort": 2,
+        "menuUrl": "/majors"
+      }
+    ]
+  },
+  {
+    "name": "人员管理",
+    "key": "personnel",
+    "type": "DIRECTORY",
+    "icon": "users",
+    "sort": 4,
+    "menuUrl": null,
+    "children": [
+      {
+        "name": "学生管理",
+        "key": "personnel:student",
+        "type": "MENU",
+        "icon": "user",
+        "sort": 1,
+        "menuUrl": "/students"
+      },
+      {
+        "name": "教师管理",
+        "key": "personnel:teacher",
+        "type": "MENU",
+        "icon": "user-check",
+        "sort": 2,
+        "menuUrl": "/teachers"
+      },
+      {
+        "name": "家庭成员管理",
+        "key": "personnel:family-member",
+        "type": "MENU",
+        "icon": "home",
+        "sort": 3,
+        "menuUrl": "/family-members"
+      }
+    ]
+  },
+  {
+    "name": "课程管理",
+    "key": "course",
+    "type": "DIRECTORY",
+    "icon": "book-open",
+    "sort": 5,
+    "menuUrl": null,
+    "children": [
+      {
+        "name": "课程列表",
+        "key": "course:list",
+        "type": "MENU",
+        "icon": "list",
+        "sort": 1,
+        "menuUrl": "/course-list"
+      },
+      {
+        "name": "开课管理",
+        "key": "course:offering",
+        "type": "MENU",
+        "icon": "plus-circle",
+        "sort": 2,
+        "menuUrl": "/course-offerings"
+      }
+    ]
+  },
+  {
+    "name": "班级管理",
+    "key": "class",
+    "type": "DIRECTORY",
+    "icon": "users-round",
+    "sort": 6,
+    "menuUrl": null,
+    "children": [
+      {
+        "name": "行政班管理",
+        "key": "class:administrative",
+        "type": "MENU",
+        "icon": "folder",
+        "sort": 1,
+        "menuUrl": "/administrative-classes"
+      },
+      {
+        "name": "教学班管理",
+        "key": "class:teaching",
+        "type": "MENU",
+        "icon": "folder-open",
+        "sort": 2,
+        "menuUrl": "/teaching-classes"
+      },
+      {
+        "name": "培养计划管理",
+        "key": "class:program-requirement",
+        "type": "MENU",
+        "icon": "clipboard-list",
+        "sort": 3,
+        "menuUrl": "/program-requirements"
+      }
+    ]
+  },
+  {
+    "name": "教学安排",
+    "key": "teaching",
+    "type": "DIRECTORY",
+    "icon": "calendar-days",
+    "sort": 7,
+    "menuUrl": null,
+    "children": [
+      {
+        "name": "排课管理",
+        "key": "teaching:schedule",
+        "type": "MENU",
+        "icon": "calendar-clock",
+        "sort": 1,
+        "menuUrl": "/schedules"
+      },
+      {
+        "name": "选课窗口管理",
+        "key": "teaching:selection-window",
+        "type": "MENU",
+        "icon": "calendar-range",
+        "sort": 2,
+        "menuUrl": "/selection-windows"
+      }
+    ]
+  },
+  {
+    "name": "学生选课",
+    "key": "enrollment",
+    "type": "DIRECTORY",
+    "icon": "clipboard-pen",
+    "sort": 8,
+    "menuUrl": null,
+    "children": [
+      {
+        "name": "可选课程",
+        "key": "enrollment:available",
+        "type": "MENU",
+        "icon": "search",
+        "sort": 1,
+        "menuUrl": "/available-courses"
+      },
+      {
+        "name": "我的选课",
+        "key": "enrollment:my",
+        "type": "MENU",
+        "icon": "clipboard-check",
+        "sort": 2,
+        "menuUrl": "/my-enrollments"
+      }
+    ]
+  }
+]

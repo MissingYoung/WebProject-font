@@ -1022,3 +1022,21 @@ export interface FileUploadResponse {
   fileUrl: string // 文件访问 URL
   uploadTime: string // 上传时间（ISO 8601 格式）
 }
+
+// --- 菜单 (Menu) ---
+
+// 菜单类型枚举（复用 PermissionType）
+export type MenuType = PermissionType // 'DIRECTORY' | 'MENU'
+
+// 菜单项视图对象
+export interface MenuVO {
+  id: number
+  parentId: number | null
+  name: string
+  key: string
+  type: MenuType
+  menuUrl: string | null
+  icon: string
+  sort: number
+  children: MenuVO[]
+}
