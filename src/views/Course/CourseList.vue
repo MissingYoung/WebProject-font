@@ -9,6 +9,7 @@ import {
 } from '@/lib/api'
 import type { CourseVO, CourseQueryParams } from '@/types'
 import CourseEditDialog from '@/components/Course/CourseEditDialog.vue'
+import { toast } from 'vue-sonner'
 
 // UI 组件
 import { Button } from '@/components/ui/button'
@@ -166,7 +167,7 @@ const handleConfirmDelete = async () => {
     fetchData()
   } catch (err: any) {
     console.error('删除失败', err)
-    alert(err.message || '删除失败，请稍后重试')
+    toast.error(err.message || '删除失败，请稍后重试')
   } finally {
     isDeleting.value = false
   }
@@ -176,11 +177,11 @@ const handleActivate = async (row: CourseVO) => {
   try {
     await activateCourse(row.id)
     console.log('课程启用成功')
-    alert(`课程“${row.name}”启用成功`)
+    toast.success(`课程"${row.name}"启用成功`)
     fetchData()
   } catch (err: any) {
     console.error('启用失败', err)
-    alert(err.message || '启用失败')
+    toast.error(err.message || '启用失败')
   }
 }
 //课程停用逻辑
@@ -188,11 +189,11 @@ const handleDeactivate = async (row: CourseVO) => {
   try {
     await deactivateCourse(row.id)
     console.log('课程停用成功')
-    alert(`课程“${row.name}”停用成功`)
+    toast.success(`课程"${row.name}"停用成功`)
     fetchData()
   } catch (err: any) {
     console.error('停用失败', err)
-    alert(err.message || '停用失败')
+    toast.error(err.message || '停用失败')
   }
 }
 //课程归档逻辑
@@ -204,11 +205,11 @@ const handleArchive = async (row: CourseVO) => {
   try {
     await archiveCourse(row.id)
     console.log('课程归档成功')
-    alert('课程归档成功')
+    toast.success('课程归档成功')
     fetchData() // 刷新列表，状态变为 ARCHIVED
   } catch (err: any) {
     console.error('归档失败', err)
-    alert(err.message || '归档失败')
+    toast.error(err.message || '归档失败')
   }
 }
 //点击查看课程详情

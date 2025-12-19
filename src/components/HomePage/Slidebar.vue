@@ -36,7 +36,7 @@ const goToProfile = () => {
         class="flex items-center gap-2 font-semibold text-base hover:opacity-80 transition-opacity"
       >
         <Command class="h-6 w-6" />
-        <span class="truncate">智慧作业管理平台</span>
+        <span class="truncate">智慧教学管理平台</span>
       </a>
     </div>
 

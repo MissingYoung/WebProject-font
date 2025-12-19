@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { changePassword } from '@/lib/api'
 import type { ChangePasswordPayload } from '@/types/index'
+import { toast } from 'vue-sonner'
 
 // 引入你的 UI 组件
 import { Button } from '@/components/ui/button'
@@ -59,7 +60,7 @@ const handleChangePassword = async () => {
 
     if (result && result.code === 200) {
       // 3. 成功处理
-      alert('密码修改成功！请使用新密码重新登录。')
+      toast.success('密码修改成功！请使用新密码重新登录')
 
       // 登出用户 (清除本地 token 和用户信息)
       userStore.logout()

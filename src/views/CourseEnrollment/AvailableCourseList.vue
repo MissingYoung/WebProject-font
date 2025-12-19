@@ -208,12 +208,16 @@ const formatCapacity = (enrolled?: number, capacity?: number) => {
 
 // 检查课程是否已选
 const isCourseEnrolled = (row: AvailableTeachingClassVO): boolean => {
-  return enrolledCourseNames.value.includes(row.courseName)
+  const courseName = row.courseName ?? ''
+  if (!courseName) return false
+  return enrolledCourseNames.value.includes(courseName)
 }
 
 // 检查课程是否已退
 const isCourseDrooped = (row: AvailableTeachingClassVO): boolean => {
-  return droppedCourseNames.value.includes(row.courseName)
+  const courseName = row.courseName ?? ''
+  if (!courseName) return false
+  return droppedCourseNames.value.includes(courseName)
 }
 
 // 是否可选

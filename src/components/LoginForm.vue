@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { login } from '@/lib/api'
 import { useUserStore } from '@/stores/user'
 import type { UserInfo } from '@/types'
+import { toast } from 'vue-sonner'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -90,7 +91,7 @@ const handleLogin = async () => {
     // 获取用户菜单
     await userStore.fetchMenuTree()
 
-    alert('登陆成功，即将跳转到首页')
+    toast.success('登录成功，即将跳转到首页')
     await router.push({ name: 'Dashboard' })
     error.value = ''
   } catch (err: any) {

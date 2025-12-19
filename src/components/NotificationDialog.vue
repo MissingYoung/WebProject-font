@@ -7,12 +7,7 @@ import {
   AlertDialogTitle,
   AlertDialogAction,
 } from '@/components/ui/alert-dialog'
-import {
-  CircleCheckIcon,
-  InfoIcon,
-  OctagonXIcon,
-  TriangleAlertIcon,
-} from 'lucide-vue-next'
+import { CircleCheckIcon, InfoIcon, OctagonXIcon, TriangleAlertIcon } from 'lucide-vue-next'
 
 interface NotificationState {
   isOpen: boolean

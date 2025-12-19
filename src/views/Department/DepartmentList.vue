@@ -10,6 +10,7 @@ import {
 import type { DepartmentVO } from '@/types'
 import { formatDate } from '@/lib/date'
 import DepartmentEditDialog from '@/components/Department/DepartmentEditDialog.vue'
+import { toast } from 'vue-sonner'
 
 // UI 组件
 import { Button } from '@/components/ui/button'
@@ -183,13 +184,12 @@ const handleConfirmDelete = async () => {
     await deleteDepartment(deptToDelete.value.id)
     console.log('删除成功')
     deleteDialogOpen.value = false
-    alert('删除成功')
+    toast.success('删除成功')
     // 刷新列表
     fetchData()
   } catch (err: any) {
     console.error('删除失败', err)
-    // 这里可以用 Toast，或者简单的 alert
-    alert(err.message || '删除失败，该部门下可能还有子部门或关联数据')
+    toast.error(err.message || '删除失败，该部门下可能还有子部门或关联数据')
   } finally {
     isDeleting.value = false
   }
@@ -200,13 +200,13 @@ const handleEnable = async (row: DepartmentVO) => {
     // 调用接口
     await enableDepartment(row.id)
     console.log('部门启用成功')
-    alert('部门启用成功')
+    toast.success('部门启用成功')
 
     // 刷新列表，状态应变为 ACTIVE
     fetchData()
   } catch (err: any) {
     console.error('启用失败', err)
-    alert(err.message || '启用失败')
+    toast.error(err.message || '启用失败')
   }
 }
 //弃用部门逻辑
@@ -219,7 +219,7 @@ const handleDisable = async (row: DepartmentVO) => {
     fetchData() // 刷新列表，状态变为 DISABLED
   } catch (err: any) {
     console.error('禁用失败', err)
-    alert(err.message || '禁用失败')
+    toast.error(err.message || '禁用失败')
   }
 }
 

@@ -41,13 +41,11 @@ const error = ref<string | null>(null)
 const isEditMode = ref(false)
 const currentId = ref<number | null>(null)
 
-// 下拉选项
 const courseOfferings = ref<CourseOfferingVO[]>([])
 const teachers = ref<TeacherVO[]>([])
 const isLoadingOfferings = ref(false)
 const isLoadingTeachers = ref(false)
 
-// 表单初始状态
 const initialState: CreateTeachingClassPayload = {
   courseOfferingId: 0,
   code: '',
@@ -58,7 +56,6 @@ const initialState: CreateTeachingClassPayload = {
 
 const formData = reactive<CreateTeachingClassPayload>({ ...initialState })
 
-// 加载开课列表
 const loadCourseOfferings = async () => {
   isLoadingOfferings.value = true
   try {
@@ -74,7 +71,6 @@ const loadCourseOfferings = async () => {
   }
 }
 
-// 加载教师列表
 const loadTeachers = async () => {
   isLoadingTeachers.value = true
   try {
@@ -90,7 +86,6 @@ const loadTeachers = async () => {
   }
 }
 
-// 打开对话框
 const openDialog = (item?: TeachingClassVO) => {
   open.value = true
   error.value = null
@@ -112,9 +107,7 @@ const openDialog = (item?: TeachingClassVO) => {
 
 defineExpose({ openDialog })
 
-// 提交表单
 const handleSubmit = async () => {
-  // 基础校验
   if (!formData.courseOfferingId) {
     error.value = '请选择开课'
     return
@@ -180,7 +173,6 @@ onMounted(() => {
       </Alert>
 
       <div class="grid gap-4 py-4">
-        <!-- 开课 -->
         <div class="grid grid-cols-4 items-center gap-4">
           <Label class="text-right text-red-500">开课 *</Label>
           <div class="col-span-3">
@@ -206,7 +198,6 @@ onMounted(() => {
           </div>
         </div>
 
-        <!-- 教学班编码 -->
         <div class="grid grid-cols-4 items-center gap-4">
           <Label class="text-right text-red-500">编码 *</Label>
           <Input
@@ -217,13 +208,11 @@ onMounted(() => {
           />
         </div>
 
-        <!-- 教学班名称 -->
         <div class="grid grid-cols-4 items-center gap-4">
           <Label class="text-right text-red-500">名称 *</Label>
           <Input v-model="formData.name" class="col-span-3" placeholder="请输入教学班名称" />
         </div>
 
-        <!-- 容量 -->
         <div class="grid grid-cols-4 items-center gap-4">
           <Label class="text-right">容量</Label>
           <Input
@@ -234,7 +223,6 @@ onMounted(() => {
           />
         </div>
 
-        <!-- 主讲教师 -->
         <div class="grid grid-cols-4 items-center gap-4">
           <Label class="text-right">主讲教师</Label>
           <div class="col-span-3">
@@ -257,7 +245,7 @@ onMounted(() => {
       </div>
 
       <DialogFooter>
-        <Button variant="outline" :disabled="isLoading" @click="open = false"> 取消 </Button>
+        <Button variant="outline" :disabled="isLoading" @click="open = false">取消</Button>
         <Button :disabled="isLoading" @click="handleSubmit">
           {{ isLoading ? '提交中...' : isEditMode ? '保存' : '创建' }}
         </Button>

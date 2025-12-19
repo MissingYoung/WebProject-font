@@ -5,11 +5,11 @@ import { useNotification } from '@/composables/useNotification'
 import { Loader2 } from 'lucide-vue-next'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import NotificationDialog from '@/components/NotificationDialog.vue'
+import { Toaster } from '@/components/ui/sonner'
 
 const userStore = useUserStore()
 const { notificationState, closeNotification } = useNotification()
 
-// 当组件挂载时，执行初始化检查
 onMounted(() => {
   userStore.initializeUser()
 })
@@ -31,6 +31,21 @@ onMounted(() => {
 
   <!-- 全局通知对话框 -->
   <NotificationDialog :state="notificationState" @close="closeNotification" />
+
+  <!-- Sonner Toast 通知 -->
+  <Toaster
+    position="top-center"
+    rich-colors
+    close-button
+    expand
+    :visible-toasts="3"
+    :offset="24"
+    :toast-options="{
+      style: {
+        margin: '0 auto',
+      },
+    }"
+  />
 </template>
 
 <style scoped>

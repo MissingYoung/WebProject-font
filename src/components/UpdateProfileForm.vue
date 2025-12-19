@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useAuthForm } from '@/composables/userAuthForm'
 import { updateUserProfile, getUserInfo } from '@/lib/api'
 import type { UpdateProfilePayload } from '@/types'
+import { toast } from 'vue-sonner'
 
 // 引入 UI 组件
 import { Button } from '@/components/ui/button'
@@ -66,7 +67,7 @@ const handleUpdate = async () => {
   try {
     const result = await submit(formData)
     if (result && (result as any).code === 200) {
-      alert('用户资料更新成功！')
+      toast.success('用户资料更新成功')
       router.back()
     } else if (!error.value) {
       error.value = (result && (result as any).message) || '更新失败,请检查输入信息'

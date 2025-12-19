@@ -5,6 +5,7 @@ import { useAuthForm } from '@/composables/userAuthForm'
 import { register } from '@/lib/api'
 import type { RegisterPayload } from '@/types'
 import { isPureString } from '@/utils/validate'
+import { toast } from 'vue-sonner'
 
 import { useUserStore } from '@/stores/user'
 import type { UserInfo } from '@/types'
@@ -83,7 +84,7 @@ const handleRegister = async () => {
         token: token,
         user: miniUserInfo,
       })
-      alert('注册成功！即将跳转到首页...')
+      toast.success('注册成功！即将跳转到首页')
       error.value = ''
       router.push({ name: 'Dashboard' })
     } else if (result && result.code === 400) {

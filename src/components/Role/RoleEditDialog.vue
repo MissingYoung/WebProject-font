@@ -2,13 +2,14 @@
 import { ref, reactive } from 'vue'
 import { createRole, updateRole } from '@/lib/api'
 import type { RoleVO, CreateRolePayload, UpdateRolePayload } from '@/types'
-import { toast } from 'vue-sonner'
+import { useNotification } from '@/composables/useNotification'
 
 // UI 组件
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
   Dialog,
   DialogContent,
@@ -17,18 +18,21 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Loader2 } from 'lucide-vue-next'
+import { Loader2, AlertTriangle } from 'lucide-vue-next'
 
 // --- 类型和事件 ---
 const emit = defineEmits<{
   (e: 'success'): void
 }>()
 
+const { success: showSuccess, error: showError } = useNotification()
+
 // --- 状态 ---
 const isOpen = ref(false)
 const isSubmitting = ref(false)
 const isEditMode = ref(false)
 const editingRole = ref<RoleVO | null>(null)
+const errorMsg = ref<string | null>(null)
 
 const formData = reactive<CreateRolePayload>({
   name: '',
@@ -41,6 +45,7 @@ const resetForm = () => {
   formData.name = ''
   formData.key = ''
   formData.description = ''
+  errorMsg.value = null
 }
 
 // 打开对话框
@@ -67,24 +72,25 @@ const closeDialog = () => {
 
 // 表单验证
 const validateForm = (): boolean => {
+  errorMsg.value = null
   if (!formData.name.trim()) {
-    toast.error('请输入角色名称')
+    errorMsg.value = '请输入角色名称'
     return false
   }
   if (formData.name.length > 50) {
-    toast.error('角色名称不能超过 50 个字符')
+    errorMsg.value = '角色名称不能超过 50 个字符'
     return false
   }
   if (!formData.key.trim()) {
-    toast.error('请输入角色标识')
+    errorMsg.value = '请输入角色标识'
     return false
   }
   if (formData.key.length > 50) {
-    toast.error('角色标识不能超过 50 个字符')
+    errorMsg.value = '角色标识不能超过 50 个字符'
     return false
   }
   if (formData.description && formData.description.length > 200) {
-    toast.error('角色描述不能超过 200 个字符')
+    errorMsg.value = '角色描述不能超过 200 个字符'
     return false
   }
   return true
@@ -104,17 +110,17 @@ const handleSubmit = async () => {
         description: formData.description,
       }
       await updateRole(editingRole.value.id, payload)
-      toast.success('角色更新成功')
+      showSuccess('角色更新成功')
     } else {
       // 创建模式
       await createRole(formData)
-      toast.success('角色创建成功')
+      showSuccess('角色创建成功')
     }
     closeDialog()
     emit('success')
-  } catch (error) {
+  } catch (error: any) {
     console.error('保存角色失败', error)
-    toast.error(error instanceof Error ? error.message : '保存失败，请重试')
+    errorMsg.value = error.message || '保存失败，请重试'
   } finally {
     isSubmitting.value = false
   }
@@ -138,6 +144,12 @@ defineExpose({
       </DialogHeader>
 
       <div class="grid gap-4 py-4">
+        <!-- 错误提示 -->
+        <Alert v-if="errorMsg" variant="destructive" class="py-2 flex items-center gap-3">
+          <AlertTriangle class="h-4 w-4 shrink-0" />
+          <AlertDescription>{{ errorMsg }}</AlertDescription>
+        </Alert>
+
         <!-- 角色名称 -->
         <div class="grid gap-2">
           <Label for="name"> 角色名称 <span class="text-red-500">*</span> </Label>
@@ -148,8 +160,16 @@ defineExpose({
         <!-- 角色标识 -->
         <div class="grid gap-2">
           <Label for="key"> 角色标识 <span class="text-red-500">*</span> </Label>
-          <Input id="key" v-model="formData.key" placeholder="例如：admin" maxlength="50" />
-          <p class="text-xs text-muted-foreground">唯一标识，用于程序识别，最多 50 个字符</p>
+          <Input
+            id="key"
+            v-model="formData.key"
+            placeholder="例如：admin"
+            maxlength="50"
+            :disabled="isEditMode"
+          />
+          <p class="text-xs text-muted-foreground">
+            {{ isEditMode ? '角色标识不可修改' : '唯一标识，用于程序识别，最多 50 个字符' }}
+          </p>
         </div>
 
         <!-- 角色描述 -->

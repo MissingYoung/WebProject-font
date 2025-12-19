@@ -3,11 +3,7 @@ import { computed } from 'vue'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { BarChart } from 'echarts/charts'
-import {
-  TitleComponent,
-  TooltipComponent,
-  GridComponent,
-} from 'echarts/components'
+import { TitleComponent, TooltipComponent, GridComponent } from 'echarts/components'
 import VChart from 'vue-echarts'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import type { PopularCourse } from '@/types'
@@ -41,7 +37,8 @@ const option = computed(() => {
         type: 'shadow',
       },
       formatter: (params: { name: string; value: number }[]) => {
-        const data = params[0]
+        const data = params?.[0]
+        if (!data) return ''
         return `${data.name}<br/>选课人数: ${data.value}`
       },
     },

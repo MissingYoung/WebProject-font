@@ -3,6 +3,7 @@ import { reactive, ref } from 'vue'
 import { createDepartment, updateDepartment } from '@/lib/api'
 import type { CreateDepartmentPayload, DepartmentVO } from '@/types'
 import { Loader2 } from 'lucide-vue-next'
+import { toast } from 'vue-sonner'
 
 // Shadcn UI 组件
 import { Button } from '@/components/ui/button'
@@ -88,12 +89,12 @@ const handleSubmit = async () => {
     if (isEditMode.value && currentId.value) {
       await updateDepartment(currentId.value, payload)
       console.log('部门更新成功')
-      alert('部门更新成功')
+      toast.success('部门更新成功')
     } else {
       // 创建逻辑
       await createDepartment(payload)
       console.log('部门创建成功')
-      alert('部门创建成功')
+      toast.success('部门创建成功')
     }
 
     console.log('部门操作成功')

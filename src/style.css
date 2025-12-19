@@ -121,64 +121,225 @@
     @apply bg-background text-foreground;
   }
 
-  /* Toast 样式修复 */
-  :where([data-sonner-toaster]) {
-    z-index: 9999 !important;
+  /* Toast 容器样式优化 - 强制顶部居中 */
+  [data-sonner-toaster],
+  [data-sonner-toaster][data-theme],
+  [data-sonner-toaster][data-y-position],
+  [data-sonner-toaster][data-x-position] {
+    position: fixed !important;
+    z-index: 99999 !important;
+    top: 24px !important;
+    left: 50% !important;
+    right: auto !important;
+    bottom: auto !important;
+    transform: translateX(-50%) !important;
+    width: auto !important;
+    max-width: 500px !important;
+    margin: 0 !important;
+    padding: 0 16px !important;
+  }
+
+  [data-sonner-toaster][data-y-position='top'] {
+    top: 24px !important;
+    bottom: auto !important;
+  }
+
+  [data-sonner-toaster][data-y-position='bottom'] {
+    top: 24px !important;
+    bottom: auto !important;
+  }
+
+  [data-sonner-toaster][data-x-position='left'],
+  [data-sonner-toaster][data-x-position='right'],
+  [data-sonner-toaster][data-x-position='center'] {
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) !important;
   }
 
   [data-sonner-toast] {
+    position: relative !important;
     background: var(--popover) !important;
     border: 1px solid var(--border) !important;
     color: var(--popover-foreground) !important;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.08) !important;
+    border-radius: 50px !important;
+    padding: 12px 24px !important;
+    min-height: 48px !important;
+    max-height: 56px !important;
+    backdrop-filter: blur(8px) !important;
+    margin: 0 auto 12px auto !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: auto !important;
+    min-width: 280px !important;
+    max-width: 420px !important;
   }
 
   [data-sonner-toast][data-styled='true'] [data-content] {
     color: var(--popover-foreground) !important;
+    font-size: 14px !important;
+    line-height: 1.3 !important;
+    display: flex !important;
+    align-items: center !important;
+    white-space: nowrap !important;
   }
 
   [data-sonner-toast][data-styled='true'] [data-title] {
     color: var(--popover-foreground) !important;
-    font-weight: 500;
+    font-weight: 600 !important;
+    font-size: 14px !important;
+    line-height: 1.3 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 350px !important;
   }
 
   [data-sonner-toast][data-styled='true'] [data-description] {
     color: var(--muted-foreground) !important;
+    display: none !important;
   }
 
-  /* Toast 类型样式 */
+  /* Toast 类型样式 - 成功 */
   [data-sonner-toast][data-type='success'] {
-    background: var(--primary) !important;
-    color: var(--primary-foreground) !important;
-    border-color: var(--primary) !important;
+    background: linear-gradient(90deg, oklch(0.72 0.14 145) 0%, oklch(0.68 0.16 145) 100%) !important;
+    color: white !important;
+    border: none !important;
+    box-shadow: 0 4px 16px rgba(34, 197, 94, 0.3), 0 2px 4px rgba(34, 197, 94, 0.2) !important;
   }
 
   [data-sonner-toast][data-type='success'] [data-title],
-  [data-sonner-toast][data-type='success'] [data-content] {
-    color: var(--primary-foreground) !important;
+  [data-sonner-toast][data-type='success'] [data-content],
+  [data-sonner-toast][data-type='success'] [data-icon] {
+    color: white !important;
   }
 
+  /* Toast 类型样式 - 错误 */
   [data-sonner-toast][data-type='error'] {
-    background: var(--destructive) !important;
-    color: var(--destructive-foreground) !important;
-    border-color: var(--destructive) !important;
+    background: linear-gradient(90deg, oklch(0.65 0.22 28) 0%, oklch(0.62 0.24 28) 100%) !important;
+    color: white !important;
+    border: none !important;
+    box-shadow: 0 4px 16px rgba(239, 68, 68, 0.3), 0 2px 4px rgba(239, 68, 68, 0.2) !important;
   }
 
   [data-sonner-toast][data-type='error'] [data-title],
-  [data-sonner-toast][data-type='error'] [data-content] {
-    color: var(--destructive-foreground) !important;
+  [data-sonner-toast][data-type='error'] [data-content],
+  [data-sonner-toast][data-type='error'] [data-icon] {
+    color: white !important;
   }
 
+  /* Toast 类型样式 - 信息 */
   [data-sonner-toast][data-type='info'] {
-    background: var(--muted) !important;
-    color: var(--foreground) !important;
-    border-color: var(--border) !important;
+    background: linear-gradient(90deg, oklch(0.7 0.14 240) 0%, oklch(0.66 0.16 240) 100%) !important;
+    color: white !important;
+    border: none !important;
+    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3), 0 2px 4px rgba(59, 130, 246, 0.2) !important;
   }
 
+  [data-sonner-toast][data-type='info'] [data-title],
+  [data-sonner-toast][data-type='info'] [data-content],
+  [data-sonner-toast][data-type='info'] [data-icon] {
+    color: white !important;
+  }
+
+  /* Toast 类型样式 - 警告 */
   [data-sonner-toast][data-type='warning'] {
-    background: var(--accent) !important;
-    color: var(--accent-foreground) !important;
-    border-color: var(--border) !important;
+    background: linear-gradient(90deg, oklch(0.75 0.14 75) 0%, oklch(0.72 0.16 75) 100%) !important;
+    color: white !important;
+    border: none !important;
+    box-shadow: 0 4px 16px rgba(245, 158, 11, 0.3), 0 2px 4px rgba(245, 158, 11, 0.2) !important;
+  }
+
+  [data-sonner-toast][data-type='warning'] [data-title],
+  [data-sonner-toast][data-type='warning'] [data-content],
+  [data-sonner-toast][data-type='warning'] [data-icon] {
+    color: white !important;
+  }
+
+  /* Toast 图标优化 - 长条形布局 */
+  [data-sonner-toast] [data-icon] {
+    width: 18px !important;
+    height: 18px !important;
+    min-width: 18px !important;
+    margin-right: 10px !important;
+    margin-left: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  /* Toast 关闭按钮优化 - 圆形按钮 */
+  [data-sonner-toast] [data-close-button] {
+    position: absolute !important;
+    right: 8px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    background: rgba(255, 255, 255, 0.25) !important;
+    border: none !important;
+    color: white !important;
+    width: 20px !important;
+    height: 20px !important;
+    min-width: 20px !important;
+    border-radius: 50% !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: all 0.2s ease !important;
+    opacity: 0.8 !important;
+  }
+
+  [data-sonner-toast] [data-close-button]:hover {
+    background: rgba(255, 255, 255, 0.4) !important;
+    opacity: 1 !important;
+    transform: translateY(-50%) scale(1.1) !important;
+  }
+
+  [data-sonner-toast] [data-close-button] svg {
+    width: 12px !important;
+    height: 12px !important;
+  }
+
+  /* Toast 进入/退出动画优化 */
+  [data-sonner-toast][data-mounted='true'] {
+    animation: toast-slide-in-top 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+  }
+
+  [data-sonner-toast][data-removed='true'] {
+    animation: toast-slide-out-top 0.25s cubic-bezier(0.4, 0, 1, 1) forwards !important;
+  }
+
+  [data-sonner-toast][data-swiping='true'] {
+    transform: translateY(var(--y)) !important;
+    transition: none !important;
+  }
+
+  @keyframes toast-slide-in-top {
+    from {
+      transform: translateY(-120%) scale(0.9);
+      opacity: 0;
+    }
+    50% {
+      transform: translateY(-20%) scale(1.02);
+      opacity: 1;
+    }
+    to {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+    }
+  }
+
+  @keyframes toast-slide-out-top {
+    from {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+    }
+    to {
+      transform: translateY(-120%) scale(0.9);
+      opacity: 0;
+    }
   }
 
   /* 自定义滚动条样式 */
@@ -209,4 +370,27 @@
   .scrollbar-thin:hover {
     scrollbar-color: hsl(var(--muted-foreground) / 0.5) transparent;
   }
+}
+
+/* Toast 全局定位覆盖 - 最高优先级 */
+[data-sonner-toaster] {
+  position: fixed !important;
+  inset: 24px auto auto 50% !important;
+  transform: translateX(-50%) !important;
+  z-index: 99999 !important;
+  width: auto !important;
+  max-width: 440px !important;
+  pointer-events: none !important;
+}
+
+[data-sonner-toast] {
+  pointer-events: auto !important;
+}
+
+/* Toast 内容包装器 */
+[data-sonner-toast] > div {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0 !important;
+  padding-right: 28px !important;
 }

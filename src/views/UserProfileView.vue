@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, watch } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { getUserInfo, updateUserInfo } from '@/lib/api'
 import { toast } from 'vue-sonner'
@@ -44,6 +44,16 @@ const formData = reactive({
 
 // 保存原始邮箱用于邮箱验证功能
 const originalEmail = ref('')
+
+// 监听 userStore 的头像变化，实时同步到 formData
+watch(
+  () => userStore.userInfo?.avatarUrl,
+  (newAvatarUrl) => {
+    if (newAvatarUrl) {
+      formData.avatarUrl = newAvatarUrl
+    }
+  }
+)
 
 // 加载用户信息
 const loadUserProfile = async () => {

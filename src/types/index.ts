@@ -72,6 +72,13 @@ export interface UserInfo {
   politicalStatus: string
   description: string
   role?: string // 新增：可选角色字段，用于权限判断
+  // 可选的扩展字段（后端若返回则直接显示，不返回不影响现有逻辑）
+  administrativeClassId?: number
+  administrativeClassName?: string
+  departmentName?: string
+  majorName?: string
+  gradeLevel?: number
+  entryYear?: number
 }
 
 // 用户资料 (User Profile)
@@ -109,6 +116,12 @@ export interface SendEmailBindingCodePayload {
 }
 
 export interface BindEmailPayload {
+  email: string
+  verificationCode: string
+}
+
+export interface VerifyEmailCodePayload {
+  userId: string
   email: string
   verificationCode: string
 }
@@ -263,7 +276,7 @@ export interface SemesterQueryParams {
 export type UserStatus = 'ACTIVE' | 'DISABLED'
 
 // --- 性别枚举 ---
-export type Gender = 'MALE' | 'FEMALE' | 'UNKNOWN'
+export type Gender = 'MALE' | 'FEMALE' | 'UNKNOWN' | 0 | 1 | 2
 
 // --- 学生 (Student) ---
 
@@ -289,6 +302,7 @@ export interface StudentVO {
   departmentId?: number
   majorId?: number
   administrativeClassId?: number
+  administrativeClassName?: string
   entryYear?: number
   gradeLevel?: number
   studentStatus?: StudentStatus

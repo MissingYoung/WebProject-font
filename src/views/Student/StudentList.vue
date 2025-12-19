@@ -1,7 +1,12 @@
 <script setup lang="ts">
-import { reactive, ref, onMounted } from 'vue'
-import { getStudentList, getDepartmentList } from '@/lib/api'
-import type { StudentVO, StudentQueryParams, DepartmentVO } from '@/types'
+import { reactive, ref, onMounted, onUnmounted } from 'vue'
+import { getStudentList, getDepartmentList, getAdministrativeClassList } from '@/lib/api'
+import type {
+  StudentVO,
+  StudentQueryParams,
+  DepartmentVO,
+  AdministrativeClassVO,
+} from '@/types'
 import StudentEditDialog from '@/components/Student/StudentEditDialog.vue'
 
 // UI 组件
@@ -28,6 +33,7 @@ import {
   Search,
   RotateCcw,
   Pencil,
+  RefreshCw,
   GraduationCap,
   ChevronLeft,
   ChevronRight,
@@ -42,6 +48,7 @@ import {
 } from '@/components/ui/dialog'
 
 // --- 状态管理 ---
+const isMounted = ref(true)
 const isLoading = ref(false)
 const tableData = ref<StudentVO[]>([])
 const total = ref(0)
@@ -53,6 +60,7 @@ const selectedStudent = ref<StudentVO | null>(null)
 
 // 下拉选项数据
 const departments = ref<DepartmentVO[]>([])
+const adminClasses = ref<AdministrativeClassVO[]>([])
 
 // 查询参数
 const queryParams = reactive<StudentQueryParams & { id: string }>({
@@ -63,6 +71,7 @@ const queryParams = reactive<StudentQueryParams & { id: string }>({
   username: '',
   status: undefined,
   departmentId: undefined,
+  administrativeClassId: undefined,
   majorId: undefined,
   entryYear: undefined,
   gradeLevel: undefined,
@@ -91,16 +100,33 @@ const genderMap: Record<string, string> = {
 const loadDepartments = async () => {
   try {
     const res = await getDepartmentList({ pageNum: 1, pageSize: 100, status: 'ACTIVE' })
-    if (res && res.data) {
+    if (isMounted.value && res && res.data) {
       departments.value = res.data.records
     }
   } catch (err) {
-    console.error('加载部门列表失败', err)
+    if (isMounted.value) {
+      console.error('加载部门列表失败', err)
+    }
+  }
+}
+
+// 加载行政班列表
+const loadAdminClasses = async () => {
+  try {
+    const res = await getAdministrativeClassList({ pageNum: 1, pageSize: 100, status: 'ACTIVE' })
+    if (isMounted.value && res && res.data) {
+      adminClasses.value = res.data.records
+    }
+  } catch (err) {
+    if (isMounted.value) {
+      console.error('加载行政班列表失败', err)
+    }
   }
 }
 
 // 获取数据
 const fetchData = async () => {
+  if (!isMounted.value) return
   isLoading.value = true
   tableData.value = []
   try {
@@ -115,21 +141,26 @@ const fetchData = async () => {
     if (apiParams.username) cleanParams.username = apiParams.username
     if (apiParams.status) cleanParams.status = apiParams.status
     if (apiParams.departmentId) cleanParams.departmentId = apiParams.departmentId
+    if (apiParams.administrativeClassId) cleanParams.administrativeClassId = apiParams.administrativeClassId
     if (apiParams.majorId) cleanParams.majorId = apiParams.majorId
     if (apiParams.entryYear) cleanParams.entryYear = apiParams.entryYear
     if (apiParams.gradeLevel) cleanParams.gradeLevel = apiParams.gradeLevel
 
     const res = await getStudentList(cleanParams as StudentQueryParams)
-    if (res && res.data) {
+    if (isMounted.value && res && res.data) {
       tableData.value = res.data.records
       total.value = res.data.total
     }
   } catch (error) {
-    console.error('获取学生数据失败', error)
-    tableData.value = []
-    total.value = 0
+    if (isMounted.value) {
+      console.error('获取学生数据失败', error)
+      tableData.value = []
+      total.value = 0
+    }
   } finally {
-    isLoading.value = false
+    if (isMounted.value) {
+      isLoading.value = false
+    }
   }
 }
 
@@ -147,6 +178,7 @@ const handleReset = () => {
   queryParams.username = ''
   queryParams.status = undefined
   queryParams.departmentId = undefined
+  queryParams.administrativeClassId = undefined
   queryParams.majorId = undefined
   queryParams.entryYear = undefined
   queryParams.gradeLevel = undefined
@@ -186,10 +218,23 @@ const getDepartmentName = (departmentId?: number) => {
   return dept?.name || `ID: ${departmentId}`
 }
 
+const getClassName = (classId?: number, className?: string) => {
+  if (className) return className
+  if (!classId) return '-'
+  const cls = adminClasses.value.find((c) => c.id === classId)
+  return cls?.name || `ID: ${classId}`
+}
+
 // 初始化
 onMounted(() => {
   loadDepartments()
+  loadAdminClasses()
   fetchData()
+})
+
+// 清理
+onUnmounted(() => {
+  isMounted.value = false
 })
 </script>
 
@@ -221,14 +266,35 @@ onMounted(() => {
         <label class="text-sm font-medium">所属学院</label>
         <Select
           :model-value="queryParams.departmentId ? String(queryParams.departmentId) : undefined"
-          @update:model-value="(v) => (queryParams.departmentId = v ? Number(v) : undefined)"
+          @update:model-value="(v) => (queryParams.departmentId = v && v !== 'all' ? Number(v) : undefined)"
         >
           <SelectTrigger>
             <SelectValue placeholder="全部" />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="all">全部</SelectItem>
             <SelectItem v-for="dept in departments" :key="dept.id" :value="String(dept.id)">
               {{ dept.name }}
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div class="grid gap-2 w-[180px]">
+        <label class="text-sm font-medium">所属班级</label>
+        <Select
+          :model-value="
+            queryParams.administrativeClassId ? String(queryParams.administrativeClassId) : undefined
+          "
+          @update:model-value="(v) => (queryParams.administrativeClassId = v && v !== 'all' ? Number(v) : undefined)"
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="全部" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">全部</SelectItem>
+            <SelectItem v-for="cls in adminClasses" :key="cls.id" :value="String(cls.id)">
+              {{ cls.name }}
             </SelectItem>
           </SelectContent>
         </Select>
@@ -248,12 +314,13 @@ onMounted(() => {
         <label class="text-sm font-medium">状态</label>
         <Select
           :model-value="queryParams.status"
-          @update:model-value="(v) => (queryParams.status = v as 'ACTIVE' | 'DISABLED' | undefined)"
+          @update:model-value="(v) => (queryParams.status = v && v !== 'all' ? (v as 'ACTIVE' | 'DISABLED') : undefined)"
         >
           <SelectTrigger>
             <SelectValue placeholder="全部" />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="all">全部</SelectItem>
             <SelectItem value="ACTIVE">正常</SelectItem>
             <SelectItem value="DISABLED">禁用</SelectItem>
           </SelectContent>
@@ -278,6 +345,7 @@ onMounted(() => {
             <TableHead>姓名</TableHead>
             <TableHead>性别</TableHead>
             <TableHead>所属学院</TableHead>
+            <TableHead>所属班级</TableHead>
             <TableHead>入学年份</TableHead>
             <TableHead>年级</TableHead>
             <TableHead>状态</TableHead>
@@ -308,6 +376,9 @@ onMounted(() => {
             <TableCell>{{ item.realName || '-' }}</TableCell>
             <TableCell>{{ genderMap[item.gender || ''] || '-' }}</TableCell>
             <TableCell>{{ getDepartmentName(item.departmentId) }}</TableCell>
+            <TableCell>
+              {{ getClassName(item.administrativeClassId, (item as any).administrativeClassName) }}
+            </TableCell>
             <TableCell>{{ item.entryYear || '-' }}</TableCell>
             <TableCell>{{ item.gradeLevel || '-' }}</TableCell>
             <TableCell>
@@ -325,6 +396,16 @@ onMounted(() => {
                 <!-- 查看详情 -->
                 <Button variant="ghost" size="sm" title="查看详情" @click="handleViewDetail(item)">
                   <Eye class="h-4 w-4 text-gray-600" />详情
+                </Button>
+                <!-- 调整班级 -->
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  title="调整班级"
+                  class="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                  @click="handleEdit(item)"
+                >
+                  <RefreshCw class="h-4 w-4" />班级
                 </Button>
                 <!-- 编辑按钮 -->
                 <Button variant="ghost" size="sm" title="编辑学业信息" @click="handleEdit(item)">
@@ -408,8 +489,8 @@ onMounted(() => {
               <p class="font-medium">{{ getDepartmentName(selectedStudent.departmentId) }}</p>
             </div>
             <div class="space-y-1">
-              <p class="text-sm text-muted-foreground">专业 ID</p>
-              <p class="font-medium">{{ selectedStudent.majorId || '-' }}</p>
+              <p class="text-sm text-muted-foreground">所属班级</p>
+              <p class="font-medium">{{ getClassName(selectedStudent.administrativeClassId) }}</p>
             </div>
           </div>
 

@@ -10,6 +10,7 @@ import type {
   SendCodePayload,
   ResetPasswordPayload,
   SendEmailBindingCodePayload,
+  BindEmailPayload,
   VerifyEmailCodePayload,
   UserProfile,
   UpdateProfilePayload,
@@ -117,6 +118,7 @@ type GetUserProfileSuccessResponse = ApiResponse<UserProfile>
 type UpdateUserProfileSuccessResponse = ApiResponse<null>
 type SendCodeSuccessResponse = ApiResponse<null>
 type ResetPasswordSuccessResponse = ApiResponse<null>
+type VerifyEmailCodeSuccessResponse = ApiResponse<null>
 type CreateCourseSuccessResponse = ApiResponse<number>
 type GetCourseListSuccessResponse = ApiResponse<PageResult<CourseVO>>
 type UpdateCourseSuccessResponse = ApiResponse<null>
@@ -201,6 +203,13 @@ export const sendEmailBindingCode = async (
   payload: SendEmailBindingCodePayload,
   userId: string
 ): Promise<SendCodeSuccessResponse> => apiClient.post(`/user/${userId}/email/send-code`, payload)
+
+//验证邮箱验证码
+export const verifyEmailCode = async (
+  payload: VerifyEmailCodePayload,
+  userId: string
+): Promise<VerifyEmailCodeSuccessResponse> =>
+  apiClient.post(`/user/${userId}/email/verify`, payload)
 
 //绑定邮箱
 export const bindEmail = async (
@@ -1082,8 +1091,7 @@ type GetSystemActivitySuccessResponse = ApiResponse<SystemActivity[]>
 // 获取 Dashboard 概览统计
 export const getDashboardOverview = async (params?: {
   semesterId?: number
-}): Promise<GetDashboardOverviewSuccessResponse> =>
-  apiClient.get('/dashboard/overview', { params })
+}): Promise<GetDashboardOverviewSuccessResponse> => apiClient.get('/dashboard/overview', { params })
 
 // 获取选课进度
 export const getEnrollmentProgress = async (params?: {

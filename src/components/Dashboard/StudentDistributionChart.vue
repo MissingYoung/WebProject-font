@@ -25,17 +25,12 @@ const props = defineProps<{
   showTeachers?: boolean
 }>()
 
-use([
-  CanvasRenderer,
-  BarChart,
-  TitleComponent,
-  TooltipComponent,
-  LegendComponent,
-  GridComponent,
-])
+use([CanvasRenderer, BarChart, TitleComponent, TooltipComponent, LegendComponent, GridComponent])
 
 const option = computed(() => {
-  const hasTeacherData = props.data.some((d) => d.teacherCount !== undefined && d.teacherCount !== null)
+  const hasTeacherData = props.data.some(
+    (d) => d.teacherCount !== undefined && d.teacherCount !== null
+  )
 
   const series: BarSeriesOption[] = [
     {

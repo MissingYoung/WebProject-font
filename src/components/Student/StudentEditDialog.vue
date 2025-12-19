@@ -1,7 +1,18 @@
 <script setup lang="ts">
 import { reactive, ref, watch } from 'vue'
-import { updateStudentInfo, getDepartmentList, getMajorList } from '@/lib/api'
-import type { StudentVO, UpdateStudentInfoRequest, DepartmentVO, MajorVO } from '@/types'
+import {
+  updateStudentInfo,
+  getDepartmentList,
+  getMajorList,
+  getAdministrativeClassList,
+} from '@/lib/api'
+import type {
+  StudentVO,
+  UpdateStudentInfoRequest,
+  DepartmentVO,
+  MajorVO,
+  AdministrativeClassVO,
+} from '@/types'
 import { Loader2 } from 'lucide-vue-next'
 
 // Shadcn UI 组件
@@ -39,6 +50,8 @@ const departments = ref<DepartmentVO[]>([])
 const majors = ref<MajorVO[]>([])
 const isLoadingDepartments = ref(false)
 const isLoadingMajors = ref(false)
+const isLoadingAdminClasses = ref(false)
+const adminClasses = ref<AdministrativeClassVO[]>([])
 
 // 初始数据
 const initialState: UpdateStudentInfoRequest = {
@@ -47,6 +60,25 @@ const initialState: UpdateStudentInfoRequest = {
   administrativeClassId: undefined,
   entryYear: undefined,
   gradeLevel: undefined,
+}
+
+// 加载行政班列表
+const loadAdminClasses = async () => {
+  isLoadingAdminClasses.value = true
+  try {
+    const res = await getAdministrativeClassList({
+      pageNum: 1,
+      pageSize: 100,
+      status: 'ACTIVE' as const,
+    })
+    if (res && res.data) {
+      adminClasses.value = res.data.records
+    }
+  } catch (err) {
+    console.error('加载行政班列表失败', err)
+  } finally {
+    isLoadingAdminClasses.value = false
+  }
 }
 
 const formData = reactive<UpdateStudentInfoRequest>({ ...initialState })
@@ -120,6 +152,7 @@ const openDialog = (student: StudentVO) => {
 
   // 加载下拉选项
   loadDepartments()
+  loadAdminClasses()
   if (student.departmentId) {
     loadMajors(student.departmentId)
   }
@@ -207,15 +240,32 @@ const handleSubmit = async () => {
           </Select>
         </div>
 
-        <!-- 3. 行政班ID & 入学年份 -->
+        <!-- 3. 所属班级 & 入学年份 -->
         <div class="grid grid-cols-2 gap-4">
           <div class="grid gap-2">
-            <Label>行政班 ID</Label>
-            <Input
-              v-model.number="formData.administrativeClassId"
-              type="number"
-              placeholder="行政班 ID"
-            />
+            <Label>所属班级</Label>
+            <Select
+              :model-value="
+                formData.administrativeClassId ? String(formData.administrativeClassId) : undefined
+              "
+              @update:model-value="
+                (v) => (formData.administrativeClassId = v ? Number(v) : undefined)
+              "
+            >
+              <SelectTrigger :disabled="isLoadingAdminClasses">
+                <SelectValue placeholder="可选：选择行政班" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem :value="String(0)">未分班</SelectItem>
+                <SelectItem
+                  v-for="item in adminClasses"
+                  :key="item.id"
+                  :value="String(item.id)"
+                >
+                  {{ item.name }}
+                </SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div class="grid gap-2">
             <Label>入学年份</Label>

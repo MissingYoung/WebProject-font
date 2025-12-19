@@ -15,6 +15,8 @@ const props = withDefaults(defineProps<Props>(), {
   level: 0,
 })
 
+import { isNavigationFailure } from 'vue-router'
+
 const router = useRouter()
 
 // 判断是否为目录
@@ -34,13 +36,40 @@ const toggleExpand = () => {
 }
 
 // 处理菜单点击
-const handleClick = () => {
+const handleClick = async () => {
   if (isDirectory.value) {
     // 目录：切换展开状态
     toggleExpand()
-  } else if (props.menuItem.menuUrl) {
-    // 菜单：跳转路由
-    router.push(props.menuItem.menuUrl)
+    return
+  }
+
+  const url = props.menuItem.menuUrl
+  if (!url) return
+
+  // 外链直接新窗口打开
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    window.open(url, '_blank')
+    return
+  }
+
+  // 未匹配到路由则忽略，避免无效导航导致渲染报错
+  const resolved = router.resolve(url)
+  if (!resolved.matched.length) {
+    console.warn('未匹配到有效路由，已忽略导航：', url)
+    return
+  }
+
+  // 相同路由不重复跳转
+  if (router.currentRoute.value.path === url) return
+
+  try {
+    await router.push(resolved)
+  } catch (err) {
+    if (isNavigationFailure(err)) {
+      // 忽略重复导航等已知导航错误
+      return
+    }
+    console.error('菜单跳转失败', err)
   }
 }
 
@@ -89,7 +118,7 @@ const indentStyle = computed(() => ({
     >
       <!-- 左侧：图标 + 名称 -->
       <div class="flex items-center gap-3">
-        <component :is="IconComponent" v-if="IconComponent" class="h-4 w-4 flex-shrink-0" />
+        <component :is="IconComponent" v-if="IconComponent" class="h-4 w-4 shrink-0" />
         <span>{{ menuItem.name }}</span>
       </div>
 
