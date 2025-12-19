@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { changePassword } from '@/lib/api'
 import type { ChangePasswordPayload } from '@/types/index'
+import { useNotification } from '@/composables/useNotification'
 
 // 引入你的 UI 组件
 import { Button } from '@/components/ui/button'
@@ -22,6 +23,7 @@ import { Loader2 } from 'lucide-vue-next'
 
 const router = useRouter()
 const userStore = useUserStore()
+const { confirm, success } = useNotification()
 
 const formData = reactive<ChangePasswordPayload>({
   oldPassword: '',
@@ -30,8 +32,16 @@ const formData = reactive<ChangePasswordPayload>({
 const confirmNewPassword = ref('')
 const isLoading = ref(false)
 const error = ref<string | null>(null)
-function cancelChangePassword() {
-  alert('您确定放弃修改吗？')
+
+async function cancelChangePassword() {
+  if (
+    !(await confirm({
+      title: '放弃修改？',
+      description: '未保存的更改将丢失',
+    }))
+  )
+    return
+
   router.push({ name: 'Dashboard' })
 }
 
@@ -59,20 +69,21 @@ const handleChangePassword = async () => {
 
     if (result && result.code === 200) {
       // 3. 成功处理
-      alert('密码修改成功！请使用新密码重新登录。')
+      success('密码修改成功！请使用新密码重新登录')
 
       // 登出用户 (清除本地 token 和用户信息)
-      userStore.logout()
+      await userStore.logout()
 
       // 跳转到登录页
-      router.push({ name: 'Login' }) // 确保你的登录路由 name 是 'Login'
+      router.push({ name: 'Login' })
     } else {
       // API 返回的业务错误
       error.value = result.message
     }
-  } catch (err: any) {
+  } catch (err: unknown) {
     // 网络或其他异常
-    const errorMessage = err.message || '请求失败，请检查您的网络连接或稍后重试。'
+    const errorMessage =
+      err instanceof Error ? err.message : '请求失败，请检查您的网络连接或稍后重试。'
 
     error.value = errorMessage
     console.error('修改密码异常:', err)

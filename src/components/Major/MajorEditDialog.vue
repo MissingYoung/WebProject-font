@@ -3,7 +3,7 @@ import { reactive, ref, onMounted } from 'vue'
 import { createMajor, updateMajor, getDepartmentList } from '@/lib/api'
 import type { CreateMajorPayload, MajorVO, DegreeLevel, DepartmentVO } from '@/types'
 import { Loader2 } from 'lucide-vue-next'
-import { toast } from 'vue-sonner'
+import { useNotification } from '@/composables/useNotification'
 
 // Shadcn UI 组件
 import { Button } from '@/components/ui/button'
@@ -20,12 +20,14 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
-  Select,
+Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
+}} from '@/components/ui/select'
+
+const { success, error, info } = useNotification()
 
 const emit = defineEmits(['success'])
 
@@ -75,7 +77,7 @@ const fetchDepartments = async () => {
     }
   } catch (err: unknown) {
     console.error('获取部门列表失败', err)
-    toast.error('获取部门列表失败')
+    error('获取部门列表失败')
   } finally {
     isLoadingDepartments.value = false
   }
@@ -137,10 +139,10 @@ const handleSubmit = async () => {
 
     if (isEditMode.value && currentId.value) {
       await updateMajor(currentId.value, payload)
-      toast.success('专业更新成功')
+      success('专业更新成功')
     } else {
       await createMajor(payload)
-      toast.success('专业创建成功')
+      success('专业创建成功')
     }
 
     open.value = false
@@ -148,7 +150,7 @@ const handleSubmit = async () => {
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : '操作失败'
     error.value = message
-    toast.error(message)
+    error(message)
   } finally {
     isLoading.value = false
   }

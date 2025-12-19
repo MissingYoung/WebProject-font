@@ -1,9 +1,13 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { useUserStore } from '@/stores/user'
+import { useNotification } from '@/composables/useNotification'
 import { Loader2 } from 'lucide-vue-next'
-import { Toaster } from '@/components/ui/sonner'
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import NotificationDialog from '@/components/NotificationDialog.vue'
+
 const userStore = useUserStore()
+const { notificationState, closeNotification } = useNotification()
 
 // 当组件挂载时，执行初始化检查
 onMounted(() => {
@@ -22,8 +26,11 @@ onMounted(() => {
 
   <RouterView v-else />
 
-  <!-- 全局 Toast 通知组件 -->
-  <Toaster rich-colors position="top-right" />
+  <!-- 全局确认对话框 -->
+  <ConfirmDialog />
+
+  <!-- 全局通知对话框 -->
+  <NotificationDialog :state="notificationState" @close="closeNotification" />
 </template>
 
 <style scoped>

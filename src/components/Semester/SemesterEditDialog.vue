@@ -3,7 +3,7 @@ import { reactive, ref } from 'vue'
 import { createSemester, updateSemester } from '@/lib/api'
 import type { CreateSemesterPayload, SemesterVO } from '@/types'
 import { Loader2 } from 'lucide-vue-next'
-import { toast } from 'vue-sonner'
+import { useNotification } from '@/composables/useNotification'
 
 // Shadcn UI 组件
 import { Button } from '@/components/ui/button'
@@ -19,12 +19,14 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
-  Select,
+Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
+}} from '@/components/ui/select'
+
+const { success, error, info } = useNotification()
 
 const emit = defineEmits(['success'])
 
@@ -110,10 +112,10 @@ const handleSubmit = async () => {
 
     if (isEditMode.value && currentId.value) {
       await updateSemester(currentId.value, payload)
-      toast.success('学期更新成功')
+      success('学期更新成功')
     } else {
       await createSemester(payload)
-      toast.success('学期创建成功')
+      success('学期创建成功')
     }
 
     open.value = false
@@ -121,7 +123,7 @@ const handleSubmit = async () => {
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : '操作失败'
     error.value = message
-    toast.error(message)
+    error(message)
   } finally {
     isLoading.value = false
   }

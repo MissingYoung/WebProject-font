@@ -121,6 +121,66 @@
     @apply bg-background text-foreground;
   }
 
+  /* Toast 样式修复 */
+  :where([data-sonner-toaster]) {
+    z-index: 9999 !important;
+  }
+
+  [data-sonner-toast] {
+    background: var(--popover) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--popover-foreground) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  }
+
+  [data-sonner-toast][data-styled='true'] [data-content] {
+    color: var(--popover-foreground) !important;
+  }
+
+  [data-sonner-toast][data-styled='true'] [data-title] {
+    color: var(--popover-foreground) !important;
+    font-weight: 500;
+  }
+
+  [data-sonner-toast][data-styled='true'] [data-description] {
+    color: var(--muted-foreground) !important;
+  }
+
+  /* Toast 类型样式 */
+  [data-sonner-toast][data-type='success'] {
+    background: var(--primary) !important;
+    color: var(--primary-foreground) !important;
+    border-color: var(--primary) !important;
+  }
+
+  [data-sonner-toast][data-type='success'] [data-title],
+  [data-sonner-toast][data-type='success'] [data-content] {
+    color: var(--primary-foreground) !important;
+  }
+
+  [data-sonner-toast][data-type='error'] {
+    background: var(--destructive) !important;
+    color: var(--destructive-foreground) !important;
+    border-color: var(--destructive) !important;
+  }
+
+  [data-sonner-toast][data-type='error'] [data-title],
+  [data-sonner-toast][data-type='error'] [data-content] {
+    color: var(--destructive-foreground) !important;
+  }
+
+  [data-sonner-toast][data-type='info'] {
+    background: var(--muted) !important;
+    color: var(--foreground) !important;
+    border-color: var(--border) !important;
+  }
+
+  [data-sonner-toast][data-type='warning'] {
+    background: var(--accent) !important;
+    color: var(--accent-foreground) !important;
+    border-color: var(--border) !important;
+  }
+
   /* 自定义滚动条样式 */
   .scrollbar-thin::-webkit-scrollbar {
     width: 6px;

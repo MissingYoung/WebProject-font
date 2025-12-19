@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { login } from '@/lib/api'
 import { useUserStore } from '@/stores/user'
 import type { UserInfo } from '@/types'
+import { useNotification } from '@/composables/useNotification'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -22,6 +23,7 @@ import IdentifyCode from './IdentifyCode.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
+const { success } = useNotification()
 
 const formData = reactive({
   sduId: '',
@@ -90,11 +92,11 @@ const handleLogin = async () => {
     // 获取用户菜单
     await userStore.fetchMenuTree()
 
-    alert('登陆成功，即将跳转到首页')
+    success('登陆成功，即将跳转到首页')
     await router.push({ name: 'Dashboard' })
     error.value = ''
-  } catch (err: any) {
-    const errorMessage = err.message || '登录过程中出现未知错误，请稍后重试'
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : '登录过程中出现未知错误，请稍后重试'
     error.value = errorMessage
     console.error('登录异常: ', errorMessage)
   } finally {

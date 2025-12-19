@@ -5,6 +5,7 @@ import { useAuthForm } from '@/composables/userAuthForm'
 import { register } from '@/lib/api'
 import type { RegisterPayload } from '@/types'
 import { isPureString } from '@/utils/validate'
+import { useNotification } from '@/composables/useNotification'
 
 import { useUserStore } from '@/stores/user'
 import type { UserInfo } from '@/types'
@@ -26,6 +27,7 @@ import { Loader2 } from 'lucide-vue-next'
 
 const router = useRouter()
 const userStore = useUserStore()
+const { success } = useNotification()
 
 // 1. 更新 formData 以匹配 RegisterPayload 类型和后端 API 要求
 const formData = reactive<RegisterPayload>({
@@ -83,7 +85,7 @@ const handleRegister = async () => {
         token: token,
         user: miniUserInfo,
       })
-      alert('注册成功！即将跳转到首页...')
+      success('注册成功！即将跳转到首页')
       error.value = ''
       router.push({ name: 'Dashboard' })
     } else if (result && result.code === 400) {

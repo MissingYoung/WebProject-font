@@ -39,7 +39,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { toast } from 'vue-sonner'
+import { useNotification } from '@/composables/useNotification'
 import { formatDate } from '@/lib/date'
 import type {
   CourseSelectionWindowVO,
@@ -56,6 +56,8 @@ import {
   getSemesterList,
 } from '@/lib/api'
 import CourseSelectionWindowEditDialog from '@/components/CourseSelectionWindow/CourseSelectionWindowEditDialog.vue'
+
+const { success, error, info } = useNotification()
 
 // 状态映射
 const statusMap: Record<
@@ -126,7 +128,7 @@ const fetchData = async () => {
     }
   } catch (err: unknown) {
     console.error('获取选课窗口列表失败', err)
-    toast.error('获取数据失败，请重试')
+    error('获取数据失败，请重试')
   } finally {
     isLoading.value = false
   }
@@ -185,12 +187,12 @@ const handleConfirmDelete = async () => {
   isDeleting.value = true
   try {
     await deleteSelectionWindow(itemToDelete.value.id)
-    toast.success('删除成功')
+    success('删除成功')
     deleteDialogOpen.value = false
     fetchData()
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : '删除失败'
-    toast.error(message)
+    error(message)
   } finally {
     isDeleting.value = false
   }
@@ -200,11 +202,11 @@ const handleConfirmDelete = async () => {
 const handlePublish = async (row: CourseSelectionWindowVO) => {
   try {
     await publishSelectionWindow(row.id)
-    toast.success('发布成功')
+    success('发布成功')
     fetchData()
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : '发布失败'
-    toast.error(message)
+    error(message)
   }
 }
 
@@ -212,11 +214,11 @@ const handlePublish = async (row: CourseSelectionWindowVO) => {
 const handleActivate = async (row: CourseSelectionWindowVO) => {
   try {
     await activateSelectionWindow(row.id)
-    toast.success('已激活')
+    success('已激活')
     fetchData()
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : '激活失败'
-    toast.error(message)
+    error(message)
   }
 }
 
@@ -224,11 +226,11 @@ const handleActivate = async (row: CourseSelectionWindowVO) => {
 const handleClose = async (row: CourseSelectionWindowVO) => {
   try {
     await closeSelectionWindow(row.id)
-    toast.success('已关闭')
+    success('已关闭')
     fetchData()
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : '关闭失败'
-    toast.error(message)
+    error(message)
   }
 }
 

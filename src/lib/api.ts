@@ -49,6 +49,12 @@ import type {
   AssignPermissionsPayload,
   AssignUserRolePayload,
   MenuVO,
+  DashboardOverview,
+  EnrollmentProgress,
+  EnrollmentTrendPoint,
+  PopularCourse,
+  OrgDistribution,
+  SystemActivity,
 } from '@/types'
 import { useUserStore } from '@/stores/user'
 
@@ -146,7 +152,7 @@ export const updateUserProfile = async (
   payload: UpdateProfilePayload,
   userId: string
 ): Promise<UpdateUserProfileSuccessResponse> =>
-  apiClient.post(`/user/${userId}/update-profile`, payload)
+  apiClient.post(`/user/${userId}/profile/update`, payload)
 
 //  更新登录请求函数
 export const login = async (payload: LoginPayload): Promise<LoginSuccessResponse> =>
@@ -196,11 +202,11 @@ export const sendEmailBindingCode = async (
   userId: string
 ): Promise<SendCodeSuccessResponse> => apiClient.post(`/user/${userId}/email/send-code`, payload)
 
-//验证邮箱验证码
-export const verifyEmailCode = async (
-  payload: VerifyEmailCodePayload,
+//绑定邮箱
+export const bindEmail = async (
+  payload: BindEmailPayload,
   userId: string
-): Promise<SendCodeSuccessResponse> => apiClient.post(`/user/${userId}/email/verify`, payload)
+): Promise<SendCodeSuccessResponse> => apiClient.post(`/user/${userId}/email/bind`, payload)
 
 //创建课程
 export const createCourse = async (
@@ -1063,3 +1069,54 @@ type GetCurrentUserMenuSuccessResponse = ApiResponse<MenuVO[]>
 // 获取当前用户的菜单树
 export const getCurrentUserMenu = async (): Promise<GetCurrentUserMenuSuccessResponse> =>
   apiClient.get('/menu/current')
+
+// --- Dashboard 统计 (Dashboard Statistics) API ---
+
+type GetDashboardOverviewSuccessResponse = ApiResponse<DashboardOverview>
+type GetEnrollmentProgressSuccessResponse = ApiResponse<EnrollmentProgress[]>
+type GetEnrollmentTrendSuccessResponse = ApiResponse<EnrollmentTrendPoint[]>
+type GetPopularCoursesSuccessResponse = ApiResponse<PopularCourse[]>
+type GetOrgDistributionSuccessResponse = ApiResponse<OrgDistribution[]>
+type GetSystemActivitySuccessResponse = ApiResponse<SystemActivity[]>
+
+// 获取 Dashboard 概览统计
+export const getDashboardOverview = async (params?: {
+  semesterId?: number
+}): Promise<GetDashboardOverviewSuccessResponse> =>
+  apiClient.get('/dashboard/overview', { params })
+
+// 获取选课进度
+export const getEnrollmentProgress = async (params?: {
+  semesterId?: number
+  departmentId?: number
+  fillRateMin?: number
+  fillRateMax?: number
+}): Promise<GetEnrollmentProgressSuccessResponse> =>
+  apiClient.get('/dashboard/enrollment/progress', { params })
+
+// 获取选课趋势
+export const getEnrollmentTrend = async (params?: {
+  semesterId?: number
+  days?: number
+}): Promise<GetEnrollmentTrendSuccessResponse> =>
+  apiClient.get('/dashboard/enrollment/trend', { params })
+
+// 获取热门课程
+export const getPopularCourses = async (params?: {
+  semesterId?: number
+  limit?: number
+  order?: 'desc' | 'asc'
+}): Promise<GetPopularCoursesSuccessResponse> =>
+  apiClient.get('/dashboard/course/popular', { params })
+
+// 获取组织分布
+export const getOrgDistribution = async (params: {
+  dimension: 'department' | 'major' | 'grade'
+}): Promise<GetOrgDistributionSuccessResponse> =>
+  apiClient.get('/dashboard/org/distribution', { params })
+
+// 获取系统活动
+export const getSystemActivity = async (params?: {
+  days?: number
+}): Promise<GetSystemActivitySuccessResponse> =>
+  apiClient.get('/dashboard/activity/recent', { params })

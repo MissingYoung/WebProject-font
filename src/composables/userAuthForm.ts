@@ -16,9 +16,9 @@ export function useAuthForm<T, U>(apiCallFunction: (formData: T) => Promise<U>) 
       const response = await apiCallFunction(formData)
       isLoading.value = false
       return response
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('提交出错：', err)
-      error.value = err.message || '发生未知错误'
+      error.value = err instanceof Error ? err.message : '发生未知错误'
 
       return null
     } finally {

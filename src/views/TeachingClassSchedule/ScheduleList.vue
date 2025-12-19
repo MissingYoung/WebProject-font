@@ -28,7 +28,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { toast } from 'vue-sonner'
+import { useNotification } from '@/composables/useNotification'
 import type { TeachingClassScheduleVO, SemesterVO, TeachingClassVO } from '@/types'
 import {
   getTeachingClassScheduleList,
@@ -37,6 +37,8 @@ import {
   getTeachingClassList,
 } from '@/lib/api'
 import ScheduleEditDialog from '@/components/TeachingClassSchedule/ScheduleEditDialog.vue'
+
+const { success, error, info } = useNotification()
 
 // 星期映射
 const weekDayMap: Record<number, string> = {
@@ -120,7 +122,7 @@ const fetchData = async () => {
     }
   } catch (err: unknown) {
     console.error('获取排课列表失败', err)
-    toast.error('获取数据失败，请重试')
+    error('获取数据失败，请重试')
   } finally {
     isLoading.value = false
   }
@@ -179,12 +181,12 @@ const handleConfirmDelete = async () => {
   isDeleting.value = true
   try {
     await deleteTeachingClassSchedule(itemToDelete.value.id)
-    toast.success('删除成功')
+    success('删除成功')
     deleteDialogOpen.value = false
     fetchData()
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : '删除失败'
-    toast.error(message)
+    error(message)
   } finally {
     isDeleting.value = false
   }

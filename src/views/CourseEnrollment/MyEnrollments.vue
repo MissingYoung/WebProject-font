@@ -28,10 +28,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { toast } from 'vue-sonner'
+import { useNotification } from '@/composables/useNotification'
 import { formatDate } from '@/lib/date'
 import type { CourseEnrollmentVO, SemesterVO, CourseEnrollmentStatus } from '@/types'
 import { getMyEnrollments, dropCourse, getSemesterList } from '@/lib/api'
+
+const { success, error, info } = useNotification()
 
 // 状态映射
 const statusMap: Record<
@@ -143,7 +145,7 @@ const handleConfirmDrop = async () => {
   isDropping.value = true
   try {
     await dropCourse(itemToDrop.value.id)
-    toast.success('退课成功')
+    success('退课成功')
     dropDialogOpen.value = false
     fetchData()
   } catch (err: unknown) {

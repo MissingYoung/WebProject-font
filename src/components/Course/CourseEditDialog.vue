@@ -117,8 +117,8 @@ const handleSubmit = async () => {
     }
     open.value = false
     emit('success') //通知父组件刷新
-  } catch (err: any) {
-    error.value = err.message || (isEditMode.value ? '更新失败' : '创建失败')
+  } catch (err: unknown) {
+    error.value = err instanceof Error ? err.message : isEditMode.value ? '更新失败' : '创建失败'
   } finally {
     isLoading.value = false
   }

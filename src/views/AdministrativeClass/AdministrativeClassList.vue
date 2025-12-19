@@ -29,7 +29,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { toast } from 'vue-sonner'
+import { useNotification } from '@/composables/useNotification'
 import { formatDate } from '@/lib/date'
 import type { AdministrativeClassVO, MajorVO, AdministrativeClassStatus } from '@/types'
 import {
@@ -40,6 +40,8 @@ import {
   getMajorList,
 } from '@/lib/api'
 import AdministrativeClassEditDialog from '@/components/AdministrativeClass/AdministrativeClassEditDialog.vue'
+
+const { success, error, info } = useNotification()
 
 // 状态映射
 const statusMap: Record<string, { label: string; variant: 'default' | 'destructive' }> = {
@@ -99,7 +101,7 @@ const fetchData = async () => {
     }
   } catch (err: unknown) {
     console.error('获取行政班列表失败', err)
-    toast.error('获取数据失败，请重试')
+    error('获取数据失败，请重试')
   } finally {
     isLoading.value = false
   }
@@ -159,12 +161,12 @@ const handleConfirmDelete = async () => {
   isDeleting.value = true
   try {
     await deleteAdministrativeClass(itemToDelete.value.id)
-    toast.success('删除成功')
+    success('删除成功')
     deleteDialogOpen.value = false
     fetchData()
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : '删除失败'
-    toast.error(message)
+    error(message)
   } finally {
     isDeleting.value = false
   }
@@ -174,11 +176,11 @@ const handleConfirmDelete = async () => {
 const handleEnable = async (row: AdministrativeClassVO) => {
   try {
     await enableAdministrativeClass(row.id)
-    toast.success('启用成功')
+    success('启用成功')
     fetchData()
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : '启用失败'
-    toast.error(message)
+    error(message)
   }
 }
 
@@ -186,11 +188,11 @@ const handleEnable = async (row: AdministrativeClassVO) => {
 const handleDisable = async (row: AdministrativeClassVO) => {
   try {
     await disableAdministrativeClass(row.id)
-    toast.success('禁用成功')
+    success('禁用成功')
     fetchData()
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : '禁用失败'
-    toast.error(message)
+    error(message)
   }
 }
 

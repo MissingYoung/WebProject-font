@@ -47,7 +47,7 @@ export interface ChangePasswordPayload {
 export interface UpdateUserInfoPayload {
   username?: string
   realName?: string
-  gender?: 0 | 1 | 2 // 0=MALE, 1=FEMALE, 2=UNKNOWN
+  gender?: Gender
   birthday?: string
   phone?: string
   email?: string
@@ -63,7 +63,7 @@ export interface UserInfo {
   id: number
   username: string
   realName: string
-  gender: 0 | 1 | 2 // 0=MALE, 1=FEMALE, 2=UNKNOWN
+  gender: Gender
   birthday: string
   phone: string
   email: string
@@ -108,8 +108,7 @@ export interface SendEmailBindingCodePayload {
   email: string
 }
 
-export interface VerifyEmailCodePayload {
-  userId: string
+export interface BindEmailPayload {
   email: string
   verificationCode: string
 }
@@ -1050,4 +1049,69 @@ export interface MenuVO {
   icon: string
   sort: number
   children: MenuVO[]
+}
+
+// --- Dashboard 统计 (Dashboard Statistics) ---
+
+// Dashboard 概览统计
+export interface DashboardOverview {
+  totalStudents: number
+  activeStudents: number
+  disabledStudents: number
+  totalTeachers: number
+  activeTeachers: number
+  disabledTeachers: number
+  totalCourses: number
+  activeCourses: number
+  inactiveCourses: number
+  archivedCourses: number
+  currentEnrollments: number
+  waitlistCount: number
+  totalDepartments: number
+  totalMajors: number
+}
+
+// 选课进度
+export interface EnrollmentProgress {
+  offeringId: number
+  courseId: number
+  courseCode: string
+  courseName: string
+  departmentName: string
+  totalCapacity: number
+  enrolled: number
+  waitlisted: number
+  fillRate: number
+}
+
+// 选课趋势数据点
+export interface EnrollmentTrendPoint {
+  date: string // YYYY-MM-DD
+  enrollCount: number
+  dropCount: number
+}
+
+// 热门课程
+export interface PopularCourse {
+  courseId: number
+  courseCode: string
+  courseName: string
+  departmentName: string
+  enrollmentCount: number
+  waitlistCount: number
+}
+
+// 组织分布
+export interface OrgDistribution {
+  id: number
+  label: string
+  studentCount: number
+  teacherCount?: number // 年级维度时为 null
+}
+
+// 系统活动
+export interface SystemActivity {
+  date: string // YYYY-MM-DD
+  newUsers: number
+  activeWindows: number
 }

@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { useUserStore } from '@/stores/user'
-import { getUserInfo, updateUserInfo } from '@/lib/api'
-import { toast } from 'vue-sonner'
-import { User, Mail } from 'lucide-vue-next'
+import { getUserInfo, updateUserProfile, uploadFile, changePassword } from '@/lib/api'
+import { useNotification } from '@/composables/useNotification'
+import { User, Mail, Upload, KeyRound } from 'lucide-vue-next'
+import type { Gender } from '@/types'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -21,18 +22,22 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import EmailVerificationDialog from '@/components/EmailVerificationDialog.vue'
 
+const { success, error, info } = useNotification()
+
 const userStore = useUserStore()
 const isLoading = ref(false)
 const isLoadingProfile = ref(true)
 const error = ref<string | null>(null)
 const isEditMode = ref(false)
 const isEmailDialogOpen = ref(false)
+const isUploadingAvatar = ref(false)
+const fileInputRef = ref<HTMLInputElement | null>(null)
 
 // 表单数据
 const formData = reactive({
   username: '',
   realName: '',
-  gender: undefined as 0 | 1 | 2 | undefined,
+  gender: undefined as Gender | undefined,
   birthday: '',
   phone: '',
   email: '',
@@ -64,7 +69,7 @@ const loadUserProfile = async () => {
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : '加载个人信息失败'
     error.value = message
-    toast.error(message)
+    error(message)
   } finally {
     isLoadingProfile.value = false
   }
@@ -80,19 +85,27 @@ const handleSave = async () => {
       throw new Error('用户ID不存在')
     }
     console.log('123')
-    await updateUserInfo(formData, String(userId))
+    await updateUserProfile(
+      {
+        username: formData.username,
+        email: formData.email,
+        avatarUrl: formData.avatarUrl,
+        description: formData.description,
+      },
+      String(userId)
+    )
 
     // 更新本地用户信息
     if (userStore.userInfo) {
       Object.assign(userStore.userInfo, formData)
     }
 
-    toast.success('个人信息已保存')
+    success('个人信息已保存')
     isEditMode.value = false
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : '保存失败'
     error.value = message
-    toast.error(message)
+    error(message)
   } finally {
     isLoading.value = false
   }
@@ -105,10 +118,29 @@ const handleCancel = async () => {
 }
 
 // 处理邮箱验证完成
-const handleEmailVerified = (newEmail: string) => {
-  formData.email = newEmail
-  originalEmail.value = newEmail
-  toast.success('邮箱验证成功！')
+const handleEmailVerified = async (newEmail: string) => {
+  try {
+    // 更新表单数据
+    formData.email = newEmail
+    originalEmail.value = newEmail
+
+    // 同步更新到服务器
+    const userId = userStore.userInfo?.id
+    if (userId) {
+      await updateUserProfile({ email: newEmail }, String(userId))
+
+      // 同步更新到 userStore
+      if (userStore.userInfo) {
+        userStore.userInfo.email = newEmail
+      }
+    }
+
+    success('邮箱绑定成功！')
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : '邮箱更新失败'
+    error(message)
+    console.error('邮箱更新失败:', err)
+  }
 }
 
 // 打开邮箱验证对话框
@@ -116,12 +148,168 @@ const openEmailVerification = () => {
   isEmailDialogOpen.value = true
 }
 
+// 触发文件选择对话框
+const handleAvatarClick = () => {
+  if (!isUploadingAvatar.value) {
+    fileInputRef.value?.click()
+  }
+}
+
+// 处理头像上传
+const handleAvatarFileSelected = async (event: Event) => {
+  console.log('[UserProfile] handleAvatarFileSelected 被调用')
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  console.log('[UserProfile] 选择的文件:', file)
+  if (!file) return
+
+  // 验证文件类型
+  if (!file.type.startsWith('image/')) {
+    error('请选择图片文件')
+    return
+  }
+
+  // 验证文件大小（限制为10MB）
+  const maxSize = 10 * 1024 * 1024
+  if (file.size > maxSize) {
+    error('文件大小不能超过10MB')
+    console.log('[UserProfile] 文件太大，已拒绝')
+    return
+  }
+
+  isUploadingAvatar.value = true
+  console.log('[UserProfile] 开始上传...')
+  try {
+    // 第一步：上传文件
+    const uploadRes = await uploadFile(file)
+    console.log('[UserProfile] 上传响应:', uploadRes)
+    if (!uploadRes.data) {
+      throw new Error('上传失败')
+    }
+
+    const avatarUrl = uploadRes.data.fileUrl
+    if (!avatarUrl) {
+      throw new Error('获取上传文件URL失败')
+    }
+
+    // 第二步：更新用户信息
+    const userId = userStore.userInfo?.id
+    if (!userId) {
+      throw new Error('用户信息不完整')
+    }
+
+    await updateUserProfile({ avatarUrl }, String(userId))
+
+    // 第三步：更新本地用户信息和表单数据
+    if (userStore.userInfo) {
+      userStore.userInfo.avatarUrl = avatarUrl
+    }
+    formData.avatarUrl = avatarUrl
+
+    success('头像上传成功')
+  } catch (err: unknown) {
+    let message = '头像上传失败'
+
+    if (err instanceof Error) {
+      if (err.message.includes('file_upload') || err.message.includes("doesn't exist")) {
+        message = '服务器配置错误：文件存储服务未初始化，请联系管理员'
+      } else if (err.message.includes('获取上传文件URL失败')) {
+        message = '上传文件成功，但获取URL失败，请重试'
+      } else {
+        message = err.message
+      }
+    }
+
+    error(message)
+    console.error('上传头像失败:', err)
+  } finally {
+    isUploadingAvatar.value = false
+    // 重置文件输入
+    if (fileInputRef.value) {
+      fileInputRef.value.value = ''
+    }
+  }
+}
+
 // 性别选项
 const genderOptions = [
-  { value: 0, label: '男' },
-  { value: 1, label: '女' },
-  { value: 2, label: '保密' },
+  { value: 'MALE', label: '男' },
+  { value: 'FEMALE', label: '女' },
+  { value: 'UNKNOWN', label: '保密' },
 ]
+
+// 修改密码相关
+const passwordData = reactive({
+  oldPassword: '',
+  newPassword: '',
+  confirmPassword: '',
+})
+const isPasswordEditMode = ref(false)
+const isChangingPassword = ref(false)
+const passwordError = ref<string | null>(null)
+
+// 开启密码编辑模式
+const startPasswordEdit = () => {
+  isPasswordEditMode.value = true
+  passwordError.value = null
+}
+
+// 取消密码修改
+const cancelPasswordEdit = () => {
+  isPasswordEditMode.value = false
+  passwordData.oldPassword = ''
+  passwordData.newPassword = ''
+  passwordData.confirmPassword = ''
+  passwordError.value = null
+}
+
+// 提交密码修改
+const handleChangePassword = async () => {
+  passwordError.value = null
+
+  // 验证
+  if (!passwordData.oldPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
+    passwordError.value = '所有字段均为必填项'
+    return
+  }
+
+  if (passwordData.newPassword !== passwordData.confirmPassword) {
+    passwordError.value = '两次输入的新密码不一致'
+    return
+  }
+
+  if (passwordData.newPassword.length < 6) {
+    passwordError.value = '新密码长度至少为6位'
+    return
+  }
+
+  const userId = userStore.userInfo?.id
+  if (!userId) {
+    passwordError.value = '用户信息不完整'
+    return
+  }
+
+  isChangingPassword.value = true
+
+  try {
+    await changePassword(userId, {
+      oldPassword: passwordData.oldPassword,
+      newPassword: passwordData.newPassword,
+    })
+
+    success('密码修改成功！请使用新密码重新登录')
+
+    // 登出并跳转到登录页
+    await userStore.logout()
+    window.location.href = '/login'
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : '密码修改失败'
+    passwordError.value = message
+    error(message)
+  } finally {
+    isChangingPassword.value = false
+  }
+}
 
 onMounted(() => {
   loadUserProfile()
@@ -152,26 +340,128 @@ onMounted(() => {
     </Alert>
 
     <!-- 内容区 -->
-    <div v-if="!isLoadingProfile" class="grid gap-6 md:grid-cols-3">
-      <!-- 左侧头像卡片 -->
-      <Card class="md:col-span-1">
-        <CardHeader>
-          <CardTitle class="text-lg">头像</CardTitle>
-        </CardHeader>
-        <CardContent class="flex flex-col items-center gap-4">
-          <Avatar class="h-24 w-24">
-            <AvatarImage
-              v-if="formData.avatarUrl"
-              :src="formData.avatarUrl"
-              :alt="formData.realName"
-            />
-            <AvatarFallback>{{ userStore.userInitial }}</AvatarFallback>
-          </Avatar>
-          <p class="text-sm text-muted-foreground text-center">
-            在右上角个人菜单中点击"上传头像"来更新您的头像
-          </p>
-        </CardContent>
-      </Card>
+    <div v-if="!isLoadingProfile" class="grid gap-6 md:grid-cols-3 items-start">
+      <!-- 左侧列 -->
+      <div class="md:col-span-1 space-y-6">
+        <!-- 头像卡片 -->
+        <Card>
+          <CardHeader>
+            <CardTitle class="text-lg">头像</CardTitle>
+          </CardHeader>
+          <CardContent class="flex flex-col items-center gap-4">
+            <div
+              class="relative cursor-pointer group"
+              :class="{ 'pointer-events-none opacity-50': isUploadingAvatar }"
+              @click="handleAvatarClick"
+            >
+              <Avatar class="h-32 w-32 transition-opacity group-hover:opacity-80">
+                <AvatarImage
+                  v-if="formData.avatarUrl"
+                  :src="formData.avatarUrl"
+                  :alt="formData.realName"
+                />
+                <AvatarFallback>{{ userStore.userInitial }}</AvatarFallback>
+              </Avatar>
+              <div
+                class="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <Upload class="h-8 w-8 text-white" />
+              </div>
+            </div>
+            <p class="text-sm text-muted-foreground text-center">
+              {{ isUploadingAvatar ? '上传中...' : '点击头像上传新头像' }}
+            </p>
+          </CardContent>
+        </Card>
+
+        <!-- 修改密码卡片 -->
+        <Card>
+          <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-3">
+            <div>
+              <CardTitle class="text-lg flex items-center gap-2">
+                <KeyRound class="h-4 w-4" />
+                修改密码
+              </CardTitle>
+            </div>
+            <Button
+              v-if="!isPasswordEditMode"
+              variant="outline"
+              size="sm"
+              @click="startPasswordEdit"
+            >
+              修改
+            </Button>
+          </CardHeader>
+
+          <CardContent v-if="isPasswordEditMode" class="space-y-4">
+            <!-- 错误提示 -->
+            <Alert v-if="passwordError" variant="destructive" class="py-2">
+              <AlertDescription class="text-xs">{{ passwordError }}</AlertDescription>
+            </Alert>
+
+            <!-- 旧密码 -->
+            <div class="space-y-2">
+              <Label for="oldPassword" class="text-sm">旧密码</Label>
+              <Input
+                id="oldPassword"
+                v-model="passwordData.oldPassword"
+                type="password"
+                placeholder="请输入旧密码"
+                :disabled="isChangingPassword"
+              />
+            </div>
+
+            <!-- 新密码 -->
+            <div class="space-y-2">
+              <Label for="newPassword" class="text-sm">新密码</Label>
+              <Input
+                id="newPassword"
+                v-model="passwordData.newPassword"
+                type="password"
+                placeholder="请输入新密码"
+                :disabled="isChangingPassword"
+              />
+            </div>
+
+            <!-- 确认新密码 -->
+            <div class="space-y-2">
+              <Label for="confirmPassword" class="text-sm">确认新密码</Label>
+              <Input
+                id="confirmPassword"
+                v-model="passwordData.confirmPassword"
+                type="password"
+                placeholder="请再次输入新密码"
+                :disabled="isChangingPassword"
+              />
+            </div>
+
+            <!-- 按钮 -->
+            <div class="flex gap-2 pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                class="flex-1"
+                :disabled="isChangingPassword"
+                @click="cancelPasswordEdit"
+              >
+                取消
+              </Button>
+              <Button
+                size="sm"
+                class="flex-1"
+                :disabled="isChangingPassword"
+                @click="handleChangePassword"
+              >
+                {{ isChangingPassword ? '修改中...' : '确认' }}
+              </Button>
+            </div>
+          </CardContent>
+
+          <CardContent v-else class="pt-0">
+            <p class="text-xs text-muted-foreground">修改密码后需要重新登录</p>
+          </CardContent>
+        </Card>
+      </div>
 
       <!-- 右侧信息卡片 -->
       <Card class="md:col-span-2">
@@ -190,7 +480,7 @@ onMounted(() => {
           </Button>
         </CardHeader>
 
-        <CardContent class="space-y-6">
+        <CardContent class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <!-- 用户名 -->
           <div class="grid gap-2">
             <Label for="username">用户名</Label>
@@ -208,8 +498,8 @@ onMounted(() => {
             <Input
               id="realName"
               v-model="formData.realName"
-              :disabled="!isEditMode"
-              placeholder="输入姓名"
+              disabled
+              placeholder="不可修改"
             />
           </div>
 
@@ -217,11 +507,9 @@ onMounted(() => {
           <div class="grid gap-2">
             <Label for="gender">性别</Label>
             <Select
-              :model-value="formData.gender?.toString()"
-              :disabled="!isEditMode"
-              @update:model-value="
-                (val) => (formData.gender = val ? (parseInt(String(val)) as 0 | 1 | 2) : undefined)
-              "
+              :model-value="formData.gender"
+              disabled
+              @update:model-value="(val) => (formData.gender = val as Gender | undefined)"
             >
               <SelectTrigger id="gender">
                 <SelectValue placeholder="选择性别" />
@@ -230,7 +518,7 @@ onMounted(() => {
                 <SelectItem
                   v-for="option in genderOptions"
                   :key="option.value"
-                  :value="String(option.value)"
+                  :value="option.value"
                 >
                   {{ option.label }}
                 </SelectItem>
@@ -241,7 +529,7 @@ onMounted(() => {
           <!-- 生日 -->
           <div class="grid gap-2">
             <Label for="birthday">生日</Label>
-            <Input id="birthday" v-model="formData.birthday" type="date" :disabled="!isEditMode" />
+            <Input id="birthday" v-model="formData.birthday" type="date" disabled />
           </div>
 
           <!-- 电话 -->
@@ -250,8 +538,8 @@ onMounted(() => {
             <Input
               id="phone"
               v-model="formData.phone"
-              :disabled="!isEditMode"
-              placeholder="输入电话号码"
+              disabled
+              placeholder="不可修改"
             />
           </div>
 
@@ -260,23 +548,21 @@ onMounted(() => {
             <div class="flex items-center justify-between">
               <Label for="email">邮箱</Label>
               <Button
-                v-if="!isEditMode"
                 type="button"
-                variant="ghost"
+                variant="outline"
                 size="sm"
-                class="h-auto p-0 text-xs text-blue-600 hover:text-blue-700"
                 @click="openEmailVerification"
               >
-                <Mail class="mr-1 h-3 w-3" />
-                验证邮箱
+                <Mail class="mr-2 h-4 w-4" />
+                {{ formData.email ? '修改邮箱' : '绑定邮箱' }}
               </Button>
             </div>
             <Input
               id="email"
               v-model="formData.email"
               type="email"
-              :disabled="!isEditMode"
-              placeholder="输入邮箱地址"
+              disabled
+              :placeholder="formData.email || '点击右侧按钮绑定邮箱'"
             />
           </div>
 
@@ -286,8 +572,8 @@ onMounted(() => {
             <Input
               id="ethnic"
               v-model="formData.ethnic"
-              :disabled="!isEditMode"
-              placeholder="输入民族"
+              disabled
+              placeholder="不可修改"
             />
           </div>
 
@@ -297,13 +583,13 @@ onMounted(() => {
             <Input
               id="politicalStatus"
               v-model="formData.politicalStatus"
-              :disabled="!isEditMode"
-              placeholder="输入政治面目"
+              disabled
+              placeholder="不可修改"
             />
           </div>
 
           <!-- 个人描述 -->
-          <div class="grid gap-2">
+          <div class="grid gap-2 md:col-span-2">
             <Label for="description">个人描述</Label>
             <Textarea
               id="description"
@@ -315,7 +601,7 @@ onMounted(() => {
           </div>
 
           <!-- 保存按钮 -->
-          <div v-if="isEditMode" class="flex justify-end gap-2 pt-4">
+          <div v-if="isEditMode" class="flex justify-end gap-2 pt-4 md:col-span-2">
             <Button variant="outline" :disabled="isLoading" @click="handleCancel">取消</Button>
             <Button :disabled="isLoading" @click="handleSave">
               {{ isLoading ? '保存中...' : '保存' }}
@@ -332,6 +618,15 @@ onMounted(() => {
       :current-email="originalEmail"
       @update:open="isEmailDialogOpen = $event"
       @verified="handleEmailVerified"
+    />
+
+    <!-- 隐藏的文件输入框 -->
+    <input
+      ref="fileInputRef"
+      type="file"
+      accept="image/*"
+      style="display: none"
+      @change="handleAvatarFileSelected"
     />
   </div>
 </template>

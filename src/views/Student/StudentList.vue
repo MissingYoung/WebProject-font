@@ -104,7 +104,7 @@ const fetchData = async () => {
   isLoading.value = true
   tableData.value = []
   try {
-    const { id, ...apiParams } = queryParams
+    const { id: _id, ...apiParams } = queryParams
     // 过滤空值
     const cleanParams: Partial<StudentQueryParams> = {
       pageNum: apiParams.pageNum,

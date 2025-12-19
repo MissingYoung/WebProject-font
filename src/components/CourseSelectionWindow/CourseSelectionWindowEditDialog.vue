@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { toast } from 'vue-sonner'
+import { useNotification } from '@/composables/useNotification'
 import type {
   CourseSelectionWindowVO,
   CreateSelectionWindowPayload,
@@ -28,6 +28,8 @@ import type {
   CourseType,
 } from '@/types'
 import { createSelectionWindow, updateSelectionWindow, getSemesterList } from '@/lib/api'
+
+const { success, error, info } = useNotification()
 
 const emit = defineEmits(['success'])
 
@@ -63,7 +65,7 @@ const loadSemesters = async () => {
     }
   } catch (err: unknown) {
     console.error('加载学期列表失败', err)
-    toast.error('加载学期列表失败')
+    error('加载学期列表失败')
   } finally {
     isLoadingSemesters.value = false
   }
@@ -127,10 +129,10 @@ const handleSubmit = async () => {
 
     if (isEditMode.value && currentId.value) {
       await updateSelectionWindow(currentId.value, payload)
-      toast.success('更新成功')
+      success('更新成功')
     } else {
       await createSelectionWindow(payload)
-      toast.success('创建成功')
+      success('创建成功')
     }
 
     open.value = false
@@ -138,7 +140,7 @@ const handleSubmit = async () => {
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : '操作失败'
     error.value = message
-    toast.error(message)
+    error(message)
   } finally {
     isLoading.value = false
   }

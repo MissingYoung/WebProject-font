@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { toast } from 'vue-sonner'
+import { useNotification } from '@/composables/useNotification'
 import type {
   TeachingClassVO,
   CreateTeachingClassPayload,
@@ -27,11 +27,13 @@ import type {
   TeacherVO,
 } from '@/types'
 import {
-  createTeachingClass,
+createTeachingClass,
   updateTeachingClass,
   getCourseOfferingList,
   getTeacherList,
-} from '@/lib/api'
+}} from '@/lib/api'
+
+const { success, error, info } = useNotification()
 
 const emit = defineEmits(['success'])
 
@@ -68,7 +70,7 @@ const loadCourseOfferings = async () => {
     }
   } catch (err: unknown) {
     console.error('加载开课列表失败', err)
-    toast.error('加载开课列表失败')
+    error('加载开课列表失败')
   } finally {
     isLoadingOfferings.value = false
   }
@@ -84,7 +86,7 @@ const loadTeachers = async () => {
     }
   } catch (err: unknown) {
     console.error('加载教师列表失败', err)
-    toast.error('加载教师列表失败')
+    error('加载教师列表失败')
   } finally {
     isLoadingTeachers.value = false
   }
@@ -142,10 +144,10 @@ const handleSubmit = async () => {
 
     if (isEditMode.value && currentId.value) {
       await updateTeachingClass(currentId.value, payload)
-      toast.success('更新成功')
+      success('更新成功')
     } else {
       await createTeachingClass(payload)
-      toast.success('创建成功')
+      success('创建成功')
     }
 
     open.value = false
@@ -153,7 +155,7 @@ const handleSubmit = async () => {
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : '操作失败'
     error.value = message
-    toast.error(message)
+    error(message)
   } finally {
     isLoading.value = false
   }

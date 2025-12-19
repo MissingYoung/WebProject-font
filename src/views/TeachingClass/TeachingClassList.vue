@@ -38,7 +38,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { toast } from 'vue-sonner'
+import { useNotification } from '@/composables/useNotification'
 import { formatDate } from '@/lib/date'
 import type { TeachingClassVO, SemesterVO, CourseOfferingVO, TeachingClassStatus } from '@/types'
 import {
@@ -50,6 +50,8 @@ import {
   getCourseOfferingList,
 } from '@/lib/api'
 import TeachingClassEditDialog from '@/components/TeachingClass/TeachingClassEditDialog.vue'
+
+const { success, error, info } = useNotification()
 
 // 状态映射
 const statusMap: Record<
@@ -133,7 +135,7 @@ const fetchData = async () => {
     }
   } catch (err: unknown) {
     console.error('获取教学班列表失败', err)
-    toast.error('获取数据失败，请重试')
+    error('获取数据失败，请重试')
   } finally {
     isLoading.value = false
   }
@@ -193,12 +195,12 @@ const handleConfirmDelete = async () => {
   isDeleting.value = true
   try {
     await deleteTeachingClass(itemToDelete.value.id)
-    toast.success('删除成功')
+    success('删除成功')
     deleteDialogOpen.value = false
     fetchData()
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : '删除失败'
-    toast.error(message)
+    error(message)
   } finally {
     isDeleting.value = false
   }
@@ -208,11 +210,11 @@ const handleConfirmDelete = async () => {
 const handlePublish = async (row: TeachingClassVO) => {
   try {
     await publishTeachingClass(row.id)
-    toast.success('发布成功')
+    success('发布成功')
     fetchData()
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : '发布失败'
-    toast.error(message)
+    error(message)
   }
 }
 
@@ -220,11 +222,11 @@ const handlePublish = async (row: TeachingClassVO) => {
 const handleClose = async (row: TeachingClassVO) => {
   try {
     await closeTeachingClass(row.id)
-    toast.success('已关闭')
+    success('已关闭')
     fetchData()
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : '操作失败'
-    toast.error(message)
+    error(message)
   }
 }
 
