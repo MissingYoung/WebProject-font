@@ -3,7 +3,7 @@ import { reactive, ref, onMounted } from 'vue'
 import { getRoleList, deleteRole, activateRole, deactivateRole } from '@/lib/api'
 import type { RoleVO, RoleQueryParams } from '@/types'
 import { formatDate } from '@/lib/date'
-import { toast } from 'vue-sonner'
+import { useNotification } from '@/composables/useNotification'
 import RoleEditDialog from '@/components/Role/RoleEditDialog.vue'
 import RolePermissionDialog from '@/components/Role/RolePermissionDialog.vue'
 
@@ -52,6 +52,9 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 
+// 使用通知
+const { success: showSuccess, error: showError } = useNotification()
+
 // --- 状态管理 ---
 const isLoading = ref(false)
 const tableData = ref<RoleVO[]>([])
@@ -97,7 +100,7 @@ const fetchData = async () => {
     }
   } catch (error) {
     console.error('获取角色数据失败', error)
-    toast.error('获取角色数据失败，请重试')
+    showError('获取角色数据失败，请重试')
     tableData.value = []
     total.value = 0
   } finally {
@@ -164,11 +167,11 @@ const handleConfirmDelete = async () => {
   try {
     await deleteRole(roleToDelete.value.id)
     deleteDialogOpen.value = false
-    toast.success('删除成功')
+    showSuccess('删除成功')
     fetchData()
   } catch (err) {
     console.error('删除失败', err)
-    toast.error(err instanceof Error ? err.message : '删除失败，请重试')
+    showError(err instanceof Error ? err.message : '删除失败，请重试')
   } finally {
     isDeleting.value = false
   }
@@ -178,11 +181,11 @@ const handleConfirmDelete = async () => {
 const handleActivate = async (row: RoleVO) => {
   try {
     await activateRole(row.id)
-    toast.success('角色启用成功')
+    showSuccess('角色启用成功')
     fetchData()
   } catch (err) {
     console.error('启用失败', err)
-    toast.error(err instanceof Error ? err.message : '启用失败')
+    showError(err instanceof Error ? err.message : '启用失败')
   }
 }
 
@@ -190,11 +193,11 @@ const handleActivate = async (row: RoleVO) => {
 const handleDeactivate = async (row: RoleVO) => {
   try {
     await deactivateRole(row.id)
-    toast.success('角色禁用成功')
+    showSuccess('角色禁用成功')
     fetchData()
   } catch (err) {
     console.error('禁用失败', err)
-    toast.error(err instanceof Error ? err.message : '禁用失败')
+    showError(err instanceof Error ? err.message : '禁用失败')
   }
 }
 
