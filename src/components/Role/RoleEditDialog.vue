@@ -2,7 +2,7 @@
 import { ref, reactive } from 'vue'
 import { createRole, updateRole } from '@/lib/api'
 import type { RoleVO, CreateRolePayload, UpdateRolePayload } from '@/types'
-import { useNotification } from '@/composables/useNotification'
+import { toast } from 'vue-sonner'
 
 // UI 组件
 import { Button } from '@/components/ui/button'
@@ -18,8 +18,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Loader2 } from 'lucide-vue-next'
-
-const { success: showSuccess, error: showError, info: showInfo } = useNotification()
 
 // --- 类型和事件 ---
 const emit = defineEmits<{
@@ -70,23 +68,23 @@ const closeDialog = () => {
 // 表单验证
 const validateForm = (): boolean => {
   if (!formData.name.trim()) {
-    showError('请输入角色名称')
+    toast.error('请输入角色名称')
     return false
   }
   if (formData.name.length > 50) {
-    showError('角色名称不能超过 50 个字符')
+    toast.error('角色名称不能超过 50 个字符')
     return false
   }
   if (!formData.key.trim()) {
-    showError('请输入角色标识')
+    toast.error('请输入角色标识')
     return false
   }
   if (formData.key.length > 50) {
-    showError('角色标识不能超过 50 个字符')
+    toast.error('角色标识不能超过 50 个字符')
     return false
   }
   if (formData.description && formData.description.length > 200) {
-    showError('角色描述不能超过 200 个字符')
+    toast.error('角色描述不能超过 200 个字符')
     return false
   }
   return true
@@ -106,17 +104,17 @@ const handleSubmit = async () => {
         description: formData.description,
       }
       await updateRole(editingRole.value.id, payload)
-      showSuccess('角色更新成功')
+      toast.success('角色更新成功')
     } else {
       // 创建模式
       await createRole(formData)
-      showSuccess('角色创建成功')
+      toast.success('角色创建成功')
     }
     closeDialog()
     emit('success')
   } catch (error) {
     console.error('保存角色失败', error)
-    showError(error instanceof Error ? error.message : '保存失败，请重试')
+    toast.error(error instanceof Error ? error.message : '保存失败，请重试')
   } finally {
     isSubmitting.value = false
   }

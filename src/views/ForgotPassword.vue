@@ -68,8 +68,8 @@ const handleSendCode = async () => {
     } else {
       throw new Error(res.message || '发送验证码失败')
     }
-  } catch (err: unknown) {
-    error.value = err instanceof Error ? err.message : '发送验证码请求失败，请稍后重试'
+  } catch (err: any) {
+    error.value = err.message || '发送验证码请求失败，请稍后重试'
   } finally {
     isSendingCode.value = false
   }
@@ -129,8 +129,8 @@ const handleSubmit = async () => {
     } else {
       throw new Error(res.message || '重置密码失败')
     }
-  } catch (err: unknown) {
-    error.value = err instanceof Error ? err.message : '重置密码过程中出现错误'
+  } catch (err: any) {
+    error.value = err.message || '重置密码过程中出现错误'
   } finally {
     isLoading.value = false
   }

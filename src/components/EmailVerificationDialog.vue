@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { reactive, ref, onUnmounted } from 'vue'
-import { sendEmailBindingCode, bindEmail } from '@/lib/api'
-import { useNotification } from '@/composables/useNotification'
+import { sendEmailBindingCode, verifyEmailCode } from '@/lib/api'
+import { toast } from 'vue-sonner'
 import { Mail, Loader2 } from 'lucide-vue-next'
 
 import { Button } from '@/components/ui/button'
@@ -15,8 +15,6 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-
-const { success, error, info } = useNotification()
 
 interface Props {
   open?: boolean
@@ -113,7 +111,7 @@ const handleSendCode = async () => {
     const res = await sendEmailBindingCode({ email: formData.email }, props.userId)
 
     if (res && (res.code === 0 || res.code === 200 || res.data === null)) {
-      success('验证码已发送，请查收邮件')
+      toast.success('验证码已发送，请查收邮件')
       step.value = 'verify'
       startCountdown()
     } else {
@@ -122,7 +120,7 @@ const handleSendCode = async () => {
   } catch (err: unknown) {
     const errMessage = err instanceof Error ? err.message : '发送验证码请求失败，请稍后重试'
     error.value = errMessage
-    error(errMessage)
+    toast.error(errMessage)
   } finally {
     isSendingCode.value = false
   }
@@ -160,8 +158,9 @@ const handleVerify = async () => {
       throw new Error('用户ID不存在')
     }
 
-    const res = await bindEmail(
+    const res = await verifyEmailCode(
       {
+        userId: props.userId,
         email: formData.email,
         verificationCode: formData.verificationCode,
       },
@@ -169,7 +168,7 @@ const handleVerify = async () => {
     )
 
     if (res && (res.code === 0 || res.code === 200 || res.data === null)) {
-      success('邮箱验证成功')
+      toast.success('邮箱验证成功')
       emit('verified', formData.email)
       handleOpenChange(false)
     } else {
@@ -178,7 +177,7 @@ const handleVerify = async () => {
   } catch (err: unknown) {
     const errMessage = err instanceof Error ? err.message : '验证请求失败，请稍后重试'
     error.value = errMessage
-    error(errMessage)
+    toast.error(errMessage)
   } finally {
     isLoading.value = false
   }

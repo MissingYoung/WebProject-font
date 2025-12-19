@@ -3,8 +3,8 @@ import { ref } from 'vue'
 import { KeyRound, LogOut, Upload } from 'lucide-vue-next'
 import { useUserStore } from '@/stores/user'
 import { useRouter } from 'vue-router'
-import { uploadFile, updateUserProfile } from '@/lib/api'
-import { useNotification } from '@/composables/useNotification'
+import { uploadFile, updateUserInfo } from '@/lib/api'
+import { toast } from 'vue-sonner'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -19,34 +19,17 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 
 const userStore = useUserStore()
 const router = useRouter()
-const { confirm, success, error } = useNotification()
 const isUploading = ref(false)
 const fileInputRef = ref<HTMLInputElement | null>(null)
 
-const goToProfile = () => {
-  router.push({ name: 'UserProfile' })
-}
-
 const goToChangePassword = () => {
-  router.push({ name: 'UserProfile' })
+  //userStore.changePassword();
+  router.push({ name: 'ChangePassword' })
 }
 
 const handleSwitchAccount = async () => {
-  console.log('[Header] handleSwitchAccount 开始')
-  const confirmed = await confirm({
-    title: '退出登录',
-    description: '确认要退出当前账号吗？',
-  })
-  console.log('[Header] confirm 返回值:', confirmed)
-
-  if (!confirmed) {
-    console.log('[Header] 用户取消，退出函数')
-    return
-  }
-
-  console.log('[Header] 开始执行登出')
   await userStore.logout()
-  success('已退出登录')
+  alert('您是否退出当前账号？')
   router.push({ name: 'Login' })
 }
 
@@ -63,14 +46,14 @@ const handleFileSelected = async (event: Event) => {
 
   // 验证文件类型
   if (!file.type.startsWith('image/')) {
-    error('请选择图片文件')
+    toast.error('请选择图片文件')
     return
   }
 
-  // 验证文件大小（限制为10MB）
-  const maxSize = 10 * 1024 * 1024
+  // 验证文件大小（限制为5MB）
+  const maxSize = 5 * 1024 * 1024
   if (file.size > maxSize) {
-    error('文件大小不能超过10MB')
+    toast.error('文件大小不能超过5MB')
     return
   }
 
@@ -93,14 +76,19 @@ const handleFileSelected = async (event: Event) => {
       throw new Error('用户信息不完整')
     }
 
-    await updateUserProfile({ avatarUrl }, String(userId))
+    await updateUserInfo(
+      {
+        avatarUrl,
+      },
+      String(userId)
+    )
 
     // 第三步：更新本地用户信息
     if (userStore.userInfo) {
       userStore.userInfo.avatarUrl = avatarUrl
     }
 
-    success('头像上传成功')
+    toast.success('头像上传成功')
   } catch (err: unknown) {
     let message = '头像上传失败'
 
@@ -115,7 +103,7 @@ const handleFileSelected = async (event: Event) => {
       }
     }
 
-    error(message)
+    toast.error(message)
     console.error('上传头像失败:', err)
   } finally {
     isUploading.value = false
@@ -130,16 +118,16 @@ const handleFileSelected = async (event: Event) => {
 <!-- 导航栏整体布局 -->
 <template>
   <header
-    class="sticky top-0 z-50 flex h-14 items-center gap-4 border-b bg-background sm:static lg:h-[60px] sm:bg-transparent px-6"
+    class="sticky top-0 z-50 flex h-16 items-center gap-4 border-b bg-background sm:static sm:h-auto sm:border-0 sm:bg-transparent px-6"
   >
-    <div class="container mx-auto flex w-full items-center justify-between pr-4 sm:pr-6">
+    <div class="container mx-auto flex w-full items-center justify-between px-4 sm:px-6">
       <div>
         <h1 class="text-lg font-semibold">欢迎回来，{{ userStore.userRealName }}</h1>
       </div>
 
-      <!-- 个人资料下拉菜单 -->
+      <!-- 个人中心下拉菜单 -->
       <div class="flex items-center gap-2">
-        <span class="text-sm font-medium hidden md:inline">个人资料</span>
+        <span class="text-sm font-medium hidden md:inline">个人中心</span>
         <DropdownMenu>
           <DropdownMenuTrigger as-child>
             <Button variant="outline" size="icon" class="overflow-hidden rounded-full">
@@ -152,10 +140,7 @@ const handleFileSelected = async (event: Event) => {
           <DropdownMenuContent v-if="userStore.userInfo" align="end">
             <DropdownMenuLabel>我的账户</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem
-              class="flex flex-col items-start cursor-pointer"
-              @click="goToProfile"
-            >
+            <DropdownMenuItem class="flex flex-col items-start text-muted-foreground!">
               <span>用户名: {{ userStore.userInfo.username }}</span>
               <span>学工号: {{ userStore.userInfo.sduId }}</span>
               <span>姓名：{{ userStore.userInfo.realName || userStore.userInfo.username }}</span>

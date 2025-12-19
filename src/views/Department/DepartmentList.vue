@@ -10,7 +10,6 @@ import {
 import type { DepartmentVO } from '@/types'
 import { formatDate } from '@/lib/date'
 import DepartmentEditDialog from '@/components/Department/DepartmentEditDialog.vue'
-import { useNotification } from '@/composables/useNotification'
 
 // UI 组件
 import { Button } from '@/components/ui/button'
@@ -41,18 +40,30 @@ import {
   ChevronLeft,
   ChevronRight,
   Trash2,
+  AlertTriangle,
   Play,
   PauseCircle,
 } from 'lucide-vue-next'
-
-const { success, error, confirm, extractErrorMessage } = useNotification()
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 
 // --- 状态管理 ---
 const isLoading = ref(false)
 const tableData = ref<DepartmentVO[]>([])
 const total = ref(0)
 const editDialogRef = ref<InstanceType<typeof DepartmentEditDialog> | null>(null)
-const departments = ref<DepartmentVO[]>([])
+// 删除相关的状态
+const deleteDialogOpen = ref(false)
+const deptToDelete = ref<DepartmentVO | null>(null)
+const isDeleting = ref(false)
 
 // 查询参数
 const queryParams = reactive({
@@ -75,33 +86,6 @@ const statusMap: Record<
 }
 
 // --- 方法 ---
-
-// 加载部门列表用于映射上级部门名称
-const loadDepartments = async () => {
-  try {
-    console.log('开始加载部门列表...')
-    const res = await getDepartmentList({ pageNum: 1, pageSize: 100 })
-    console.log('部门列表 API 响应:', res)
-    if (res && res.data) {
-      departments.value = res.data.records
-      console.log('已加载部门列表，共', departments.value.length, '个部门')
-    } else {
-      console.warn('部门列表 API 返回数据为空:', res)
-    }
-  } catch (err) {
-    console.error('加载部门列表失败', err)
-  }
-}
-
-// 获取上级部门名称
-const getParentDepartmentName = (parentId: number | null | undefined) => {
-  if (!parentId || parentId === 0) return '无'
-  const dept = departments.value.find((d) => d.id === parentId)
-  if (!dept) {
-    console.warn(`未找到ID为 ${parentId} 的上级部门，当前已加载部门数：`, departments.value.length)
-  }
-  return dept?.name || `ID: ${parentId}`
-}
 
 // 获取数据
 const fetchData = async () => {
@@ -127,7 +111,7 @@ const fetchData = async () => {
       }
     } else {
       // 构造符合 DepartmentQueryParams 类型的参数（排除 id）
-      const { id: _id, ...apiParams } = queryParams
+      const { id, ...apiParams } = queryParams
       const res = await getDepartmentList(apiParams)
 
       if (res && res.data) {
@@ -184,71 +168,63 @@ const handleEdit = (row: DepartmentVO) => {
   editDialogRef.value?.openDialog(row)
 }
 
-// 删除部门
-const handleDelete = async (row: DepartmentVO) => {
-  if (
-    !(await confirm({
-      title: '确认删除该部门吗？',
-      description: `您正在尝试删除部门：${row.name} (${row.code})。注意：删除后可能影响相关的子部门和关联数据。`,
-      destructive: true,
-    }))
-  )
-    return
+// 点击删除按钮
+const handleDeleteClick = (row: DepartmentVO) => {
+  deptToDelete.value = row
+  deleteDialogOpen.value = true
+}
 
+// 确认删除
+const handleConfirmDelete = async () => {
+  if (!deptToDelete.value) return
+
+  isDeleting.value = true
   try {
-    await deleteDepartment(row.id)
+    await deleteDepartment(deptToDelete.value.id)
     console.log('删除成功')
-    success('删除成功')
-    handleRefresh()
-  } catch (err: unknown) {
+    deleteDialogOpen.value = false
+    alert('删除成功')
+    // 刷新列表
+    fetchData()
+  } catch (err: any) {
     console.error('删除失败', err)
-    error(extractErrorMessage(err, '删除失败，该部门下可能还有子部门或关联数据'))
+    // 这里可以用 Toast，或者简单的 alert
+    alert(err.message || '删除失败，该部门下可能还有子部门或关联数据')
+  } finally {
+    isDeleting.value = false
   }
 }
-
-// 刷新数据（包括部门列表和表格数据）
-const handleRefresh = async () => {
-  await loadDepartments()
-  fetchData()
-}
-
 //启用部门逻辑
 const handleEnable = async (row: DepartmentVO) => {
   try {
+    // 调用接口
     await enableDepartment(row.id)
     console.log('部门启用成功')
-    success('部门启用成功')
-    handleRefresh()
-  } catch (err: unknown) {
+    alert('部门启用成功')
+
+    // 刷新列表，状态应变为 ACTIVE
+    fetchData()
+  } catch (err: any) {
     console.error('启用失败', err)
-    error(extractErrorMessage(err, '启用失败'))
+    alert(err.message || '启用失败')
   }
 }
 //弃用部门逻辑
 const handleDisable = async (row: DepartmentVO) => {
-  if (
-    !(await confirm({
-      title: '禁用部门',
-      description: '确定要禁用该部门吗？',
-      destructive: true,
-    }))
-  )
-    return
+  if (!confirm('确定要禁用该部门吗？')) return
 
   try {
     await disableDepartment(row.id)
     console.log('部门禁用成功')
-    success('部门禁用成功')
-    handleRefresh()
-  } catch (err: unknown) {
+    fetchData() // 刷新列表，状态变为 DISABLED
+  } catch (err: any) {
     console.error('禁用失败', err)
-    error(extractErrorMessage(err, '禁用失败'))
+    alert(err.message || '禁用失败')
   }
 }
 
 // 初始化
-onMounted(async () => {
-  await loadDepartments()
+onMounted(() => {
   fetchData()
 })
 </script>
@@ -334,7 +310,7 @@ onMounted(async () => {
             <TableHead>部门编码</TableHead>
             <TableHead>部门名称</TableHead>
             <TableHead>简称</TableHead>
-            <TableHead>上级部门</TableHead>
+            <TableHead>上级ID</TableHead>
             <TableHead>状态</TableHead>
             <TableHead>创建时间</TableHead>
             <TableHead class="text-right">操作</TableHead>
@@ -364,7 +340,7 @@ onMounted(async () => {
             <TableCell>{{ item.name }}</TableCell>
             <TableCell>{{ item.shortName || '-' }}</TableCell>
             <TableCell class="text-muted-foreground">
-              {{ getParentDepartmentName(item.parentId) }}
+              {{ item.parentId === 0 ? '顶级' : item.parentId }}
             </TableCell>
             <TableCell>
               <Badge v-if="statusMap[item.status]" :variant="statusMap[item.status]?.variant">
@@ -411,7 +387,7 @@ onMounted(async () => {
                   size="sm"
                   title="删除部门"
                   class="text-red-600 hover:text-red-700 hover:bg-red-50"
-                  @click="handleDelete(item)"
+                  @click="handleDeleteClick(item)"
                 >
                   <Trash2 class="h-4 w-4" />删除
                 </Button>
@@ -446,6 +422,35 @@ onMounted(async () => {
     </div>
 
     <!-- 挂载弹窗，success 事件触发刷新 -->
-    <DepartmentEditDialog ref="editDialogRef" @success="handleRefresh" />
+    <!-- 删除确认弹窗 -->
+    <AlertDialog :open="deleteDialogOpen" @update:open="(v) => (deleteDialogOpen = v)">
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle class="flex items-center gap-2 text-red-600">
+            <AlertTriangle class="h-5 w-5" />
+            确认删除该部门吗？
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            您正在尝试删除部门：<span class="font-bold text-black">{{ deptToDelete?.name }}</span>
+            ({{ deptToDelete?.code }})。
+            <br />
+            <span class="text-red-500 text-xs mt-2 block"
+              >注意：通常需要先删除或转移该部门下的所有子部门和人员才能删除成功。</span
+            >
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel :disabled="isDeleting">取消</AlertDialogCancel>
+          <AlertDialogAction
+            :disabled="isDeleting"
+            class="bg-red-600 hover:bg-red-700 text-white"
+            @click.prevent="handleConfirmDelete"
+          >
+            {{ isDeleting ? '删除中...' : '确认删除' }}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    <DepartmentEditDialog ref="editDialogRef" @success="fetchData" />
   </div>
 </template>

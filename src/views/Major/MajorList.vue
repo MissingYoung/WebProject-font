@@ -4,7 +4,7 @@ import { getMajorList, deleteMajor, enableMajor, disableMajor, getDepartmentList
 import type { MajorVO, MajorQueryParams, DegreeLevel, DepartmentVO } from '@/types'
 import { formatDate } from '@/lib/date'
 import MajorEditDialog from '@/components/Major/MajorEditDialog.vue'
-import { useNotification } from '@/composables/useNotification'
+import { toast } from 'vue-sonner'
 
 // UI 组件
 import { Button } from '@/components/ui/button'
@@ -40,7 +40,7 @@ import {
   PauseCircle,
 } from 'lucide-vue-next'
 import {
-AlertDialog,
+  AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
@@ -48,9 +48,7 @@ AlertDialog,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-}} from '@/components/ui/alert-dialog'
-
-const { success, error, info } = useNotification()
+} from '@/components/ui/alert-dialog'
 
 // --- 状态管理 ---
 const isLoading = ref(false)
@@ -137,7 +135,7 @@ const fetchData = async () => {
   } catch (error: unknown) {
     console.error('获取专业数据失败', error)
     const message = error instanceof Error ? error.message : '获取专业列表失败'
-    error(message)
+    toast.error(message)
     tableData.value = []
     total.value = 0
   } finally {
@@ -199,12 +197,12 @@ const handleConfirmDelete = async () => {
   isDeleting.value = true
   try {
     await deleteMajor(majorToDelete.value.id)
-    success('专业删除成功')
+    toast.success('专业删除成功')
     deleteDialogOpen.value = false
     fetchData()
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : '删除失败'
-    error(message)
+    toast.error(message)
   } finally {
     isDeleting.value = false
   }
@@ -214,11 +212,11 @@ const handleConfirmDelete = async () => {
 const handleEnable = async (row: MajorVO) => {
   try {
     await enableMajor(row.id)
-    success('专业启用成功')
+    toast.success('专业启用成功')
     fetchData()
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : '启用失败'
-    error(message)
+    toast.error(message)
   }
 }
 
@@ -226,11 +224,11 @@ const handleEnable = async (row: MajorVO) => {
 const handleDisable = async (row: MajorVO) => {
   try {
     await disableMajor(row.id)
-    success('专业禁用成功')
+    toast.success('专业禁用成功')
     fetchData()
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : '禁用失败'
-    error(message)
+    toast.error(message)
   }
 }
 

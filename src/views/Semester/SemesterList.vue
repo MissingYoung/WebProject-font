@@ -3,7 +3,7 @@ import { reactive, ref, onMounted } from 'vue'
 import { getSemesterList, deleteSemester, setCurrentSemester } from '@/lib/api'
 import type { SemesterVO, SemesterQueryParams } from '@/types'
 import SemesterEditDialog from '@/components/Semester/SemesterEditDialog.vue'
-import { useNotification } from '@/composables/useNotification'
+import { toast } from 'vue-sonner'
 
 // UI 组件
 import { Button } from '@/components/ui/button'
@@ -38,7 +38,7 @@ import {
   CheckCircle,
 } from 'lucide-vue-next'
 import {
-AlertDialog,
+  AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
@@ -46,9 +46,7 @@ AlertDialog,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-}} from '@/components/ui/alert-dialog'
-
-const { success, error, info } = useNotification()
+} from '@/components/ui/alert-dialog'
 
 // --- 状态管理 ---
 const isLoading = ref(false)
@@ -108,7 +106,7 @@ const fetchData = async () => {
   } catch (error: unknown) {
     console.error('获取学期数据失败', error)
     const message = error instanceof Error ? error.message : '获取学期列表失败'
-    error(message)
+    toast.error(message)
     tableData.value = []
     total.value = 0
   } finally {
@@ -169,12 +167,12 @@ const handleConfirmDelete = async () => {
   isDeleting.value = true
   try {
     await deleteSemester(semesterToDelete.value.id)
-    success('学期删除成功')
+    toast.success('学期删除成功')
     deleteDialogOpen.value = false
     fetchData()
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : '删除失败'
-    error(message)
+    toast.error(message)
   } finally {
     isDeleting.value = false
   }
@@ -193,12 +191,12 @@ const handleConfirmSetCurrent = async () => {
   isSettingCurrent.value = true
   try {
     await setCurrentSemester(semesterToSetCurrent.value.id)
-    success('当前学期设置成功')
+    toast.success('当前学期设置成功')
     setCurrentDialogOpen.value = false
     fetchData()
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : '设置失败'
-    error(message)
+    toast.error(message)
   } finally {
     isSettingCurrent.value = false
   }

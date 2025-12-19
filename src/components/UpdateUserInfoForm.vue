@@ -64,8 +64,8 @@ onMounted(async () => {
   try {
     const res = await getUserInfo(userId)
     userRole.value = res?.data?.role || ''
-  } catch (e: unknown) {
-    console.warn('获取用户信息失败：', e instanceof Error ? e.message : '未知错误')
+  } catch (e: any) {
+    console.warn('获取用户信息失败：', e?.message)
   } finally {
     isLoadingUserInfo.value = false
   }
@@ -87,18 +87,14 @@ const handleUpdate = async () => {
   }
   try {
     const result = await submit(formData)
-    if (result && typeof result === 'object' && 'code' in result && result.code === 200) {
+    if (result && (result as any).code === 200) {
       alert('用户信息更新成功！')
       router.back()
     } else if (!error.value) {
-      const message =
-        result && typeof result === 'object' && 'message' in result
-          ? String(result.message)
-          : '更新失败,请检查输入信息'
-      error.value = message
+      error.value = (result && (result as any).message) || '更新失败,请检查输入信息'
     }
-  } catch (err: unknown) {
-    error.value = err instanceof Error ? err.message : '提交过程中发生异常'
+  } catch (err: any) {
+    error.value = err?.message || '提交过程中发生异常'
   }
 }
 </script>

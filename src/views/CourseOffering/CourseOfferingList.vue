@@ -40,7 +40,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { useNotification } from '@/composables/useNotification'
+import { toast } from 'vue-sonner'
 import { formatDate } from '@/lib/date'
 import type { CourseOfferingVO, SemesterVO, CourseType, CourseOfferingStatus } from '@/types'
 import {
@@ -54,8 +54,6 @@ import {
   getSemesterList,
 } from '@/lib/api'
 import CourseOfferingEditDialog from '@/components/CourseOffering/CourseOfferingEditDialog.vue'
-
-const { success, error, info } = useNotification()
 
 // 状态映射
 const statusMap: Record<
@@ -128,7 +126,7 @@ const fetchData = async () => {
     }
   } catch (err: unknown) {
     console.error('获取开课列表失败', err)
-    error('获取数据失败，请重试')
+    toast.error('获取数据失败，请重试')
   } finally {
     isLoading.value = false
   }
@@ -188,12 +186,12 @@ const handleConfirmDelete = async () => {
   isDeleting.value = true
   try {
     await deleteCourseOffering(itemToDelete.value.id)
-    success('删除成功')
+    toast.success('删除成功')
     deleteDialogOpen.value = false
     fetchData()
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : '删除失败'
-    error(message)
+    toast.error(message)
   } finally {
     isDeleting.value = false
   }
@@ -203,55 +201,55 @@ const handleConfirmDelete = async () => {
 const handleSetDraft = async (row: CourseOfferingVO) => {
   try {
     await setCourseOfferingDraft(row.id)
-    success('已设为草稿')
+    toast.success('已设为草稿')
     fetchData()
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : '操作失败'
-    error(message)
+    toast.error(message)
   }
 }
 
 const handleSetScheduling = async (row: CourseOfferingVO) => {
   try {
     await setCourseOfferingScheduling(row.id)
-    success('已进入排课阶段')
+    toast.success('已进入排课阶段')
     fetchData()
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : '操作失败'
-    error(message)
+    toast.error(message)
   }
 }
 
 const handleOpenEnrollment = async (row: CourseOfferingVO) => {
   try {
     await setCourseOfferingEnrollmentOpen(row.id)
-    success('已开放选课')
+    toast.success('已开放选课')
     fetchData()
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : '操作失败'
-    error(message)
+    toast.error(message)
   }
 }
 
 const handleCloseEnrollment = async (row: CourseOfferingVO) => {
   try {
     await setCourseOfferingEnrollmentClosed(row.id)
-    success('已关闭选课')
+    toast.success('已关闭选课')
     fetchData()
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : '操作失败'
-    error(message)
+    toast.error(message)
   }
 }
 
 const handleArchive = async (row: CourseOfferingVO) => {
   try {
     await setCourseOfferingArchived(row.id)
-    success('已归档')
+    toast.success('已归档')
     fetchData()
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : '操作失败'
-    error(message)
+    toast.error(message)
   }
 }
 

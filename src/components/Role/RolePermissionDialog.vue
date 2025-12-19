@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue'
 import { getAllPermissions, getRolePermissions, assignRolePermissions } from '@/lib/api'
 import type { RoleVO, PermissionVO } from '@/types'
-import { useNotification } from '@/composables/useNotification'
+import { toast } from 'vue-sonner'
 
 // UI 组件
 import { Button } from '@/components/ui/button'
@@ -17,8 +17,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Loader2, Shield, Folder, Menu } from 'lucide-vue-next'
-
-const { success: showSuccess, error: showError, info: showInfo } = useNotification()
 
 // --- 类型和事件 ---
 const emit = defineEmits<{
@@ -85,7 +83,7 @@ const openDialog = async (role: RoleVO) => {
     }
   } catch (error) {
     console.error('加载权限数据失败', error)
-    showError('加载权限数据失败')
+    toast.error('加载权限数据失败')
     isOpen.value = false
   } finally {
     isLoading.value = false
@@ -144,12 +142,12 @@ const handleSubmit = async () => {
     await assignRolePermissions(currentRole.value.id, {
       permissionIds: Array.from(selectedPermissionIds.value),
     })
-    showSuccess('权限分配成功')
+    toast.success('权限分配成功')
     closeDialog()
     emit('success')
   } catch (error) {
     console.error('权限分配失败', error)
-    showError(error instanceof Error ? error.message : '权限分配失败，请重试')
+    toast.error(error instanceof Error ? error.message : '权限分配失败，请重试')
   } finally {
     isSubmitting.value = false
   }

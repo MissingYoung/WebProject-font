@@ -29,16 +29,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { useNotification } from '@/composables/useNotification'
-import type { AvailableTeachingClassVO, SemesterVO, CourseType, CourseEnrollmentVO } from '@/types'
+import { toast } from 'vue-sonner'
+import type { AvailableTeachingClassVO, SemesterVO, CourseType } from '@/types'
 import {
-getAvailableTeachingClasses,
+  getAvailableTeachingClasses,
   enrollCourse,
   getSemesterList,
   getMyEnrollments,
-}} from '@/lib/api'
-
-const { success, error, info } = useNotification()
+} from '@/lib/api'
 
 // 课程类型映射
 const courseTypeMap: Record<string, string> = {
@@ -93,13 +91,11 @@ const loadEnrolledCourses = async () => {
     const res = await getMyEnrollments({ pageNum: 1, pageSize: 100 })
     if (res?.data) {
       enrolledCourseNames.value = res.data.records
-        .filter((item: CourseEnrollmentVO) => item.status === 'SELECTED')
-        .map((item: CourseEnrollmentVO) => item.courseName)
-        .filter((name): name is string => name !== undefined)
+        .filter((item: any) => item.status === 'SELECTED')
+        .map((item: any) => item.courseName)
       droppedCourseNames.value = res.data.records
-        .filter((item: CourseEnrollmentVO) => item.status === 'DROPPED')
-        .map((item: CourseEnrollmentVO) => item.courseName)
-        .filter((name): name is string => name !== undefined)
+        .filter((item: any) => item.status === 'DROPPED')
+        .map((item: any) => item.courseName)
     }
   } catch (err: unknown) {
     console.error('加载选课信息失败', err)
@@ -190,7 +186,7 @@ const handleConfirmEnroll = async () => {
   isEnrolling.value = true
   try {
     await enrollCourse({ teachingClassId: itemToEnroll.value.id })
-    success('选课成功')
+    toast.success('选课成功')
     enrollDialogOpen.value = false
     // 选课成功后重新加载已选课程，实时更新按钮状态
     await loadEnrolledCourses()
@@ -212,12 +208,12 @@ const formatCapacity = (enrolled?: number, capacity?: number) => {
 
 // 检查课程是否已选
 const isCourseEnrolled = (row: AvailableTeachingClassVO): boolean => {
-  return row.courseName ? enrolledCourseNames.value.includes(row.courseName) : false
+  return enrolledCourseNames.value.includes(row.courseName)
 }
 
 // 检查课程是否已退
 const isCourseDrooped = (row: AvailableTeachingClassVO): boolean => {
-  return row.courseName ? droppedCourseNames.value.includes(row.courseName) : false
+  return droppedCourseNames.value.includes(row.courseName)
 }
 
 // 是否可选

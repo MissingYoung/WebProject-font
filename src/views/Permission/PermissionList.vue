@@ -3,7 +3,7 @@ import { reactive, ref, onMounted } from 'vue'
 import { getPermissionList } from '@/lib/api'
 import type { PermissionVO, PermissionQueryParams } from '@/types'
 import { formatDate } from '@/lib/date'
-import { useNotification } from '@/composables/useNotification'
+import { toast } from 'vue-sonner'
 
 // UI 组件
 import { Button } from '@/components/ui/button'
@@ -34,8 +34,6 @@ import {
   Folder,
   Menu,
 } from 'lucide-vue-next'
-
-const { success: showSuccess, error: showError, info: showInfo } = useNotification()
 
 // --- 状态管理 ---
 const isLoading = ref(false)
@@ -82,7 +80,7 @@ const fetchData = async () => {
     }
   } catch (error) {
     console.error('获取权限数据失败', error)
-    showError('获取权限数据失败，请重试')
+    toast.error('获取权限数据失败，请重试')
     tableData.value = []
     total.value = 0
   } finally {

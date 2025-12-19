@@ -29,7 +29,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { useNotification } from '@/composables/useNotification'
+import { toast } from 'vue-sonner'
 import type { ProgramCourseRequirementVO, MajorVO, CourseType } from '@/types'
 import {
   getProgramCourseRequirementList,
@@ -37,8 +37,6 @@ import {
   getMajorList,
 } from '@/lib/api'
 import ProgramRequirementEditDialog from '@/components/ProgramCourseRequirement/ProgramRequirementEditDialog.vue'
-
-const { success, error, info } = useNotification()
 
 // 课程类型映射
 const courseTypeMap: Record<
@@ -101,7 +99,7 @@ const fetchData = async () => {
     }
   } catch (err: unknown) {
     console.error('获取培养计划列表失败', err)
-    error('获取数据失败，请重试')
+    toast.error('获取数据失败，请重试')
   } finally {
     isLoading.value = false
   }
@@ -160,12 +158,12 @@ const handleConfirmDelete = async () => {
   isDeleting.value = true
   try {
     await deleteProgramCourseRequirement(itemToDelete.value.id)
-    success('删除成功')
+    toast.success('删除成功')
     deleteDialogOpen.value = false
     fetchData()
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : '删除失败'
-    error(message)
+    toast.error(message)
   } finally {
     isDeleting.value = false
   }
