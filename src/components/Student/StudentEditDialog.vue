@@ -1,7 +1,18 @@
 <script setup lang="ts">
 import { reactive, ref, watch } from 'vue'
-import { updateStudentInfo, getDepartmentList, getMajorList } from '@/lib/api'
-import type { StudentVO, UpdateStudentInfoRequest, DepartmentVO, MajorVO } from '@/types'
+import {
+  getAdministrativeClassList,
+  getDepartmentList,
+  getMajorList,
+  updateStudentInfo,
+} from '@/lib/api'
+import type {
+  AdministrativeClassVO,
+  StudentVO,
+  UpdateStudentInfoRequest,
+  DepartmentVO,
+  MajorVO,
+} from '@/types'
 import { Loader2 } from 'lucide-vue-next'
 
 // Shadcn UI 组件
@@ -37,8 +48,10 @@ const currentStudent = ref<StudentVO | null>(null)
 // 下拉选项数据
 const departments = ref<DepartmentVO[]>([])
 const majors = ref<MajorVO[]>([])
+const administrativeClasses = ref<AdministrativeClassVO[]>([])
 const isLoadingDepartments = ref(false)
 const isLoadingMajors = ref(false)
+const isLoadingAdministrativeClasses = ref(false)
 
 // 初始数据
 const initialState: UpdateStudentInfoRequest = {
@@ -89,6 +102,26 @@ const loadMajors = async (departmentId?: number) => {
   }
 }
 
+// 加载行政班列表（可按专业/入学年份筛选）
+const loadAdministrativeClasses = async (majorId?: number, entryYear?: number) => {
+  isLoadingAdministrativeClasses.value = true
+  try {
+    const res = await getAdministrativeClassList({
+      pageNum: 1,
+      pageSize: 200,
+      majorId: majorId || undefined,
+      entryYear: entryYear || undefined,
+      status: 'ACTIVE',
+    })
+    administrativeClasses.value = res?.data?.records || []
+  } catch (err) {
+    console.error('加载行政班列表失败', err)
+    administrativeClasses.value = []
+  } finally {
+    isLoadingAdministrativeClasses.value = false
+  }
+}
+
 // 监听部门变化，重新加载专业
 watch(
   () => formData.departmentId,
@@ -100,6 +133,19 @@ watch(
         formData.majorId = 0
       }
     }
+  }
+)
+
+// 监听专业/入学年份变化，刷新行政班下拉选项
+watch(
+  () => [formData.majorId, formData.entryYear] as const,
+  ([majorId, entryYear]) => {
+    if (!majorId) {
+      administrativeClasses.value = []
+      formData.administrativeClassId = undefined
+      return
+    }
+    loadAdministrativeClasses(majorId, entryYear)
   }
 )
 
@@ -123,6 +169,7 @@ const openDialog = (student: StudentVO) => {
   if (student.departmentId) {
     loadMajors(student.departmentId)
   }
+  if (!student.majorId) administrativeClasses.value = []
 }
 
 defineExpose({ openDialog })
@@ -207,15 +254,32 @@ const handleSubmit = async () => {
           </Select>
         </div>
 
-        <!-- 3. 行政班ID & 入学年份 -->
+        <!-- 3. 行政班 & 入学年份 -->
         <div class="grid grid-cols-2 gap-4">
           <div class="grid gap-2">
-            <Label>行政班 ID</Label>
-            <Input
-              v-model.number="formData.administrativeClassId"
-              type="number"
-              placeholder="行政班 ID"
-            />
+            <Label>行政班</Label>
+            <Select
+              :model-value="
+                formData.administrativeClassId
+                  ? String(formData.administrativeClassId)
+                  : 'UNASSIGNED'
+              "
+              @update:model-value="
+                (v) => (formData.administrativeClassId = v === 'UNASSIGNED' ? undefined : Number(v))
+              "
+            >
+              <SelectTrigger :disabled="isLoadingAdministrativeClasses || !formData.majorId">
+                <SelectValue
+                  :placeholder="formData.majorId ? '请选择行政班（可选）' : '请先选择专业'"
+                />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="UNASSIGNED">未分班</SelectItem>
+                <SelectItem v-for="c in administrativeClasses" :key="c.id" :value="String(c.id)">
+                  {{ c.code }} - {{ c.name }}
+                </SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div class="grid gap-2">
             <Label>入学年份</Label>

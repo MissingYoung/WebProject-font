@@ -24,6 +24,8 @@ const { confirm, success, error } = useNotification()
 const isUploading = ref(false)
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const isLoggingInDemoAdmin = ref(false)
+const isLoggingInDemoStudent = ref(false)
+const isLoggingInDemoTeacher = ref(false)
 
 const goToProfile = () => {
   router.push({ name: 'UserProfile' })
@@ -100,6 +102,108 @@ const handleDemoAdminLogin = async () => {
     error(message)
   } finally {
     isLoggingInDemoAdmin.value = false
+  }
+}
+
+const handleDemoStudentLogin = async () => {
+  const confirmed = userStore.isLoggedIn
+    ? await confirm({
+        title: '切换为演示学生',
+        description: '将退出当前账号，并使用演示用学生账号登录，是否继续？',
+      })
+    : true
+
+  if (!confirmed) return
+
+  isLoggingInDemoStudent.value = true
+  try {
+    if (userStore.isLoggedIn) {
+      await userStore.logout()
+    }
+
+    const result = await login({ sduId: '202500011111', password: '123456' })
+    if (!result?.data) {
+      throw new Error('登录服务响应异常，请稍后重试')
+    }
+
+    const { token, username } = result.data
+    const miniUserInfo: UserInfo = {
+      id: result.data.userId,
+      username: username,
+      sduId: '202500011111',
+      realName: result.data.realName || '',
+      role: result.data.role,
+      avatarUrl: '',
+      gender: 'UNKNOWN',
+      birthday: '',
+      phone: '',
+      email: '',
+      ethnic: '',
+      politicalStatus: '',
+      description: '',
+    }
+
+    userStore.setUser({ token, user: miniUserInfo })
+    await userStore.fetchMenuTree()
+
+    success('已使用演示用学生登录')
+    await router.push({ name: 'Dashboard' })
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : '登录失败，请稍后重试'
+    error(message)
+  } finally {
+    isLoggingInDemoStudent.value = false
+  }
+}
+
+const handleDemoTeacherLogin = async () => {
+  const confirmed = userStore.isLoggedIn
+    ? await confirm({
+        title: '切换为演示教师',
+        description: '将退出当前账号，并使用演示用教师账号登录，是否继续？',
+      })
+    : true
+
+  if (!confirmed) return
+
+  isLoggingInDemoTeacher.value = true
+  try {
+    if (userStore.isLoggedIn) {
+      await userStore.logout()
+    }
+
+    const result = await login({ sduId: '202300011111', password: '123456' })
+    if (!result?.data) {
+      throw new Error('登录服务响应异常，请稍后重试')
+    }
+
+    const { token, username } = result.data
+    const miniUserInfo: UserInfo = {
+      id: result.data.userId,
+      username: username,
+      sduId: '202300011111',
+      realName: result.data.realName || '',
+      role: result.data.role,
+      avatarUrl: '',
+      gender: 'UNKNOWN',
+      birthday: '',
+      phone: '',
+      email: '',
+      ethnic: '',
+      politicalStatus: '',
+      description: '',
+    }
+
+    userStore.setUser({ token, user: miniUserInfo })
+    await userStore.fetchMenuTree()
+
+    success('已使用演示用教师登录')
+    await router.push({ name: 'Dashboard' })
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : '登录失败，请稍后重试'
+    error(message)
+  } finally {
+    isLoggingInDemoTeacher.value = false
   }
 }
 
@@ -192,6 +296,28 @@ const handleFileSelected = async (event: Event) => {
 
       <!-- 个人资料下拉菜单 -->
       <div class="flex items-center gap-2">
+        <Button
+          variant="outline"
+          class="whitespace-nowrap"
+          :disabled="isLoggingInDemoStudent"
+          title="使用 202500011111 / 123456 登录"
+          @click="handleDemoStudentLogin"
+        >
+          <Loader2 v-if="isLoggingInDemoStudent" class="mr-2 h-4 w-4 animate-spin" />
+          <Shield v-else class="mr-2 h-4 w-4" />
+          演示学生
+        </Button>
+        <Button
+          variant="outline"
+          class="whitespace-nowrap"
+          :disabled="isLoggingInDemoTeacher"
+          title="使用 202300011111 / 123456 登录"
+          @click="handleDemoTeacherLogin"
+        >
+          <Loader2 v-if="isLoggingInDemoTeacher" class="mr-2 h-4 w-4 animate-spin" />
+          <Shield v-else class="mr-2 h-4 w-4" />
+          演示教师
+        </Button>
         <Button
           variant="secondary"
           class="whitespace-nowrap"

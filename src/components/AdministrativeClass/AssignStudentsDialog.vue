@@ -35,6 +35,7 @@ import {
   getAdministrativeClassList,
   getMajorList,
   getStudentList,
+  removeStudentsFromAdministrativeClass,
 } from '@/lib/api'
 
 const { success, error: notifyError } = useNotification()
@@ -45,7 +46,8 @@ const emit = defineEmits<{
 
 const open = ref(false)
 const error = ref<string | null>(null)
-const isSubmitting = ref(false)
+const submittingAction = ref<'assign' | 'remove' | null>(null)
+const isSubmitting = computed(() => submittingAction.value !== null)
 
 const administrativeClasses = ref<AdministrativeClassVO[]>([])
 const majors = ref<MajorVO[]>([])
@@ -75,6 +77,30 @@ const isAllSelectedOnPage = computed(() => {
 })
 
 const selectedCount = computed(() => selectedStudentIds.value.size)
+
+const majorLabelById = computed(() => {
+  const map = new Map<number, string>()
+  for (const m of majors.value) map.set(m.id, m.name)
+  return map
+})
+
+const administrativeClassLabelById = computed(() => {
+  const map = new Map<number, string>()
+  for (const c of administrativeClasses.value) map.set(c.id, `${c.code} - ${c.name}`)
+  return map
+})
+
+const getMajorLabel = (majorId?: number) => {
+  if (!majorId) return '-'
+  return majorLabelById.value.get(majorId) || `ID: ${majorId}`
+}
+
+const getAdministrativeClassLabel = (administrativeClassId?: number) => {
+  if (!administrativeClassId) return '未分班'
+  return (
+    administrativeClassLabelById.value.get(administrativeClassId) || `ID: ${administrativeClassId}`
+  )
+}
 
 const loadAdministrativeClasses = async () => {
   try {
@@ -183,6 +209,51 @@ const nextPage = () => {
   fetchStudents()
 }
 
+const buildFailureSummary = (data: unknown): string | null => {
+  if (!data || typeof data !== 'object') return null
+  const anyData = data as any
+
+  const detailsCandidates = [
+    anyData.failedStudents,
+    anyData.failedDetails,
+    anyData.failures,
+    anyData.failedStudentInfos,
+  ]
+  const details = detailsCandidates.find((v) => Array.isArray(v)) as any[] | undefined
+  if (details && details.length > 0) {
+    const items = details
+      .slice(0, 5)
+      .map((d) => {
+        if (!d || typeof d !== 'object') return null
+        const studentId = (d as any).studentId ?? (d as any).id
+        const reason = (d as any).reason ?? (d as any).message ?? (d as any).error
+        if (studentId == null) return null
+        return reason ? `${studentId}（${reason}）` : String(studentId)
+      })
+      .filter(Boolean) as string[]
+
+    if (items.length > 0) return `失败：${items.join('、')}${details.length > 5 ? '…' : ''}`
+  }
+
+  if (Array.isArray(anyData.failedStudentIds) && anyData.failedStudentIds.length > 0) {
+    const ids = anyData.failedStudentIds as number[]
+    return `失败学生ID：${ids.slice(0, 10).join(', ')}${ids.length > 10 ? '…' : ''}`
+  }
+
+  if (anyData.failureReasons && typeof anyData.failureReasons === 'object') {
+    const entries = Object.entries(anyData.failureReasons as Record<string, string>)
+    if (entries.length > 0) {
+      const items = entries
+        .slice(0, 5)
+        .map(([id, reason]) => `${id}（${reason}）`)
+        .join('、')
+      return `失败：${items}${entries.length > 5 ? '…' : ''}`
+    }
+  }
+
+  return null
+}
+
 const handleSubmit = async () => {
   if (!state.administrativeClassId) {
     error.value = '请选择目标行政班'
@@ -193,7 +264,7 @@ const handleSubmit = async () => {
     return
   }
 
-  isSubmitting.value = true
+  submittingAction.value = 'assign'
   error.value = null
   try {
     const payload = {
@@ -209,7 +280,37 @@ const handleSubmit = async () => {
     error.value = message
     notifyError(message)
   } finally {
-    isSubmitting.value = false
+    submittingAction.value = null
+  }
+}
+
+const handleRemove = async () => {
+  if (!state.administrativeClassId) {
+    error.value = '请选择目标行政班'
+    return
+  }
+  if (selectedStudentIds.value.size === 0) {
+    error.value = '请先选择要移出的学生'
+    return
+  }
+
+  submittingAction.value = 'remove'
+  error.value = null
+  try {
+    const res = await removeStudentsFromAdministrativeClass(state.administrativeClassId, {
+      studentIds: Array.from(selectedStudentIds.value),
+    })
+    success(`移出完成：成功 ${res.data.successCount}，失败 ${res.data.failureCount}`)
+    const failureSummary = buildFailureSummary(res.data)
+    if (res.data.failureCount > 0 && failureSummary) notifyError(failureSummary)
+    open.value = false
+    emit('success')
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : '移出失败'
+    error.value = message
+    notifyError(message)
+  } finally {
+    submittingAction.value = null
   }
 }
 
@@ -225,8 +326,10 @@ watch(
   <Dialog :open="open" @update:open="(v) => (open = v)">
     <DialogContent class="sm:max-w-[900px]">
       <DialogHeader>
-        <DialogTitle>分配学生到行政班</DialogTitle>
-        <DialogDescription>从学生列表选择若干学生，批量分配到目标行政班。</DialogDescription>
+        <DialogTitle>分配/移出行政班学生</DialogTitle>
+        <DialogDescription>
+          从学生列表选择若干学生，可批量分配到目标行政班，或从目标行政班移出（变为未分班）。
+        </DialogDescription>
       </DialogHeader>
 
       <Alert v-if="error" variant="destructive" class="mb-4">
@@ -316,8 +419,8 @@ watch(
                 <TableHead class="w-28">选择</TableHead>
                 <TableHead>学工号</TableHead>
                 <TableHead>姓名</TableHead>
-                <TableHead>专业ID</TableHead>
-                <TableHead>行政班ID</TableHead>
+                <TableHead>专业</TableHead>
+                <TableHead>行政班</TableHead>
                 <TableHead>入学年份</TableHead>
                 <TableHead>年级</TableHead>
               </TableRow>
@@ -342,8 +445,8 @@ watch(
                 </TableCell>
                 <TableCell>{{ s.sduId || '-' }}</TableCell>
                 <TableCell>{{ s.realName || '-' }}</TableCell>
-                <TableCell>{{ s.majorId || '-' }}</TableCell>
-                <TableCell>{{ s.administrativeClassId || '-' }}</TableCell>
+                <TableCell>{{ getMajorLabel(s.majorId) }}</TableCell>
+                <TableCell>{{ getAdministrativeClassLabel(s.administrativeClassId) }}</TableCell>
                 <TableCell>{{ s.entryYear || '-' }}</TableCell>
                 <TableCell>{{ s.gradeLevel || '-' }}</TableCell>
               </TableRow>
@@ -381,8 +484,11 @@ watch(
 
       <DialogFooter>
         <Button variant="outline" :disabled="isSubmitting" @click="open = false">取消</Button>
+        <Button variant="destructive" :disabled="isSubmitting" @click="handleRemove">
+          {{ submittingAction === 'remove' ? '移出中...' : '移出所选' }}
+        </Button>
         <Button :disabled="isSubmitting" @click="handleSubmit">
-          {{ isSubmitting ? '提交中...' : '确认分配' }}
+          {{ submittingAction === 'assign' ? '提交中...' : '确认分配' }}
         </Button>
       </DialogFooter>
     </DialogContent>

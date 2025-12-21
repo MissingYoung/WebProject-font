@@ -79,8 +79,11 @@ const option = computed(() => {
     },
     legend: {
       data: props.showTeachers && hasTeacherData ? ['学生数', '教师数'] : ['学生数'],
+      top: 8,
+      left: 'center',
     },
     grid: {
+      top: 56,
       left: '3%',
       right: '4%',
       bottom: '3%',

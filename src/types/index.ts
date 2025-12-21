@@ -622,6 +622,25 @@ export interface AssignStudentsResultVO {
   failedStudentIds?: number[]
 }
 
+// 批量移出行政班学生请求（变为未分班）
+export interface RemoveAdministrativeClassStudentsPayload {
+  studentIds: number[] // 学生 ID 列表
+}
+
+export interface RemoveAdministrativeClassStudentsFailureDetail {
+  studentId: number
+  reason: string
+}
+
+// 批量移出行政班学生结果
+export interface RemoveAdministrativeClassStudentsResultVO {
+  successCount: number
+  failureCount: number
+  failedStudentIds?: number[]
+  failedStudents?: RemoveAdministrativeClassStudentsFailureDetail[]
+  failureReasons?: Record<number, string>
+}
+
 // 随机分班请求
 export interface RandomAssignStudentsPayload {
   administrativeClassIds: number[] // 目标行政班 ID 列表
@@ -734,6 +753,7 @@ export interface TeachingClassVO {
   termOrder?: number
   createTime?: string
   updateTime?: string
+  schedules?: TeachingClassScheduleVO[] | null
 }
 
 // 教学班查询参数
@@ -827,6 +847,24 @@ export interface FailureInfo {
   courseName?: string
   teacherName?: string
   reason?: string
+}
+
+// 自动排课请求
+export interface AutoSchedulePreferences {
+  weeklyHours?: number
+  sectionsPerClass?: number
+  preferredWeekDays?: number[]
+  preferredSections?: number[]
+  allowWeekend?: boolean
+  allowEvening?: boolean
+}
+
+export interface AutoScheduleRequest {
+  semesterId: number
+  teachingClassIds: number[]
+  preferences?: AutoSchedulePreferences
+  // 兼容后端可能支持的扩展参数
+  courseOfferingId?: number
 }
 
 // --- 选课窗口 (CourseSelectionWindow) ---
@@ -1223,4 +1261,92 @@ export interface SystemActivity {
   date: string // YYYY-MM-DD
   newUsers: number
   activeWindows: number
+}
+
+// --- 教师端：班级与课程概览 ---
+
+export interface TeacherDashboardVO {
+  userId: number
+  teacherId: number
+  teacherName: string
+  semester: SemesterVO | null
+  stats: TeacherDashboardStats
+  teachingClasses: TeachingClassVO[]
+  courses: TeacherCourseSummary[]
+  administrativeClasses: AdministrativeClassVO[]
+}
+
+export interface TeacherDashboardStats {
+  teachingClassCount: number
+  courseCount: number
+  administrativeClassCount: number
+  totalEnrolledCount: number
+}
+
+export interface TeacherCourseSummary {
+  courseId: number
+  courseCode: string
+  courseName: string
+  credit: number
+  teachingClassCount: number
+  enrolledCount: number
+}
+
+// --- 学生端：班级与课程情况总览 ---
+
+export interface StudentOverviewUserVO {
+  id: number
+  username: string
+  realName: string
+  sduId: string
+  phone?: string | null
+  email?: string | null
+  avatarUrl?: string | null
+}
+
+export interface StudentOverviewStudentVO {
+  id: number
+  entryYear?: number | null
+  gradeLevel?: number | null
+}
+
+export interface DepartmentLiteVO {
+  id: number
+  code?: string | null
+  name?: string | null
+}
+
+export interface MajorLiteVO {
+  id: number
+  code?: string | null
+  name?: string | null
+}
+
+export interface AdministrativeClassLiteVO {
+  id: number
+  code?: string | null
+  name?: string | null
+  majorId?: number | null
+  majorName?: string | null
+  entryYear?: number | null
+  counselorTeacherId?: number | null
+  counselorName?: string | null
+  studentCount?: number | null
+  status?: AdministrativeClassStatus | null
+}
+
+export interface StudentEnrollmentSummary {
+  courseCount: number
+  totalCredits: string | number
+}
+
+export interface StudentClassCourseOverviewVO {
+  user: StudentOverviewUserVO
+  student: StudentOverviewStudentVO
+  department: DepartmentLiteVO | null
+  major: MajorLiteVO | null
+  administrativeClass: AdministrativeClassLiteVO | null
+  semester: SemesterVO | null
+  enrollmentSummary: StudentEnrollmentSummary
+  enrollments: PageResult<CourseEnrollmentVO>
 }

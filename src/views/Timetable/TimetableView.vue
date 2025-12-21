@@ -95,7 +95,7 @@ const maxSection = computed(() => {
 
 const gridStyle = computed(() => {
   return {
-    gridTemplateColumns: '72px repeat(7, minmax(0, 1fr))',
+    gridTemplateColumns: '88px repeat(7, minmax(0, 1fr))',
     gridTemplateRows: `44px repeat(${maxSection.value}, 56px)`,
   }
 })
@@ -271,11 +271,12 @@ onMounted(async () => {
       <div class="border rounded-lg bg-card overflow-hidden">
         <div class="grid" :style="gridStyle">
           <!-- Header left -->
-          <div class="border-b bg-muted/40"></div>
+          <div class="border-b bg-muted/40" :style="{ gridColumnStart: 1, gridRowStart: 1 }"></div>
           <div
             v-for="(label, idx) in weekDayLabels"
             :key="label"
             class="border-b border-l px-3 py-2 text-sm font-medium bg-muted/40"
+            :style="{ gridColumnStart: idx + 2, gridRowStart: 1 }"
           >
             {{ label }}
             <span class="text-muted-foreground ml-1">({{ idx + 1 }})</span>
@@ -283,10 +284,18 @@ onMounted(async () => {
 
           <!-- Time column -->
           <template v-for="section in maxSection" :key="section">
-            <div class="border-t px-3 py-2 text-sm text-muted-foreground bg-muted/10">
-              第 {{ section }} 节
+            <div
+              class="border-t px-3 py-2 text-sm text-muted-foreground bg-muted/10 whitespace-nowrap"
+              :style="{ gridColumnStart: 1, gridRowStart: section + 1 }"
+            >
+              第{{ section }}节
             </div>
-            <div v-for="d in 7" :key="`${section}-${d}`" class="border-t border-l bg-card"></div>
+            <div
+              v-for="d in 7"
+              :key="`${section}-${d}`"
+              class="border-t border-l bg-card"
+              :style="{ gridColumnStart: d + 1, gridRowStart: section + 1 }"
+            ></div>
           </template>
 
           <!-- Items -->
@@ -317,7 +326,7 @@ onMounted(async () => {
               </div>
               <div class="flex items-center gap-1">
                 <Clock class="h-3.5 w-3.5" />
-                <span>第 {{ item.startSection }}-{{ item.endSection }} 节</span>
+                <span>第{{ item.startSection }}-{{ item.endSection }}节</span>
               </div>
             </div>
           </button>
@@ -340,7 +349,7 @@ onMounted(async () => {
           >
             <div class="font-semibold">{{ item.courseName || item.teachingClassName }}</div>
             <div class="text-sm text-muted-foreground mt-1">
-              第 {{ item.startSection }}-{{ item.endSection }} 节 · {{ item.classroom || '-' }}
+              第{{ item.startSection }}-{{ item.endSection }}节 · {{ item.classroom || '-' }}
             </div>
           </div>
           <div
@@ -364,8 +373,8 @@ onMounted(async () => {
             <div class="flex flex-wrap gap-2 mt-2">
               <Badge variant="outline">第 {{ selectedWeek }} 周</Badge>
               <Badge variant="outline">
-                {{ weekDayLabels[(activeItem?.weekDay || 1) - 1] }} 第
-                {{ activeItem?.startSection }}-{{ activeItem?.endSection }} 节
+                {{ weekDayLabels[(activeItem?.weekDay || 1) - 1] }}
+                第{{ activeItem?.startSection }}-{{ activeItem?.endSection }}节
               </Badge>
               <Badge v-if="activeItem?.startWeek && activeItem?.endWeek" variant="outline">
                 第 {{ activeItem.startWeek }}-{{ activeItem.endWeek }} 周

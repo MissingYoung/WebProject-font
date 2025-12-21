@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { Clock, Loader2, Plus, Search, RotateCcw, Pencil, Trash2 } from 'lucide-vue-next'
+import { Clock, Loader2, Plus, Search, RotateCcw, Pencil, Trash2, Sparkles } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -37,6 +37,7 @@ import {
   getTeachingClassList,
 } from '@/lib/api'
 import ScheduleEditDialog from '@/components/TeachingClassSchedule/ScheduleEditDialog.vue'
+import AutoScheduleDialog from '@/components/TeachingClassSchedule/AutoScheduleDialog.vue'
 import PaginationBar from '@/components/PaginationBar.vue'
 
 const { success, error } = useNotification()
@@ -71,6 +72,7 @@ const queryParams = reactive({
 
 // 弹窗状态
 const editDialogRef = ref<InstanceType<typeof ScheduleEditDialog> | null>(null)
+const autoScheduleDialogRef = ref<InstanceType<typeof AutoScheduleDialog> | null>(null)
 const deleteDialogOpen = ref(false)
 const itemToDelete = ref<TeachingClassScheduleVO | null>(null)
 const isDeleting = ref(false)
@@ -150,6 +152,11 @@ const handleCreate = () => {
   editDialogRef.value?.openDialog()
 }
 
+// 自动排课
+const handleAutoSchedule = () => {
+  autoScheduleDialogRef.value?.openDialog(queryParams.semesterId)
+}
+
 // 编辑
 const handleEdit = (row: TeachingClassScheduleVO) => {
   editDialogRef.value?.openDialog(row)
@@ -179,6 +186,11 @@ const handleConfirmDelete = async () => {
 
 // 编辑成功回调
 const handleEditSuccess = () => {
+  fetchData()
+}
+
+// 自动排课成功回调
+const handleAutoScheduleSuccess = () => {
   fetchData()
 }
 
@@ -225,10 +237,16 @@ onMounted(() => {
         </h2>
         <p class="text-muted-foreground">管理教学班的上课时间和地点安排</p>
       </div>
-      <Button @click="handleCreate">
-        <Plus class="mr-2 h-4 w-4" />
-        新增排课
-      </Button>
+      <div class="flex items-center gap-2">
+        <Button variant="outline" @click="handleAutoSchedule">
+          <Sparkles class="mr-2 h-4 w-4" />
+          自动排课
+        </Button>
+        <Button @click="handleCreate">
+          <Plus class="mr-2 h-4 w-4" />
+          新增排课
+        </Button>
+      </div>
     </div>
 
     <!-- 搜索区域 -->
@@ -358,6 +376,9 @@ onMounted(() => {
 
     <!-- 编辑对话框 -->
     <ScheduleEditDialog ref="editDialogRef" @success="handleEditSuccess" />
+
+    <!-- 自动排课对话框 -->
+    <AutoScheduleDialog ref="autoScheduleDialogRef" @success="handleAutoScheduleSuccess" />
 
     <!-- 删除确认对话框 -->
     <AlertDialog :open="deleteDialogOpen" @update:open="(v) => (deleteDialogOpen = v)">

@@ -1,17 +1,42 @@
 <script setup lang="ts">
 import type { SwitchRootEmits, SwitchRootProps } from 'reka-ui'
 import type { HTMLAttributes } from 'vue'
+import { computed } from 'vue'
 import { reactiveOmit } from '@vueuse/core'
-import { SwitchRoot, SwitchThumb, useForwardPropsEmits } from 'reka-ui'
+import { SwitchRoot, SwitchThumb } from 'reka-ui'
 import { cn } from '@/lib/utils'
 
-const props = defineProps<SwitchRootProps & { class?: HTMLAttributes['class'] }>()
+type CompatibleSwitchProps = SwitchRootProps & {
+  /**
+   * Backward-compatible alias for `modelValue` used by some Switch implementations.
+   * Prefer `v-model`/`modelValue`, but keep `checked` working for existing call sites.
+   */
+  checked?: boolean | null
+  class?: HTMLAttributes['class']
+}
 
-const emits = defineEmits<SwitchRootEmits>()
+type CompatibleSwitchEmits = SwitchRootEmits & {
+  'update:checked': [payload: boolean]
+}
 
-const delegatedProps = reactiveOmit(props, 'class')
+const props = defineProps<CompatibleSwitchProps>()
 
-const forwarded = useForwardPropsEmits(delegatedProps, emits)
+const emits = defineEmits<CompatibleSwitchEmits>()
+
+const delegatedProps = reactiveOmit(props, 'class', 'checked', 'modelValue')
+
+const resolvedModelValue = computed(() =>
+  props.checked !== undefined ? props.checked : props.modelValue
+)
+
+const forwarded = computed(() => ({
+  ...delegatedProps,
+  modelValue: resolvedModelValue.value,
+  'onUpdate:modelValue': (v: boolean) => {
+    emits('update:modelValue', v)
+    emits('update:checked', v)
+  },
+}))
 </script>
 
 <template>

@@ -43,8 +43,11 @@ const option = computed(() => {
     },
     legend: {
       data: ['容量', '已选', '候补'],
+      top: 8,
+      left: 'center',
     },
     grid: {
+      top: 56,
       left: '3%',
       right: '4%',
       bottom: '3%',

@@ -51,13 +51,15 @@ const option = computed(() => {
     },
     legend: {
       orient: 'horizontal',
-      bottom: 'bottom',
+      bottom: 0,
+      left: 'center',
     },
     series: [
       {
         name: '填充率分布',
         type: 'pie',
         radius: ['40%', '70%'],
+        center: ['50%', '45%'],
         avoidLabelOverlap: false,
         itemStyle: {
           borderRadius: 10,

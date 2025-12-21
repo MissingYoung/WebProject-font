@@ -18,7 +18,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Loader2 } from 'lucide-vue-next'
+import { Loader2, Shield } from 'lucide-vue-next'
 import IdentifyCode from './IdentifyCode.vue'
 
 const router = useRouter()
@@ -41,6 +41,66 @@ const handleCode = (code: string) => {
   correctCode.value = code
 }
 
+const finalizeLogin = async (result: any, sduId: string) => {
+  if (!result || !result.data) {
+    throw new Error('登录服务响应异常，请稍后重试')
+  }
+
+  const { token, username } = result.data
+
+  const miniUserInfo: UserInfo = {
+    id: result.data.userId,
+    username: username,
+    sduId,
+    realName: result.data.realName || '',
+    role: result.data.role,
+    avatarUrl: '',
+    gender: 'UNKNOWN',
+    birthday: '',
+    phone: '',
+    email: '',
+    ethnic: '',
+    politicalStatus: '',
+    description: '',
+  }
+
+  userStore.setUser({
+    token: token,
+    user: miniUserInfo,
+  })
+
+  await userStore.fetchMenuTree()
+
+  success('登陆成功，即将跳转到首页')
+  await router.push({ name: 'Dashboard' })
+  error.value = ''
+}
+
+const demoAccounts = {
+  student: { sduId: '202500011111', password: '123456' },
+  teacher: { sduId: '202300011111', password: '123456' },
+  admin: { sduId: '202400011111', password: '123456' },
+} as const
+
+const loginDemo = async (role: keyof typeof demoAccounts) => {
+  error.value = null
+  isLoading.value = true
+
+  try {
+    const { sduId, password } = demoAccounts[role]
+    const result = await login({ sduId, password })
+    await finalizeLogin(result, sduId)
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : '登录过程中出现未知错误，请稍后重试'
+    error.value = errorMessage
+    console.error('登录异常: ', errorMessage)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+defineExpose({ loginDemo })
+
 const handleLogin = async () => {
   const { sduId, password, verifyCode } = formData
   if (!sduId || !password || !verifyCode) {
@@ -61,40 +121,7 @@ const handleLogin = async () => {
 
   try {
     const result = await login(formData)
-    console.log('登录结果: ', result)
-    if (!result || !result.data) {
-      throw new Error('登录服务响应异常，请稍后重试')
-    }
-    console.log('登录成功: ', result)
-    const { token, username } = result.data
-
-    const miniUserInfo: UserInfo = {
-      id: result.data.userId,
-      username: username,
-      sduId: formData.sduId,
-      realName: result.data.realName || '',
-      role: result.data.role,
-      avatarUrl: '',
-      gender: 'UNKNOWN',
-      birthday: '',
-      phone: '',
-      email: '',
-      ethnic: '',
-      politicalStatus: '',
-      description: '',
-    }
-
-    userStore.setUser({
-      token: token,
-      user: miniUserInfo,
-    })
-
-    // 获取用户菜单
-    await userStore.fetchMenuTree()
-
-    success('登陆成功，即将跳转到首页')
-    await router.push({ name: 'Dashboard' })
-    error.value = ''
+    await finalizeLogin(result, formData.sduId)
   } catch (err: unknown) {
     const errorMessage = err instanceof Error ? err.message : '登录过程中出现未知错误，请稍后重试'
     error.value = errorMessage
@@ -144,11 +171,45 @@ const handleLogin = async () => {
         </div>
       </div>
     </CardContent>
-    <CardFooter>
+    <CardFooter class="flex flex-col gap-2">
       <Button class="w-full" :disabled="isLoading" @click="handleLogin">
         <Loader2 v-if="isLoading" class="mr-2 h-4 w-4 animate-spin" />
         {{ isLoading ? '登录中...' : '登 录' }}
       </Button>
+
+      <div class="w-full pt-1">
+        <div class="grid grid-cols-3 gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            class="w-full"
+            :disabled="isLoading"
+            @click="loginDemo('student')"
+          >
+            演示学生
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            class="w-full"
+            :disabled="isLoading"
+            @click="loginDemo('teacher')"
+          >
+            演示教师
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            class="w-full"
+            :disabled="isLoading"
+            @click="loginDemo('admin')"
+          >
+            <Loader2 v-if="isLoading" class="mr-2 h-4 w-4 animate-spin" />
+            <Shield v-else class="mr-2 h-4 w-4" />
+            演示管理员
+          </Button>
+        </div>
+      </div>
     </CardFooter>
   </Card>
 </template>

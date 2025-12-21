@@ -576,6 +576,8 @@ import type {
   UpdateAdministrativeClassPayload,
   AssignStudentsPayload,
   AssignStudentsResultVO,
+  RemoveAdministrativeClassStudentsPayload,
+  RemoveAdministrativeClassStudentsResultVO,
   RandomAssignStudentsPayload,
   CourseOfferingVO,
   CourseOfferingQueryParams,
@@ -590,6 +592,7 @@ import type {
   TeachingClassScheduleQueryParams,
   CreateSchedulePayload,
   UpdateSchedulePayload,
+  AutoScheduleRequest,
   AutoScheduleResultVO,
   CourseSelectionWindowVO,
   CourseSelectionWindowQueryParams,
@@ -601,6 +604,8 @@ import type {
   AvailableTeachingClassVO,
   AvailableTeachingClassQueryParams,
   EnrollCoursePayload,
+  StudentClassCourseOverviewVO,
+  TeacherDashboardVO,
   ProgramCourseRequirementVO,
   ProgramCourseRequirementQueryParams,
   CreateProgramCourseRequirementPayload,
@@ -619,6 +624,8 @@ type DeleteAdministrativeClassSuccessResponse = ApiResponse<null>
 type EnableAdministrativeClassSuccessResponse = ApiResponse<null>
 type DisableAdministrativeClassSuccessResponse = ApiResponse<null>
 type AssignStudentsSuccessResponse = ApiResponse<AssignStudentsResultVO>
+type RemoveAdministrativeClassStudentsSuccessResponse =
+  ApiResponse<RemoveAdministrativeClassStudentsResultVO>
 
 // 创建行政班
 export const createAdministrativeClass = async (
@@ -667,6 +674,13 @@ export const assignStudentsToClass = async (
   payload: AssignStudentsPayload
 ): Promise<AssignStudentsSuccessResponse> =>
   apiClient.post('/administrative-class/assign-students', payload)
+
+// 批量移出行政班学生（变为未分班）
+export const removeStudentsFromAdministrativeClass = async (
+  id: number,
+  payload: RemoveAdministrativeClassStudentsPayload
+): Promise<RemoveAdministrativeClassStudentsSuccessResponse> =>
+  apiClient.post(`/administrative-class/${id}/remove-students`, payload)
 
 // 随机分班
 export const randomAssignStudents = async (
@@ -936,11 +950,9 @@ export const getTeachingClassSchedules = async (
   apiClient.get(`/teaching-class/${teachingClassId}/schedules`, { params })
 
 // 自动排课
-export const autoSchedule = async (payload: {
-  semesterId?: number
-  courseOfferingId?: number
-  teachingClassIds?: number[]
-}): Promise<AutoScheduleSuccessResponse> =>
+export const autoSchedule = async (
+  payload: AutoScheduleRequest
+): Promise<AutoScheduleSuccessResponse> =>
   apiClient.post('/teaching-class-schedule/auto-schedule', payload)
 
 // --- 选课窗口 (CourseSelectionWindow) API ---
@@ -1065,6 +1077,34 @@ export const getStudentMeSchedule = async (params?: {
 export const getTeacherMeSchedule = async (params?: {
   semesterId?: number
 }): Promise<ApiResponse<ScheduleItemVO[]>> => apiClient.get('/teacher/me/schedule', { params })
+
+// --- 班级与课程概览 (Teacher / Student) API ---
+
+type GetTeacherDashboardSuccessResponse = ApiResponse<TeacherDashboardVO>
+type GetStudentClassCourseOverviewSuccessResponse = ApiResponse<StudentClassCourseOverviewVO>
+
+// 获取教师“我的班级与课程情况”
+export const getTeacherMeDashboard = async (params?: {
+  semesterId?: number
+}): Promise<GetTeacherDashboardSuccessResponse> =>
+  apiClient.get('/teacher/me/dashboard', { params })
+
+// 获取学生“班级与课程情况”总览（含已选课程分页）
+export const getStudentMeOverview = async (params?: {
+  semesterId?: number
+  pageNum?: number
+  pageSize?: number
+  includeSchedules?: boolean
+}): Promise<GetStudentClassCourseOverviewSuccessResponse> =>
+  apiClient.get('/student/me/overview', {
+    params: params
+      ? {
+          ...params,
+          pageSize:
+            typeof params.pageSize === 'number' ? Math.min(params.pageSize, 100) : params.pageSize,
+        }
+      : params,
+  })
 
 // --- 培养计划 (ProgramCourseRequirement) API ---
 

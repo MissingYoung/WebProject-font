@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { reactive, ref, onMounted } from 'vue'
-import { getStudentList, getDepartmentList } from '@/lib/api'
-import type { StudentVO, StudentQueryParams, DepartmentVO } from '@/types'
+import { getStudentList, getDepartmentList, getMajorList } from '@/lib/api'
+import type { StudentVO, StudentQueryParams, DepartmentVO, MajorVO } from '@/types'
 import StudentEditDialog from '@/components/Student/StudentEditDialog.vue'
 import UserPersonalEditDialog from '@/components/User/UserPersonalEditDialog.vue'
 
@@ -47,6 +47,7 @@ const selectedStudent = ref<StudentVO | null>(null)
 
 // 下拉选项数据
 const departments = ref<DepartmentVO[]>([])
+const majors = ref<MajorVO[]>([])
 
 // 查询参数
 const queryParams = reactive<StudentQueryParams & { id: string }>({
@@ -90,6 +91,17 @@ const loadDepartments = async () => {
     }
   } catch (err) {
     console.error('加载部门列表失败', err)
+  }
+}
+
+// 加载专业列表
+const loadMajors = async () => {
+  try {
+    const res = await getMajorList({ pageNum: 1, pageSize: 200, status: 'ACTIVE' })
+    majors.value = res?.data?.records || []
+  } catch (err) {
+    console.error('加载专业列表失败', err)
+    majors.value = []
   }
 }
 
@@ -170,9 +182,16 @@ const getDepartmentName = (departmentId?: number) => {
   return dept?.name || `ID: ${departmentId}`
 }
 
+const getMajorName = (majorId?: number) => {
+  if (!majorId) return '-'
+  const major = majors.value.find((m) => m.id === majorId)
+  return major?.name || `ID: ${majorId}`
+}
+
 // 初始化
 onMounted(() => {
   loadDepartments()
+  loadMajors()
   fetchData()
 })
 </script>
@@ -386,8 +405,8 @@ onMounted(() => {
               <p class="font-medium">{{ getDepartmentName(selectedStudent.departmentId) }}</p>
             </div>
             <div class="space-y-1">
-              <p class="text-sm text-muted-foreground">专业 ID</p>
-              <p class="font-medium">{{ selectedStudent.majorId || '-' }}</p>
+              <p class="text-sm text-muted-foreground">专业</p>
+              <p class="font-medium">{{ getMajorName(selectedStudent.majorId) }}</p>
             </div>
           </div>
 

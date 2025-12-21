@@ -3,7 +3,7 @@
 import { computed, onMounted } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { useRouter } from 'vue-router'
-import { LayoutDashboard, User } from 'lucide-vue-next'
+import { LayoutDashboard, School, User } from 'lucide-vue-next'
 import MenuItem from './MenuItem.vue'
 import type { MenuVO } from '@/types'
 
@@ -13,6 +13,8 @@ const router = useRouter()
 // 从 store 获取菜单树
 const role = computed(() => userStore.me?.role || userStore.userInfo?.role || '')
 const isAdmin = computed(() => role.value === 'admin')
+const isTeacher = computed(() => role.value === 'teacher')
+const isStudent = computed(() => role.value === 'student')
 
 const ADMIN_HIDDEN_MENU_URLS = new Set(['/available-courses', '/my-enrollments'])
 
@@ -45,6 +47,19 @@ onMounted(async () => {
 const goToProfile = () => {
   router.push({ name: 'UserProfile' })
 }
+
+const goToTeacherOverview = () => {
+  router.push('/teacher-class-course-overview')
+}
+
+const goToStudentOverview = () => {
+  router.push('/student-class-course-overview')
+}
+
+const isOverviewActive = computed(() => {
+  const path = router.currentRoute.value.path
+  return path === '/teacher-class-course-overview' || path === '/student-class-course-overview'
+})
 </script>
 
 <template>
@@ -74,6 +89,35 @@ const goToProfile = () => {
         >
           <User class="h-4 w-4 shrink-0" />
           <span class="truncate">个人中心</span>
+        </button>
+
+        <!-- 班级与课程情况（硬编码） -->
+        <button
+          v-if="isTeacher"
+          :class="[
+            'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors w-full',
+            isOverviewActive
+              ? 'bg-sidebar-accent text-sidebar-primary'
+              : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-primary',
+          ]"
+          @click="goToTeacherOverview"
+        >
+          <School class="h-4 w-4 shrink-0" />
+          <span class="truncate">我的班级与课程情况</span>
+        </button>
+
+        <button
+          v-if="isStudent"
+          :class="[
+            'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors w-full',
+            isOverviewActive
+              ? 'bg-sidebar-accent text-sidebar-primary'
+              : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-primary',
+          ]"
+          @click="goToStudentOverview"
+        >
+          <School class="h-4 w-4 shrink-0" />
+          <span class="truncate">班级与课程情况</span>
         </button>
 
         <!-- 循环渲染菜单项 -->

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { reactive, ref, onMounted } from 'vue'
-import { getPermissionList } from '@/lib/api'
+import { getAllPermissions, getPermissionList } from '@/lib/api'
 import type { PermissionVO, PermissionQueryParams } from '@/types'
 import { formatDate } from '@/lib/date'
 import { useNotification } from '@/composables/useNotification'
@@ -33,6 +33,7 @@ const { error: showError } = useNotification()
 const isLoading = ref(false)
 const tableData = ref<PermissionVO[]>([])
 const total = ref(0)
+const permissionNameById = ref<Map<number, string>>(new Map())
 
 // 查询参数
 const queryParams = reactive<PermissionQueryParams>({
@@ -60,6 +61,33 @@ const typeMap: Record<string, { label: string; icon: typeof Folder }> = {
 }
 
 // --- 方法 ---
+
+const fetchAllPermissionsForLookup = async () => {
+  try {
+    const map = new Map<number, string>()
+    let pageNum = 1
+    const pageSize = 200
+    while (true) {
+      const res = await getAllPermissions({ pageNum, pageSize })
+      const data = res?.data
+      const records = data?.records || []
+      for (const p of records) map.set(p.id, p.name)
+      if (!data?.pages || pageNum >= data.pages) break
+      if (records.length === 0) break
+      pageNum += 1
+    }
+    permissionNameById.value = map
+  } catch (error) {
+    console.error('加载全部权限用于父权限映射失败', error)
+    permissionNameById.value = new Map()
+  }
+}
+
+const getParentPermissionLabel = (parentId: number) => {
+  if (!parentId) return '顶级'
+  const name = permissionNameById.value.get(parentId)
+  return name || `ID: ${parentId}`
+}
 
 // 获取数据
 const fetchData = async () => {
@@ -99,7 +127,8 @@ const handleReset = () => {
 
 // 初始化
 onMounted(() => {
-  fetchData()
+  void fetchAllPermissionsForLookup()
+  void fetchData()
 })
 </script>
 
@@ -216,7 +245,7 @@ onMounted(() => {
               </div>
             </TableCell>
             <TableCell class="text-muted-foreground">
-              {{ item.parentId === 0 ? '顶级' : item.parentId }}
+              {{ getParentPermissionLabel(item.parentId) }}
             </TableCell>
             <TableCell>
               <span v-if="item.menuUrl" class="text-sm text-blue-600">{{ item.menuUrl }}</span>

@@ -199,10 +199,9 @@ const handleSubmit = async () => {
   error.value = null
 
   try {
-    const payload = {
-      ...formData,
-      parentId: formData.parentId ?? 0, // 0 代表顶级
-    }
+    const payload: CreateDepartmentPayload = { ...formData }
+    // 新建顶级部门时不传 parentId（避免后端将 0 视为无效上级）
+    if (!isEditMode.value && !payload.parentId) delete payload.parentId
 
     if (isEditMode.value && currentId.value) {
       await updateDepartment(currentId.value, payload)

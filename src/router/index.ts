@@ -178,6 +178,20 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import('@/views/Timetable/TimetableView.vue'),
         meta: { title: '课程表' },
       },
+      // 教师端：我的班级与课程情况
+      {
+        path: 'teacher-class-course-overview',
+        name: 'TeacherClassCourseOverview',
+        component: () => import('@/views/Teacher/TeacherClassCourseOverview.vue'),
+        meta: { title: '我的班级与课程情况' },
+      },
+      // 学生端：班级与课程情况
+      {
+        path: 'student-class-course-overview',
+        name: 'StudentClassCourseOverview',
+        component: () => import('@/views/Student/StudentClassCourseOverview.vue'),
+        meta: { title: '班级与课程情况' },
+      },
       // 培养计划进度（学生端）
       {
         path: 'program-progress',

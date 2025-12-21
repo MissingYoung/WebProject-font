@@ -25,6 +25,8 @@ const props = withDefaults(
   }
 )
 
+const MAX_PAGE_SIZE = 100
+
 const emit = defineEmits<{
   (e: 'update:pageNum', value: number): void
   (e: 'update:pageSize', value: number): void
@@ -49,7 +51,7 @@ const nextPage = () => {
 
 const updatePageSize = (value: unknown) => {
   if (value === null || value === undefined || value === '') return
-  const nextSize = Number(value)
+  const nextSize = Math.min(Number(value), MAX_PAGE_SIZE)
   if (!Number.isFinite(nextSize) || nextSize <= 0) return
 
   emit('update:pageSize', nextSize)

@@ -34,15 +34,11 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import {
   Home,
   GraduationCap,
-  Building2,
   Calendar,
   Clock,
   RefreshCw,
   MapPin,
-  BookOpen,
   Users,
-  Shield,
-  UserCog,
   ArrowRight,
   Loader2,
   AlertTriangle,
@@ -87,19 +83,6 @@ const role = computed(() => userStore.me?.role || userInfo.value?.role || '')
 const displayName = computed(
   () => userInfo.value?.realName?.trim() || userInfo.value?.username || '未设置姓名'
 )
-
-// 快捷操作菜单
-const quickActions = [
-  { name: '课程管理', routeName: 'CourseList', icon: GraduationCap, color: 'bg-blue-500' },
-  { name: '部门管理', routeName: 'DepartmentList', icon: Building2, color: 'bg-green-500' },
-  { name: '学期管理', routeName: 'SemesterList', icon: Calendar, color: 'bg-yellow-500' },
-  { name: '课程表', routeName: 'Timetable', icon: Clock, color: 'bg-teal-500' },
-  { name: '专业管理', routeName: 'MajorList', icon: BookOpen, color: 'bg-purple-500' },
-  { name: '学生管理', routeName: 'StudentList', icon: GraduationCap, color: 'bg-pink-500' },
-  { name: '教师管理', routeName: 'TeacherList', icon: Users, color: 'bg-indigo-500' },
-  { name: '权限管理', routeName: 'PermissionList', icon: Shield, color: 'bg-orange-500' },
-  { name: '角色管理', routeName: 'RoleList', icon: UserCog, color: 'bg-red-500' },
-]
 
 // 性别映射
 const genderMap: Record<Gender, string> = {
@@ -612,28 +595,5 @@ onMounted(() => {
         />
       </div>
     </div>
-
-    <!-- 6. 快捷操作区域 -->
-    <Card>
-      <CardHeader>
-        <CardTitle>快捷操作</CardTitle>
-        <CardDescription>快速访问常用功能模块</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4">
-          <button
-            v-for="action in quickActions"
-            :key="action.routeName"
-            class="flex flex-col items-center gap-2 p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors cursor-pointer"
-            @click="navigateTo(action.routeName)"
-          >
-            <div :class="['p-3 rounded-full text-white', action.color]">
-              <component :is="action.icon" class="h-5 w-5" />
-            </div>
-            <span class="text-sm font-medium">{{ action.name }}</span>
-          </button>
-        </div>
-      </CardContent>
-    </Card>
   </div>
 </template>

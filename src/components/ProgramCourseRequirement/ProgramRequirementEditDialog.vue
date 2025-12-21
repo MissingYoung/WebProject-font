@@ -28,12 +28,14 @@ import type {
   MajorVO,
   CourseVO,
   CourseType,
+  SemesterVO,
 } from '@/types'
 import {
   createProgramCourseRequirement,
   updateProgramCourseRequirement,
   getMajorList,
   getCourseList,
+  getSemesterList,
 } from '@/lib/api'
 
 const { success, error: notifyError } = useNotification()
@@ -49,8 +51,10 @@ const currentId = ref<number | null>(null)
 // 下拉选项
 const majors = ref<MajorVO[]>([])
 const courses = ref<CourseVO[]>([])
+const semesters = ref<SemesterVO[]>([])
 const isLoadingMajors = ref(false)
 const isLoadingCourses = ref(false)
+const isLoadingSemesters = ref(false)
 
 // 表单初始状态
 const initialState: CreateProgramCourseRequirementPayload = {
@@ -97,8 +101,26 @@ const loadCourses = async () => {
   }
 }
 
+// 加载学期列表
+const loadSemesters = async () => {
+  if (isLoadingSemesters.value) return
+  isLoadingSemesters.value = true
+  try {
+    const res = await getSemesterList({ pageNum: 1, pageSize: 100 })
+    if (res?.data) {
+      semesters.value = res.data.records
+    }
+  } catch (err: unknown) {
+    console.error('加载学期列表失败', err)
+    notifyError('加载学期列表失败')
+  } finally {
+    isLoadingSemesters.value = false
+  }
+}
+
 // 打开对话框
 const openDialog = (item?: ProgramCourseRequirementVO) => {
+  void loadSemesters()
   open.value = true
   error.value = null
 
@@ -141,14 +163,19 @@ const handleSubmit = async () => {
   error.value = null
 
   try {
+    const recommendedSemesterIdRaw = formData.recommendedSemesterId
+    const recommendedSemesterIdNumber =
+      recommendedSemesterIdRaw == null ? undefined : Number(recommendedSemesterIdRaw)
+
     const payload: CreateProgramCourseRequirementPayload = {
       majorId: Number(formData.majorId),
       courseId: Number(formData.courseId),
       courseType: formData.courseType,
       gradeLevel: formData.gradeLevel ? Number(formData.gradeLevel) : undefined,
-      recommendedSemesterId: formData.recommendedSemesterId
-        ? Number(formData.recommendedSemesterId)
-        : undefined,
+      recommendedSemesterId:
+        recommendedSemesterIdNumber && recommendedSemesterIdNumber > 0
+          ? recommendedSemesterIdNumber
+          : undefined,
       mandatory: formData.mandatory,
       remark: formData.remark || undefined,
     }
@@ -175,6 +202,7 @@ const handleSubmit = async () => {
 onMounted(() => {
   loadMajors()
   loadCourses()
+  loadSemesters()
 })
 </script>
 
@@ -261,13 +289,17 @@ onMounted(() => {
         <div class="grid grid-cols-4 items-center gap-4">
           <Label class="text-right">建议学期</Label>
           <div class="col-span-3">
-            <Select v-model="formData.recommendedSemesterId">
+            <Select v-model="formData.recommendedSemesterId" :disabled="isLoadingSemesters">
               <SelectTrigger>
                 <SelectValue placeholder="选择学期" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem :value="1">第一学期</SelectItem>
-                <SelectItem :value="2">第二学期</SelectItem>
+                <SelectItem :value="0">
+                  <span class="text-muted-foreground">不指定</span>
+                </SelectItem>
+                <SelectItem v-for="semester in semesters" :key="semester.id" :value="semester.id">
+                  {{ semester.name }}
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>

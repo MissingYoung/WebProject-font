@@ -40,8 +40,11 @@ const option = computed(() => ({
   },
   legend: {
     data: ['选课人数', '退课人数'],
+    top: 8,
+    left: 'center',
   },
   grid: {
+    top: 56,
     left: '3%',
     right: '4%',
     bottom: '3%',
@@ -130,7 +133,14 @@ const option = computed(() => ({
       <div v-else-if="data.length === 0" class="flex h-[350px] items-center justify-center">
         <p class="text-muted-foreground">暂无趋势数据</p>
       </div>
-      <VChart v-else class="h-[350px]" :option="option" autoresize />
+      <div v-else class="h-[350px] w-full">
+        <VChart
+          class="h-full w-full"
+          :option="option"
+          autoresize
+          aria-label="选课趋势折线图，显示最近一段时间的选课人数与退课人数"
+        />
+      </div>
     </CardContent>
   </Card>
 </template>
