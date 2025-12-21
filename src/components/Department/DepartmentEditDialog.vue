@@ -3,6 +3,7 @@ import { reactive, ref } from 'vue'
 import { createDepartment, updateDepartment } from '@/lib/api'
 import type { CreateDepartmentPayload, DepartmentVO } from '@/types'
 import { Loader2 } from 'lucide-vue-next'
+import { useNotification } from '@/composables/useNotification'
 
 // Shadcn UI 组件
 import { Button } from '@/components/ui/button'
@@ -18,6 +19,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+
+const { success } = useNotification()
 
 const emit = defineEmits(['success'])
 
@@ -87,18 +90,14 @@ const handleSubmit = async () => {
 
     if (isEditMode.value && currentId.value) {
       await updateDepartment(currentId.value, payload)
-      console.log('部门更新成功')
-      alert('部门更新成功')
+      success('部门更新成功')
     } else {
-      // 创建逻辑
       await createDepartment(payload)
-      console.log('部门创建成功')
-      alert('部门创建成功')
+      success('部门创建成功')
     }
 
-    console.log('部门操作成功')
     open.value = false
-    emit('success') // 通知父组件刷新列表
+    emit('success')
   } catch (err: unknown) {
     error.value = err instanceof Error ? err.message : isEditMode.value ? '更新失败' : '创建失败'
   } finally {

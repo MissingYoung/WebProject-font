@@ -2,6 +2,9 @@
 import { ref, reactive, onMounted } from 'vue'
 import {
   GraduationCap,
+  Users,
+  Clock,
+  Layers,
   Plus,
   Search,
   RotateCcw,
@@ -10,6 +13,7 @@ import {
   Send,
   XCircle,
 } from 'lucide-vue-next'
+import { useRouter } from 'vue-router'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -50,8 +54,12 @@ import {
   getCourseOfferingList,
 } from '@/lib/api'
 import TeachingClassEditDialog from '@/components/TeachingClass/TeachingClassEditDialog.vue'
+import TeachingClassAdminClassesDialog from '@/components/TeachingClass/TeachingClassAdminClassesDialog.vue'
+import BulkCreateTeachingClassesDialog from '@/components/TeachingClass/BulkCreateTeachingClassesDialog.vue'
+import PaginationBar from '@/components/PaginationBar.vue'
 
-const { success, error, info } = useNotification()
+const { success, error } = useNotification()
+const router = useRouter()
 
 // 状态映射
 const statusMap: Record<
@@ -60,6 +68,7 @@ const statusMap: Record<
 > = {
   DRAFT: { label: '草稿', variant: 'secondary' },
   PUBLISHED: { label: '已发布', variant: 'default' },
+  FULL: { label: '已满', variant: 'outline' },
   CLOSED: { label: '已关闭', variant: 'destructive' },
 }
 
@@ -83,6 +92,8 @@ const queryParams = reactive({
 
 // 弹窗状态
 const editDialogRef = ref<InstanceType<typeof TeachingClassEditDialog> | null>(null)
+const adminClassesDialogRef = ref<InstanceType<typeof TeachingClassAdminClassesDialog> | null>(null)
+const bulkCreateDialogRef = ref<InstanceType<typeof BulkCreateTeachingClassesDialog> | null>(null)
 const deleteDialogOpen = ref(false)
 const itemToDelete = ref<TeachingClassVO | null>(null)
 const isDeleting = ref(false)
@@ -158,22 +169,6 @@ const handleReset = () => {
   fetchData()
 }
 
-// 分页
-const prevPage = () => {
-  if (queryParams.pageNum > 1) {
-    queryParams.pageNum--
-    fetchData()
-  }
-}
-
-const nextPage = () => {
-  const maxPage = Math.ceil(total.value / queryParams.pageSize)
-  if (queryParams.pageNum < maxPage) {
-    queryParams.pageNum++
-    fetchData()
-  }
-}
-
 // 创建
 const handleCreate = () => {
   editDialogRef.value?.openDialog()
@@ -182,6 +177,20 @@ const handleCreate = () => {
 // 编辑
 const handleEdit = (row: TeachingClassVO) => {
   editDialogRef.value?.openDialog(row)
+}
+
+const handleAdminClassRestriction = (row: TeachingClassVO) => {
+  adminClassesDialogRef.value?.openDialog(row)
+}
+
+const handleSchedule = (row: TeachingClassVO) => {
+  router.push({
+    name: 'ScheduleList',
+    query: {
+      semesterId: row.semesterId ? String(row.semesterId) : undefined,
+      teachingClassId: String(row.id),
+    },
+  })
 }
 
 // 删除
@@ -235,6 +244,10 @@ const handleEditSuccess = () => {
   fetchData()
 }
 
+const handleBulkCreate = () => {
+  bulkCreateDialogRef.value?.openDialog(queryParams.courseOfferingId)
+}
+
 // 学期变化时重新加载开课列表
 const handleSemesterChange = () => {
   queryParams.courseOfferingId = undefined
@@ -259,10 +272,16 @@ onMounted(() => {
         </h2>
         <p class="text-muted-foreground">管理课程教学班信息，包括分班、教师、容量等</p>
       </div>
-      <Button @click="handleCreate">
-        <Plus class="mr-2 h-4 w-4" />
-        新增教学班
-      </Button>
+      <div class="flex items-center gap-2">
+        <Button variant="outline" @click="handleBulkCreate">
+          <Layers class="mr-2 h-4 w-4" />
+          批量创建
+        </Button>
+        <Button @click="handleCreate">
+          <Plus class="mr-2 h-4 w-4" />
+          新增教学班
+        </Button>
+      </div>
     </div>
 
     <!-- 搜索区域 -->
@@ -305,6 +324,7 @@ onMounted(() => {
           <SelectContent>
             <SelectItem value="DRAFT">草稿</SelectItem>
             <SelectItem value="PUBLISHED">已发布</SelectItem>
+            <SelectItem value="FULL">已满</SelectItem>
             <SelectItem value="CLOSED">已关闭</SelectItem>
           </SelectContent>
         </Select>
@@ -368,6 +388,17 @@ onMounted(() => {
                 <Button variant="ghost" size="icon" title="编辑" @click="handleEdit(row)">
                   <Pencil class="h-4 w-4" />
                 </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  title="行政班限制"
+                  @click="handleAdminClassRestriction(row)"
+                >
+                  <Users class="h-4 w-4 text-blue-600" />
+                </Button>
+                <Button variant="ghost" size="icon" title="排课" @click="handleSchedule(row)">
+                  <Clock class="h-4 w-4 text-purple-600" />
+                </Button>
                 <!-- 发布按钮 -->
                 <Button
                   v-if="row.status === 'DRAFT'"
@@ -399,28 +430,19 @@ onMounted(() => {
     </div>
 
     <!-- 分页 -->
-    <div class="flex items-center justify-between">
-      <div class="text-sm text-muted-foreground">
-        共 {{ total }} 条记录，当前第 {{ queryParams.pageNum }} /
-        {{ Math.ceil(total / queryParams.pageSize) || 1 }} 页
-      </div>
-      <div class="flex gap-2">
-        <Button variant="outline" size="sm" :disabled="queryParams.pageNum <= 1" @click="prevPage">
-          上一页
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          :disabled="queryParams.pageNum >= Math.ceil(total / queryParams.pageSize)"
-          @click="nextPage"
-        >
-          下一页
-        </Button>
-      </div>
-    </div>
+    <PaginationBar
+      v-model:page-num="queryParams.pageNum"
+      v-model:page-size="queryParams.pageSize"
+      class="justify-between"
+      :total="total"
+      :is-loading="isLoading"
+      @change="fetchData"
+    />
 
     <!-- 编辑对话框 -->
     <TeachingClassEditDialog ref="editDialogRef" @success="handleEditSuccess" />
+    <TeachingClassAdminClassesDialog ref="adminClassesDialogRef" @success="handleEditSuccess" />
+    <BulkCreateTeachingClassesDialog ref="bulkCreateDialogRef" @success="handleEditSuccess" />
 
     <!-- 删除确认对话框 -->
     <AlertDialog :open="deleteDialogOpen" @update:open="(v) => (deleteDialogOpen = v)">

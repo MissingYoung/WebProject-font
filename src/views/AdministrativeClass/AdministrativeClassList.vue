@@ -1,6 +1,17 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { Users, Plus, Search, RotateCcw, Pencil, Trash2, Play, PauseCircle } from 'lucide-vue-next'
+import {
+  Users,
+  Plus,
+  Search,
+  RotateCcw,
+  Pencil,
+  Trash2,
+  Play,
+  PauseCircle,
+  UserPlus,
+  Shuffle,
+} from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -40,8 +51,11 @@ import {
   getMajorList,
 } from '@/lib/api'
 import AdministrativeClassEditDialog from '@/components/AdministrativeClass/AdministrativeClassEditDialog.vue'
+import AssignStudentsDialog from '@/components/AdministrativeClass/AssignStudentsDialog.vue'
+import RandomAssignDialog from '@/components/AdministrativeClass/RandomAssignDialog.vue'
+import PaginationBar from '@/components/PaginationBar.vue'
 
-const { success, error, info } = useNotification()
+const { success, error } = useNotification()
 
 // 状态映射
 const statusMap: Record<string, { label: string; variant: 'default' | 'destructive' }> = {
@@ -68,6 +82,8 @@ const queryParams = reactive({
 
 // 弹窗状态
 const editDialogRef = ref<InstanceType<typeof AdministrativeClassEditDialog> | null>(null)
+const assignDialogRef = ref<InstanceType<typeof AssignStudentsDialog> | null>(null)
+const randomAssignDialogRef = ref<InstanceType<typeof RandomAssignDialog> | null>(null)
 const deleteDialogOpen = ref(false)
 const itemToDelete = ref<AdministrativeClassVO | null>(null)
 const isDeleting = ref(false)
@@ -124,22 +140,6 @@ const handleReset = () => {
   fetchData()
 }
 
-// 分页
-const prevPage = () => {
-  if (queryParams.pageNum > 1) {
-    queryParams.pageNum--
-    fetchData()
-  }
-}
-
-const nextPage = () => {
-  const maxPage = Math.ceil(total.value / queryParams.pageSize)
-  if (queryParams.pageNum < maxPage) {
-    queryParams.pageNum++
-    fetchData()
-  }
-}
-
 // 创建
 const handleCreate = () => {
   editDialogRef.value?.openDialog()
@@ -148,6 +148,16 @@ const handleCreate = () => {
 // 编辑
 const handleEdit = (row: AdministrativeClassVO) => {
   editDialogRef.value?.openDialog(row)
+}
+
+// 分配学生
+const handleAssignStudents = (row: AdministrativeClassVO) => {
+  assignDialogRef.value?.openDialog(row)
+}
+
+// 随机分班
+const handleRandomAssign = () => {
+  randomAssignDialogRef.value?.openDialog()
 }
 
 // 删除
@@ -218,10 +228,16 @@ onMounted(() => {
         </h2>
         <p class="text-muted-foreground">管理学校行政班信息</p>
       </div>
-      <Button @click="handleCreate">
-        <Plus class="mr-2 h-4 w-4" />
-        添加行政班
-      </Button>
+      <div class="flex items-center gap-2">
+        <Button variant="outline" @click="handleRandomAssign">
+          <Shuffle class="mr-2 h-4 w-4" />
+          随机分班
+        </Button>
+        <Button @click="handleCreate">
+          <Plus class="mr-2 h-4 w-4" />
+          添加行政班
+        </Button>
+      </div>
     </div>
 
     <!-- 搜索区域 -->
@@ -321,6 +337,14 @@ onMounted(() => {
                   <Pencil class="h-4 w-4" />
                 </Button>
                 <Button
+                  variant="ghost"
+                  size="icon"
+                  title="分配学生"
+                  @click="handleAssignStudents(row)"
+                >
+                  <UserPlus class="h-4 w-4 text-blue-600" />
+                </Button>
+                <Button
                   v-if="row.status === 'DISABLED'"
                   variant="ghost"
                   size="icon"
@@ -347,28 +371,19 @@ onMounted(() => {
     </div>
 
     <!-- 分页 -->
-    <div class="flex items-center justify-between">
-      <div class="text-sm text-muted-foreground">
-        共 {{ total }} 条记录，当前第 {{ queryParams.pageNum }} /
-        {{ Math.ceil(total / queryParams.pageSize) || 1 }} 页
-      </div>
-      <div class="flex gap-2">
-        <Button variant="outline" size="sm" :disabled="queryParams.pageNum <= 1" @click="prevPage">
-          上一页
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          :disabled="queryParams.pageNum >= Math.ceil(total / queryParams.pageSize)"
-          @click="nextPage"
-        >
-          下一页
-        </Button>
-      </div>
-    </div>
+    <PaginationBar
+      v-model:page-num="queryParams.pageNum"
+      v-model:page-size="queryParams.pageSize"
+      class="justify-between"
+      :total="total"
+      :is-loading="isLoading"
+      @change="fetchData"
+    />
 
     <!-- 编辑对话框 -->
     <AdministrativeClassEditDialog ref="editDialogRef" @success="handleEditSuccess" />
+    <AssignStudentsDialog ref="assignDialogRef" @success="handleEditSuccess" />
+    <RandomAssignDialog ref="randomAssignDialogRef" @success="handleEditSuccess" />
 
     <!-- 删除确认对话框 -->
     <AlertDialog :open="deleteDialogOpen" @update:open="(v) => (deleteDialogOpen = v)">

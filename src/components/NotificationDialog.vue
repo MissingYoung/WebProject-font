@@ -7,12 +7,7 @@ import {
   AlertDialogTitle,
   AlertDialogAction,
 } from '@/components/ui/alert-dialog'
-import {
-  CircleCheckIcon,
-  InfoIcon,
-  OctagonXIcon,
-  TriangleAlertIcon,
-} from 'lucide-vue-next'
+import { CircleCheckIcon, InfoIcon, OctagonXIcon, TriangleAlertIcon } from 'lucide-vue-next'
 
 interface NotificationState {
   isOpen: boolean
@@ -47,6 +42,8 @@ const icon = computed(() => {
       return InfoIcon
     case 'warning':
       return TriangleAlertIcon
+    default:
+      return InfoIcon
   }
 })
 
@@ -60,6 +57,8 @@ const iconColor = computed(() => {
       return 'text-blue-600'
     case 'warning':
       return 'text-yellow-600'
+    default:
+      return 'text-blue-600'
   }
 })
 
@@ -73,6 +72,8 @@ const title = computed(() => {
       return '提示'
     case 'warning':
       return '警告'
+    default:
+      return '提示'
   }
 })
 </script>

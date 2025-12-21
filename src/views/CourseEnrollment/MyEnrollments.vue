@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { BookCheck, Search, RotateCcw, Trash2 } from 'lucide-vue-next'
+import { useRouter } from 'vue-router'
 import { Button } from '@/components/ui/button'
 import {
   Select,
@@ -30,10 +31,21 @@ import {
 } from '@/components/ui/alert-dialog'
 import { useNotification } from '@/composables/useNotification'
 import { formatDate } from '@/lib/date'
-import type { CourseEnrollmentVO, SemesterVO, CourseEnrollmentStatus } from '@/types'
+import { isApiError } from '@/lib/api-error'
+import type { TeachingClassScheduleVO } from '@/types'
+import type { CourseEnrollmentVO, SemesterVO, CourseEnrollmentStatus, CourseType } from '@/types'
 import { getMyEnrollments, dropCourse, getSemesterList } from '@/lib/api'
+import PaginationBar from '@/components/PaginationBar.vue'
 
-const { success, error, info } = useNotification()
+const { success } = useNotification()
+const router = useRouter()
+
+// 课程类型映射
+const courseTypeMap: Record<string, string> = {
+  REQUIRED: '必修',
+  LIMITED_ELECTIVE: '限选',
+  OPEN_ELECTIVE: '任选',
+}
 
 // 状态映射
 const statusMap: Record<
@@ -69,6 +81,10 @@ const isDropping = ref(false)
 const errorDialogOpen = ref(false)
 const errorMessage = ref('')
 
+const goToProgramProgress = () => {
+  router.push({ name: 'ProgramProgress' })
+}
+
 // 加载学期列表
 const loadSemesters = async () => {
   try {
@@ -89,6 +105,7 @@ const fetchData = async () => {
       ...queryParams,
       semesterId: queryParams.semesterId || undefined,
       status: queryParams.status || undefined,
+      includeSchedules: true,
     }
     const res = await getMyEnrollments(params)
     if (res?.data) {
@@ -118,22 +135,6 @@ const handleReset = () => {
   fetchData()
 }
 
-// 分页
-const prevPage = () => {
-  if (queryParams.pageNum > 1) {
-    queryParams.pageNum--
-    fetchData()
-  }
-}
-
-const nextPage = () => {
-  const maxPage = Math.ceil(total.value / queryParams.pageSize)
-  if (queryParams.pageNum < maxPage) {
-    queryParams.pageNum++
-    fetchData()
-  }
-}
-
 // 退课
 const handleDropClick = (row: CourseEnrollmentVO) => {
   itemToDrop.value = row
@@ -149,7 +150,12 @@ const handleConfirmDrop = async () => {
     dropDialogOpen.value = false
     fetchData()
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : '退课失败'
+    const message =
+      isApiError(err) && err.bizCode === 'ENROLLMENT_MANDATORY_CANNOT_DROP'
+        ? '该课程为培养计划必修课，不可退课'
+        : err instanceof Error
+          ? err.message
+          : '退课失败'
     errorMessage.value = message
     errorDialogOpen.value = true
   } finally {
@@ -160,6 +166,30 @@ const handleConfirmDrop = async () => {
 // 是否可以退课
 const canDrop = (row: CourseEnrollmentVO) => {
   return row.status === 'SELECTED' || row.status === 'WAITLISTED'
+}
+
+const formatCourseType = (courseType?: CourseType) => {
+  if (!courseType) return '-'
+  return courseTypeMap[courseType] || courseType
+}
+
+const formatScheduleInfo = (schedules?: TeachingClassScheduleVO[]) => {
+  if (!schedules || schedules.length === 0) return '-'
+  const weekDayMap: Record<number, string> = {
+    1: '周一',
+    2: '周二',
+    3: '周三',
+    4: '周四',
+    5: '周五',
+    6: '周六',
+    7: '周日',
+  }
+  return schedules
+    .map(
+      (s) =>
+        `${weekDayMap[s.weekDay] || ''}第${s.startWeek}-${s.endWeek}周 第${s.startSection}-${s.endSection}节${s.classroom ? `(${s.classroom})` : ''}`
+    )
+    .join('；')
 }
 
 onMounted(() => {
@@ -179,6 +209,7 @@ onMounted(() => {
         </h2>
         <p class="text-muted-foreground">查看和管理您的选课记录</p>
       </div>
+      <Button variant="outline" @click="goToProgramProgress">培养计划进度</Button>
     </div>
 
     <!-- 搜索区域 -->
@@ -232,18 +263,19 @@ onMounted(() => {
             <TableHead>学分</TableHead>
             <TableHead>类型</TableHead>
             <TableHead>状态</TableHead>
+            <TableHead>上课时间</TableHead>
             <TableHead>选课时间</TableHead>
             <TableHead class="text-right">操作</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           <TableRow v-if="isLoading">
-            <TableCell colspan="9" class="text-center py-8 text-muted-foreground">
+            <TableCell colspan="10" class="text-center py-8 text-muted-foreground">
               加载中...
             </TableCell>
           </TableRow>
           <TableRow v-else-if="tableData.length === 0">
-            <TableCell colspan="9" class="text-center py-8 text-muted-foreground">
+            <TableCell colspan="10" class="text-center py-8 text-muted-foreground">
               暂无选课记录
             </TableCell>
           </TableRow>
@@ -254,12 +286,15 @@ onMounted(() => {
             <TableCell>{{ row.teacherName || '-' }}</TableCell>
             <TableCell>{{ row.credit || '-' }}</TableCell>
             <TableCell>
-              <Badge variant="outline">-</Badge>
+              <Badge variant="outline">{{ formatCourseType(row.courseType) }}</Badge>
             </TableCell>
             <TableCell>
               <Badge :variant="statusMap[row.status]?.variant || 'default'">
                 {{ statusMap[row.status]?.label || row.status }}
               </Badge>
+            </TableCell>
+            <TableCell class="max-w-[280px] truncate">
+              {{ formatScheduleInfo(row.schedules) }}
             </TableCell>
             <TableCell>{{ formatDate(row.selectedAt) }}</TableCell>
             <TableCell class="text-right">
@@ -280,25 +315,14 @@ onMounted(() => {
     </div>
 
     <!-- 分页 -->
-    <div class="flex items-center justify-between">
-      <div class="text-sm text-muted-foreground">
-        共 {{ total }} 条记录，当前第 {{ queryParams.pageNum }} /
-        {{ Math.ceil(total / queryParams.pageSize) || 1 }} 页
-      </div>
-      <div class="flex gap-2">
-        <Button variant="outline" size="sm" :disabled="queryParams.pageNum <= 1" @click="prevPage">
-          上一页
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          :disabled="queryParams.pageNum >= Math.ceil(total / queryParams.pageSize)"
-          @click="nextPage"
-        >
-          下一页
-        </Button>
-      </div>
-    </div>
+    <PaginationBar
+      v-model:page-num="queryParams.pageNum"
+      v-model:page-size="queryParams.pageSize"
+      class="justify-between"
+      :total="total"
+      :is-loading="isLoading"
+      @change="fetchData"
+    />
 
     <!-- 退课确认对话框 -->
     <AlertDialog :open="dropDialogOpen" @update:open="(v) => (dropDialogOpen = v)">

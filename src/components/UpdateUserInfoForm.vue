@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useAuthForm } from '@/composables/userAuthForm'
 import { updateUserInfo, getUserInfo } from '@/lib/api'
 import type { UpdateUserInfoPayload } from '@/types'
+import { useNotification } from '@/composables/useNotification'
 
 // 引入 UI 组件
 import { Button } from '@/components/ui/button'
@@ -53,6 +54,7 @@ const { isLoading, error, submit } = useAuthForm((data) =>
   updateUserInfo(data as UpdateUserInfoPayload, userId)
 )
 const isLoadingUserInfo = ref(false)
+const { success } = useNotification()
 
 // 仅从后端获取 role，并判断是否允许提交
 onMounted(async () => {
@@ -88,7 +90,7 @@ const handleUpdate = async () => {
   try {
     const result = await submit(formData)
     if (result && typeof result === 'object' && 'code' in result && result.code === 200) {
-      alert('用户信息更新成功！')
+      success('用户信息更新成功！')
       router.back()
     } else if (!error.value) {
       const message =
@@ -153,19 +155,19 @@ const handleUpdate = async () => {
             <div class="grid gap-3">
               <Label for="gender">性别</Label>
               <Select
-                :model-value="formData.gender?.toString()"
+                :model-value="formData.gender"
                 @update:model-value="
                   (val) =>
-                    (formData.gender = val ? (parseInt(String(val)) as 0 | 1 | 2) : undefined)
+                    (formData.gender = val ? (val as 'MALE' | 'FEMALE' | 'UNKNOWN') : undefined)
                 "
               >
                 <SelectTrigger id="gender" class="h-9 pl-6">
                   <SelectValue placeholder="选择性别" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="0">男</SelectItem>
-                  <SelectItem value="1">女</SelectItem>
-                  <SelectItem value="2">Fish</SelectItem>
+                  <SelectItem value="MALE">男</SelectItem>
+                  <SelectItem value="FEMALE">女</SelectItem>
+                  <SelectItem value="UNKNOWN">未知</SelectItem>
                 </SelectContent>
               </Select>
             </div>

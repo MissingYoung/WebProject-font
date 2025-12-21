@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/dialog'
 import { Loader2 } from 'lucide-vue-next'
 
-const { success: showSuccess, error: showError, info: showInfo } = useNotification()
+const { success: showSuccess, error: showError } = useNotification()
 
 // --- 类型和事件 ---
 const emit = defineEmits<{

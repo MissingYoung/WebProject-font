@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useAuthForm } from '@/composables/userAuthForm'
 import { updateUserProfile, getUserInfo } from '@/lib/api'
 import type { UpdateProfilePayload } from '@/types'
+import { useNotification } from '@/composables/useNotification'
 
 // 引入 UI 组件
 import { Button } from '@/components/ui/button'
@@ -40,6 +41,7 @@ const { isLoading, error, submit } = useAuthForm((data) =>
 const isLoadingProfile = ref(false)
 const userRole = ref('')
 const hasPermission = ref(false) // 这个页面只要有 userId 即可编辑（测试）
+const { success } = useNotification()
 
 onMounted(async () => {
   if (!userId) {
@@ -66,7 +68,7 @@ const handleUpdate = async () => {
   try {
     const result = await submit(formData)
     if (result && typeof result === 'object' && 'code' in result && result.code === 200) {
-      alert('用户资料更新成功！')
+      success('用户资料更新成功！')
       router.back()
     } else if (!error.value) {
       const message =

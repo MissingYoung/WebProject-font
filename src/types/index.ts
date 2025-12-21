@@ -14,7 +14,30 @@ export interface AuthResponseData {
 export interface ApiResponse<T> {
   code: number
   message: string
+  bizCode?: string
   data: T
+}
+
+// --- 当前登录用户 (Auth Me) ---
+
+export interface StudentAcademicProfile {
+  id: number
+  administrativeClassId?: number
+  majorId?: number
+  gradeLevel?: number
+  departmentId?: number
+}
+
+export interface TeacherWorkProfile {
+  id: number
+  departmentId?: number
+}
+
+export interface AuthMeVO {
+  user: UserInfo
+  role: string
+  student?: StudentAcademicProfile
+  teacher?: TeacherWorkProfile
 }
 
 // --- 登录 (Login) ---
@@ -115,6 +138,9 @@ export interface BindEmailPayload {
 
 //课程类型
 export type CourseType = 'REQUIRED' | 'LIMITED_ELECTIVE' | 'OPEN_ELECTIVE'
+
+//培养计划来源
+export type PlanSource = 'ADMIN_CLASS' | 'MAJOR' | 'GLOBAL'
 //课程创建参数
 export interface CreateCoursePayload {
   code: string // 课程编号 (必需)
@@ -682,7 +708,7 @@ export interface TeacherAssignment {
 // --- 教学班 (TeachingClass) ---
 
 // 教学班状态枚举
-export type TeachingClassStatus = 'DRAFT' | 'PUBLISHED' | 'CLOSED'
+export type TeachingClassStatus = 'DRAFT' | 'PUBLISHED' | 'FULL' | 'CLOSED'
 
 // 教学班视图对象
 export interface TeachingClassVO {
@@ -728,9 +754,9 @@ export interface CreateTeachingClassPayload {
   courseOfferingId: number // 课程开设 ID（必填）
   code: string // 教学班编号（必填）
   name: string // 教学班名称（必填）
-  teacherId?: number // 任课教师 ID
+  teacherId: number // 任课教师 ID（必填）
   location?: string // 上课地点
-  capacity?: number // 容量
+  capacity: number // 容量（必填）
   allowOverload?: boolean // 是否允许超员
 }
 
@@ -868,6 +894,13 @@ export interface CreateSelectionWindowPayload {
 // 更新选课窗口请求
 export type UpdateSelectionWindowPayload = Partial<CreateSelectionWindowPayload>
 
+// 当前用户选课窗口可用性
+export interface SelectionWindowAvailabilityVO {
+  open: boolean
+  reason?: string | null
+  windows: CourseSelectionWindowVO[]
+}
+
 // --- 选课 (CourseEnrollment) ---
 
 // 选课状态枚举
@@ -891,6 +924,7 @@ export interface CourseEnrollmentVO {
   courseCode?: string
   courseName?: string
   credit?: number
+  courseType?: CourseType
   semesterId?: number
   semesterName?: string
   academicYear?: string
@@ -900,6 +934,7 @@ export interface CourseEnrollmentVO {
   teacherEmployeeId?: string
   studentName?: string
   studentNumber?: string
+  schedules?: TeachingClassScheduleVO[]
 }
 
 // 选课查询参数
@@ -912,6 +947,15 @@ export interface CourseEnrollmentQueryParams {
   semesterId?: number
   status?: CourseEnrollmentStatus
 }
+
+// 选课不可选原因（后端计算）
+export type EnrollmentBlockReason =
+  | 'WINDOW_CLOSED'
+  | 'FULL'
+  | 'NOT_ELIGIBLE'
+  | 'ALREADY_SELECTED'
+  | 'TIME_CONFLICT'
+  | 'UNKNOWN'
 
 // 可选教学班视图对象
 export interface AvailableTeachingClassVO {
@@ -940,6 +984,19 @@ export interface AvailableTeachingClassVO {
   teacherName?: string
   teacherEmployeeId?: string
   schedules?: ScheduleInfo[]
+
+  // --- 后端计算的业务标记（前端直接使用） ---
+  isRecommended?: boolean
+  isMandatory?: boolean
+  planSource?: PlanSource
+  adminClassRestricted?: boolean
+  forMyAdministrativeClass?: boolean
+  inSelectionWindow?: boolean
+  selectionWindowId?: number
+  canEnroll?: boolean
+  blockReason?: EnrollmentBlockReason
+  isFull?: boolean
+  isEnrolled?: boolean
 }
 
 // 排课信息（用于可选教学班展示）
@@ -960,7 +1017,9 @@ export interface AvailableTeachingClassQueryParams {
   semesterId?: number
   courseId?: number
   courseName?: string
+  courseCode?: string
   courseType?: CourseType
+  departmentId?: number
   teacherName?: string
   onlyAvailable?: boolean
 }
@@ -968,6 +1027,37 @@ export interface AvailableTeachingClassQueryParams {
 // 选课请求
 export interface EnrollCoursePayload {
   teachingClassId: number // 教学班 ID（必填）
+}
+
+// --- 课程表 (Timetable) ---
+
+export interface ScheduleItemVO {
+  teachingClassId?: number
+  teachingClassCode?: string
+  teachingClassName?: string
+  courseId?: number
+  courseCode?: string
+  courseName?: string
+  credit?: number
+  teacherId?: number
+  teacherName?: string
+  teacherEmployeeId?: string
+  weekDay: number
+  startWeek: number
+  endWeek: number
+  startSection: number
+  endSection: number
+  classroom?: string
+  remark?: string
+}
+
+export interface TimetableMeVO {
+  semesterId: number
+  semesterName?: string
+  academicYear?: string
+  termOrder?: number
+  weekCount?: number
+  items: ScheduleItemVO[]
 }
 
 // --- 培养计划 (ProgramCourseRequirement) ---
@@ -990,6 +1080,25 @@ export interface ProgramCourseRequirementVO {
   remark?: string
   createTime?: string
   updateTime?: string
+}
+
+// 培养计划完成进度（学生端）
+export interface ProgramRequirementProgressVO {
+  mandatoryTotal: number
+  mandatorySelected: number
+  mandatoryCompleted: number
+  items: ProgramRequirementProgressItemVO[]
+}
+
+export interface ProgramRequirementProgressItemVO {
+  courseId: number
+  courseName?: string
+  courseCode?: string
+  isMandatory?: boolean
+  isRecommended?: boolean
+  planSource?: PlanSource
+  enrollmentStatus?: CourseEnrollmentStatus
+  teachingClassId?: number
 }
 
 // 培养计划查询参数

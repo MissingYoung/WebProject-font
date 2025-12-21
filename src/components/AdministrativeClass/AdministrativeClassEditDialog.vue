@@ -27,13 +27,13 @@ import type {
   TeacherVO,
 } from '@/types'
 import {
-createAdministrativeClass,
+  createAdministrativeClass,
   updateAdministrativeClass,
   getMajorList,
   getTeacherList,
-}} from '@/lib/api'
+} from '@/lib/api'
 
-const { success, error, info } = useNotification()
+const { success, error: notifyError } = useNotification()
 
 const emit = defineEmits(['success'])
 
@@ -71,7 +71,7 @@ const loadMajors = async () => {
     }
   } catch (err: unknown) {
     console.error('加载专业列表失败', err)
-    error('加载专业列表失败')
+    notifyError('加载专业列表失败')
     majors.value = []
   } finally {
     isLoadingMajors.value = false
@@ -89,7 +89,7 @@ const loadTeachers = async () => {
     }
   } catch (err: unknown) {
     console.error('加载教师列表失败', err)
-    error('加载教师列表失败')
+    notifyError('加载教师列表失败')
     teachers.value = []
   } finally {
     isLoadingTeachers.value = false
@@ -170,7 +170,7 @@ const handleSubmit = async () => {
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : '操作失败'
     error.value = message
-    error(message)
+    notifyError(message)
   } finally {
     isLoading.value = false
   }

@@ -20,14 +20,14 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
-Select,
+  Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-}} from '@/components/ui/select'
+} from '@/components/ui/select'
 
-const { success, error, info } = useNotification()
+const { success, error: notifyError } = useNotification()
 
 const emit = defineEmits(['success'])
 
@@ -77,7 +77,7 @@ const fetchDepartments = async () => {
     }
   } catch (err: unknown) {
     console.error('获取部门列表失败', err)
-    error('获取部门列表失败')
+    notifyError('获取部门列表失败')
   } finally {
     isLoadingDepartments.value = false
   }
@@ -150,7 +150,7 @@ const handleSubmit = async () => {
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : '操作失败'
     error.value = message
-    error(message)
+    notifyError(message)
   } finally {
     isLoading.value = false
   }

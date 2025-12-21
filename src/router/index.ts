@@ -171,6 +171,20 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import('@/views/CourseEnrollment/MyEnrollments.vue'),
         meta: { title: '我的选课' },
       },
+      // 课程表
+      {
+        path: 'timetable',
+        name: 'Timetable',
+        component: () => import('@/views/Timetable/TimetableView.vue'),
+        meta: { title: '课程表' },
+      },
+      // 培养计划进度（学生端）
+      {
+        path: 'program-progress',
+        name: 'ProgramProgress',
+        component: () => import('@/views/ProgramProgress/ProgramProgressView.vue'),
+        meta: { title: '培养计划进度' },
+      },
       // 个人中心
       {
         path: 'profile',

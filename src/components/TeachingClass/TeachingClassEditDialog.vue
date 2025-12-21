@@ -18,22 +18,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useNotification } from '@/composables/useNotification'
 import type {
   TeachingClassVO,
   CreateTeachingClassPayload,
+  UpdateTeachingClassPayload,
   CourseOfferingVO,
   TeacherVO,
 } from '@/types'
 import {
-createTeachingClass,
+  createTeachingClass,
   updateTeachingClass,
   getCourseOfferingList,
   getTeacherList,
-}} from '@/lib/api'
+} from '@/lib/api'
 
-const { success, error, info } = useNotification()
+const { success, error: notifyError } = useNotification()
 
 const emit = defineEmits(['success'])
 
@@ -54,8 +56,10 @@ const initialState: CreateTeachingClassPayload = {
   courseOfferingId: 0,
   code: '',
   name: '',
-  capacity: undefined,
-  teacherId: undefined,
+  teacherId: 0,
+  location: '',
+  capacity: 1,
+  allowOverload: false,
 }
 
 const formData = reactive<CreateTeachingClassPayload>({ ...initialState })
@@ -70,7 +74,7 @@ const loadCourseOfferings = async () => {
     }
   } catch (err: unknown) {
     console.error('加载开课列表失败', err)
-    error('加载开课列表失败')
+    notifyError('加载开课列表失败')
   } finally {
     isLoadingOfferings.value = false
   }
@@ -86,7 +90,7 @@ const loadTeachers = async () => {
     }
   } catch (err: unknown) {
     console.error('加载教师列表失败', err)
-    error('加载教师列表失败')
+    notifyError('加载教师列表失败')
   } finally {
     isLoadingTeachers.value = false
   }
@@ -103,8 +107,10 @@ const openDialog = (item?: TeachingClassVO) => {
     formData.courseOfferingId = item.courseOfferingId
     formData.code = item.code
     formData.name = item.name
-    formData.capacity = item.capacity
-    formData.teacherId = item.teacherId
+    formData.teacherId = item.teacherId || 0
+    formData.location = item.location || ''
+    formData.capacity = item.capacity || 1
+    formData.allowOverload = !!item.allowOverload
   } else {
     isEditMode.value = false
     currentId.value = null
@@ -129,23 +135,40 @@ const handleSubmit = async () => {
     error.value = '请输入教学班名称'
     return
   }
+  if (!formData.teacherId) {
+    error.value = '请选择主讲教师'
+    return
+  }
+  if (!formData.capacity || formData.capacity <= 0) {
+    error.value = '请输入正确的容量（需大于0）'
+    return
+  }
 
   isLoading.value = true
   error.value = null
 
   try {
-    const payload: CreateTeachingClassPayload = {
-      courseOfferingId: Number(formData.courseOfferingId),
-      code: formData.code.trim(),
-      name: formData.name.trim(),
-      capacity: formData.capacity ? Number(formData.capacity) : undefined,
-      teacherId: formData.teacherId ? Number(formData.teacherId) : undefined,
-    }
-
     if (isEditMode.value && currentId.value) {
+      const payload: UpdateTeachingClassPayload = {
+        code: formData.code.trim(),
+        name: formData.name.trim(),
+        teacherId: Number(formData.teacherId),
+        location: formData.location?.trim() || undefined,
+        capacity: Number(formData.capacity),
+        allowOverload: !!formData.allowOverload,
+      }
       await updateTeachingClass(currentId.value, payload)
       success('更新成功')
     } else {
+      const payload: CreateTeachingClassPayload = {
+        courseOfferingId: Number(formData.courseOfferingId),
+        code: formData.code.trim(),
+        name: formData.name.trim(),
+        teacherId: Number(formData.teacherId),
+        location: formData.location?.trim() || undefined,
+        capacity: Number(formData.capacity),
+        allowOverload: !!formData.allowOverload,
+      }
       await createTeachingClass(payload)
       success('创建成功')
     }
@@ -155,7 +178,7 @@ const handleSubmit = async () => {
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : '操作失败'
     error.value = message
-    error(message)
+    notifyError(message)
   } finally {
     isLoading.value = false
   }
@@ -227,7 +250,7 @@ onMounted(() => {
 
         <!-- 容量 -->
         <div class="grid grid-cols-4 items-center gap-4">
-          <Label class="text-right">容量</Label>
+          <Label class="text-right text-red-500">容量 *</Label>
           <Input
             v-model.number="formData.capacity"
             type="number"
@@ -238,7 +261,7 @@ onMounted(() => {
 
         <!-- 主讲教师 -->
         <div class="grid grid-cols-4 items-center gap-4">
-          <Label class="text-right">主讲教师</Label>
+          <Label class="text-right text-red-500">主讲教师 *</Label>
           <div class="col-span-3">
             <Select v-model="formData.teacherId" :disabled="isLoadingTeachers">
               <SelectTrigger>
@@ -254,6 +277,25 @@ onMounted(() => {
                 </SelectItem>
               </SelectContent>
             </Select>
+          </div>
+        </div>
+
+        <!-- 上课地点 -->
+        <div class="grid grid-cols-4 items-center gap-4">
+          <Label class="text-right">地点</Label>
+          <Input
+            v-model="formData.location"
+            class="col-span-3"
+            placeholder="例如：中心校区 5号楼 302"
+          />
+        </div>
+
+        <!-- 是否允许超员 -->
+        <div class="grid grid-cols-4 items-center gap-4">
+          <Label class="text-right">允许超员</Label>
+          <div class="col-span-3 flex items-center justify-between">
+            <span class="text-sm text-muted-foreground">超出容量后仍可选课（由后端兜底校验）</span>
+            <Switch v-model:checked="formData.allowOverload" />
           </div>
         </div>
       </div>

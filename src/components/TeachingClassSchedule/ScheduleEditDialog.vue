@@ -23,12 +23,12 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useNotification } from '@/composables/useNotification'
 import type { TeachingClassScheduleVO, CreateSchedulePayload, TeachingClassVO } from '@/types'
 import {
-addTeachingClassSchedule,
+  addTeachingClassSchedule,
   updateTeachingClassSchedule,
   getTeachingClassList,
-}} from '@/lib/api'
+} from '@/lib/api'
 
-const { success, error, info } = useNotification()
+const { success, error: notifyError } = useNotification()
 
 const emit = defineEmits(['success'])
 
@@ -81,7 +81,7 @@ const loadTeachingClasses = async () => {
     }
   } catch (err: unknown) {
     console.error('加载教学班列表失败', err)
-    error('加载教学班列表失败')
+    notifyError('加载教学班列表失败')
     teachingClasses.value = []
   } finally {
     isLoadingClasses.value = false
@@ -176,7 +176,7 @@ const handleSubmit = async () => {
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : '操作失败'
     error.value = message
-    error(message)
+    notifyError(message)
   } finally {
     isLoading.value = false
   }

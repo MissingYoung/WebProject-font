@@ -22,7 +22,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import EmailVerificationDialog from '@/components/EmailVerificationDialog.vue'
 
-const { success, error, info } = useNotification()
+const { success, error: notifyError } = useNotification()
 
 const userStore = useUserStore()
 const isLoading = ref(false)
@@ -69,7 +69,7 @@ const loadUserProfile = async () => {
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : '加载个人信息失败'
     error.value = message
-    error(message)
+    notifyError(message)
   } finally {
     isLoadingProfile.value = false
   }
@@ -105,7 +105,7 @@ const handleSave = async () => {
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : '保存失败'
     error.value = message
-    error(message)
+    notifyError(message)
   } finally {
     isLoading.value = false
   }
@@ -138,7 +138,7 @@ const handleEmailVerified = async (newEmail: string) => {
     success('邮箱绑定成功！')
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : '邮箱更新失败'
-    error(message)
+    notifyError(message)
     console.error('邮箱更新失败:', err)
   }
 }
@@ -165,14 +165,14 @@ const handleAvatarFileSelected = async (event: Event) => {
 
   // 验证文件类型
   if (!file.type.startsWith('image/')) {
-    error('请选择图片文件')
+    notifyError('请选择图片文件')
     return
   }
 
   // 验证文件大小（限制为10MB）
   const maxSize = 10 * 1024 * 1024
   if (file.size > maxSize) {
-    error('文件大小不能超过10MB')
+    notifyError('文件大小不能超过10MB')
     console.log('[UserProfile] 文件太大，已拒绝')
     return
   }
@@ -220,7 +220,7 @@ const handleAvatarFileSelected = async (event: Event) => {
       }
     }
 
-    error(message)
+    notifyError(message)
     console.error('上传头像失败:', err)
   } finally {
     isUploadingAvatar.value = false
@@ -305,7 +305,7 @@ const handleChangePassword = async () => {
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : '密码修改失败'
     passwordError.value = message
-    error(message)
+    notifyError(message)
   } finally {
     isChangingPassword.value = false
   }
@@ -495,12 +495,7 @@ onMounted(() => {
           <!-- 姓名 -->
           <div class="grid gap-2">
             <Label for="realName">姓名</Label>
-            <Input
-              id="realName"
-              v-model="formData.realName"
-              disabled
-              placeholder="不可修改"
-            />
+            <Input id="realName" v-model="formData.realName" disabled placeholder="不可修改" />
           </div>
 
           <!-- 性别 -->
@@ -535,24 +530,14 @@ onMounted(() => {
           <!-- 电话 -->
           <div class="grid gap-2">
             <Label for="phone">电话</Label>
-            <Input
-              id="phone"
-              v-model="formData.phone"
-              disabled
-              placeholder="不可修改"
-            />
+            <Input id="phone" v-model="formData.phone" disabled placeholder="不可修改" />
           </div>
 
           <!-- 邮箱 -->
           <div class="grid gap-2">
             <div class="flex items-center justify-between">
               <Label for="email">邮箱</Label>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                @click="openEmailVerification"
-              >
+              <Button type="button" variant="outline" size="sm" @click="openEmailVerification">
                 <Mail class="mr-2 h-4 w-4" />
                 {{ formData.email ? '修改邮箱' : '绑定邮箱' }}
               </Button>
@@ -569,12 +554,7 @@ onMounted(() => {
           <!-- 民族 -->
           <div class="grid gap-2">
             <Label for="ethnic">民族</Label>
-            <Input
-              id="ethnic"
-              v-model="formData.ethnic"
-              disabled
-              placeholder="不可修改"
-            />
+            <Input id="ethnic" v-model="formData.ethnic" disabled placeholder="不可修改" />
           </div>
 
           <!-- 政治面目 -->

@@ -3,6 +3,7 @@ import { reactive, ref, onMounted } from 'vue'
 import { getTeacherList, getDepartmentList } from '@/lib/api'
 import type { TeacherVO, TeacherQueryParams, DepartmentVO } from '@/types'
 import TeacherEditDialog from '@/components/Teacher/TeacherEditDialog.vue'
+import UserPersonalEditDialog from '@/components/User/UserPersonalEditDialog.vue'
 
 // UI 组件
 import { Button } from '@/components/ui/button'
@@ -23,16 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import {
-  Loader2,
-  Search,
-  RotateCcw,
-  Pencil,
-  Users,
-  ChevronLeft,
-  ChevronRight,
-  Eye,
-} from 'lucide-vue-next'
+import { Loader2, Search, RotateCcw, Pencil, Users, Eye, User } from 'lucide-vue-next'
 import {
   Dialog,
   DialogContent,
@@ -40,12 +32,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import PaginationBar from '@/components/PaginationBar.vue'
 
 // --- 状态管理 ---
 const isLoading = ref(false)
 const tableData = ref<TeacherVO[]>([])
 const total = ref(0)
 const editDialogRef = ref<InstanceType<typeof TeacherEditDialog> | null>(null)
+const personalEditDialogRef = ref<InstanceType<typeof UserPersonalEditDialog> | null>(null)
 
 // 详情弹窗状态
 const detailDialogOpen = ref(false)
@@ -144,24 +138,14 @@ const handleReset = () => {
   handleSearch()
 }
 
-// 分页
-const prevPage = () => {
-  if (queryParams.pageNum > 1) {
-    queryParams.pageNum--
-    fetchData()
-  }
-}
-const nextPage = () => {
-  const maxPage = Math.ceil(total.value / queryParams.pageSize)
-  if (queryParams.pageNum < maxPage) {
-    queryParams.pageNum++
-    fetchData()
-  }
-}
-
 // 操作：编辑
 const handleEdit = (row: TeacherVO) => {
   editDialogRef.value?.openDialog(row)
+}
+
+// 操作：编辑个人信息
+const handleEditPersonal = (row: TeacherVO) => {
+  personalEditDialogRef.value?.openDialog(row.userId)
 }
 
 // 查看详情
@@ -314,6 +298,14 @@ onMounted(() => {
                 <Button variant="ghost" size="sm" title="编辑工作信息" @click="handleEdit(item)">
                   <Pencil class="h-4 w-4 text-blue-600" />编辑
                 </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  title="编辑个人信息"
+                  @click="handleEditPersonal(item)"
+                >
+                  <User class="h-4 w-4 text-green-600" />个人
+                </Button>
               </div>
             </TableCell>
           </TableRow>
@@ -322,27 +314,13 @@ onMounted(() => {
     </div>
 
     <!-- 4. 分页控件 -->
-    <div class="flex items-center justify-end space-x-2 py-4">
-      <div class="text-sm text-muted-foreground mr-4">共 {{ total }} 条记录</div>
-      <Button
-        variant="outline"
-        size="sm"
-        :disabled="queryParams.pageNum <= 1 || isLoading"
-        @click="prevPage"
-      >
-        <ChevronLeft class="h-4 w-4" /> 上一页
-      </Button>
-      <div class="text-sm font-medium">第 {{ queryParams.pageNum }} 页</div>
-      <Button
-        variant="outline"
-        size="sm"
-        :disabled="tableData.length < queryParams.pageSize || isLoading"
-        @click="nextPage"
-      >
-        下一页
-        <ChevronRight class="h-4 w-4" />
-      </Button>
-    </div>
+    <PaginationBar
+      v-model:page-num="queryParams.pageNum"
+      v-model:page-size="queryParams.pageSize"
+      :total="total"
+      :is-loading="isLoading"
+      @change="fetchData"
+    />
 
     <!-- 教师详情弹窗 -->
     <Dialog :open="detailDialogOpen" @update:open="(v) => (detailDialogOpen = v)">
@@ -418,5 +396,6 @@ onMounted(() => {
 
     <!-- 编辑对话框 -->
     <TeacherEditDialog ref="editDialogRef" @success="fetchData" />
+    <UserPersonalEditDialog ref="personalEditDialogRef" @success="fetchData" />
   </div>
 </template>

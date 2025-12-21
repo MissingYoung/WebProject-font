@@ -30,13 +30,13 @@ import type {
   CourseType,
 } from '@/types'
 import {
-createCourseOffering,
+  createCourseOffering,
   updateCourseOffering,
   getSemesterList,
   getCourseList,
-}} from '@/lib/api'
+} from '@/lib/api'
 
-const { success, error, info } = useNotification()
+const { success, error: notifyError } = useNotification()
 
 const emit = defineEmits(['success'])
 
@@ -75,7 +75,7 @@ const loadSemesters = async () => {
     }
   } catch (err: unknown) {
     console.error('加载学期列表失败', err)
-    error('加载学期列表失败')
+    notifyError('加载学期列表失败')
   } finally {
     isLoadingSemesters.value = false
   }
@@ -91,7 +91,7 @@ const loadCourses = async () => {
     }
   } catch (err: unknown) {
     console.error('加载课程列表失败', err)
-    error('加载课程列表失败')
+    notifyError('加载课程列表失败')
   } finally {
     isLoadingCourses.value = false
   }
@@ -164,7 +164,7 @@ const handleSubmit = async () => {
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : '操作失败'
     error.value = message
-    error(message)
+    notifyError(message)
   } finally {
     isLoading.value = false
   }

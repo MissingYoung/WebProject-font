@@ -16,7 +16,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 
-const { success, error, info } = useNotification()
+const { success, error: notifyError } = useNotification()
 
 interface Props {
   open?: boolean
@@ -122,7 +122,7 @@ const handleSendCode = async () => {
   } catch (err: unknown) {
     const errMessage = err instanceof Error ? err.message : '发送验证码请求失败，请稍后重试'
     error.value = errMessage
-    error(errMessage)
+    notifyError(errMessage)
   } finally {
     isSendingCode.value = false
   }
@@ -178,7 +178,7 @@ const handleVerify = async () => {
   } catch (err: unknown) {
     const errMessage = err instanceof Error ? err.message : '验证请求失败，请稍后重试'
     error.value = errMessage
-    error(errMessage)
+    notifyError(errMessage)
   } finally {
     isLoading.value = false
   }

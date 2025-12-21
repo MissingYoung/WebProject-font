@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { getCurrentUser, logout as apiLogout, getCurrentUserMenu } from '@/lib/api'
-import type { UserInfo, MenuVO } from '@/types'
+import { getAuthMe, logout as apiLogout, getCurrentUserMenu } from '@/lib/api'
+import type { AuthMeVO, UserInfo, MenuVO } from '@/types'
 
 //定义store
 export const useUserStore = defineStore(
@@ -11,6 +11,7 @@ export const useUserStore = defineStore(
     const token = ref<string | null>(null)
     const userInfo = ref<UserInfo | null>(null)
     const menuTree = ref<MenuVO[]>([])
+    const me = ref<AuthMeVO | null>(null)
     const isInitialized = ref(false)
     const isLoggedIn = computed(() => !!token.value && !!userInfo.value) //判断用户是否登录
     const userRealName = computed(
@@ -77,13 +78,10 @@ export const useUserStore = defineStore(
       // 如果有 token 且还没初始化过，才尝试获取
       if (token.value && !isInitialized.value) {
         try {
-          // 只有当 store 里存了 id 才去取
-          if (userInfo.value?.id) {
-            const result = await getCurrentUser(userInfo.value.id)
-            // 只有成功获取才更新
-            if (result && result.data) {
-              userInfo.value = result.data
-            }
+          const result = await getAuthMe()
+          if (result?.data?.user) {
+            me.value = result.data
+            userInfo.value = result.data.user
           }
           // 获取菜单树
           await fetchMenuTree()
@@ -99,6 +97,7 @@ export const useUserStore = defineStore(
       token,
       userInfo,
       menuTree,
+      me,
       isLoggedIn,
       setUser,
       logout,

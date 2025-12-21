@@ -33,14 +33,13 @@ import {
   RotateCcw,
   Pencil,
   UserCog,
-  ChevronLeft,
-  ChevronRight,
   Trash2,
   AlertTriangle,
   Play,
   PauseCircle,
   Shield,
 } from 'lucide-vue-next'
+import PaginationBar from '@/components/PaginationBar.vue'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -120,22 +119,6 @@ const handleReset = () => {
   queryParams.key = ''
   queryParams.status = undefined
   handleSearch()
-}
-
-// 分页
-const prevPage = () => {
-  if (queryParams.pageNum > 1) {
-    queryParams.pageNum--
-    fetchData()
-  }
-}
-
-const nextPage = () => {
-  const maxPage = Math.ceil(total.value / queryParams.pageSize)
-  if (queryParams.pageNum < maxPage) {
-    queryParams.pageNum++
-    fetchData()
-  }
 }
 
 // 操作：添加
@@ -371,27 +354,13 @@ onMounted(() => {
     </div>
 
     <!-- 4. 分页控件 -->
-    <div class="flex items-center justify-end space-x-2 py-4">
-      <div class="text-sm text-muted-foreground mr-4">共 {{ total }} 条记录</div>
-      <Button
-        variant="outline"
-        size="sm"
-        :disabled="queryParams.pageNum <= 1 || isLoading"
-        @click="prevPage"
-      >
-        <ChevronLeft class="h-4 w-4" /> 上一页
-      </Button>
-      <div class="text-sm font-medium">第 {{ queryParams.pageNum }} 页</div>
-      <Button
-        variant="outline"
-        size="sm"
-        :disabled="tableData.length < queryParams.pageSize || isLoading"
-        @click="nextPage"
-      >
-        下一页
-        <ChevronRight class="h-4 w-4" />
-      </Button>
-    </div>
+    <PaginationBar
+      v-model:page-num="queryParams.pageNum"
+      v-model:page-size="queryParams.pageSize"
+      :total="total"
+      :is-loading="isLoading"
+      @change="fetchData"
+    />
 
     <!-- 删除确认弹窗 -->
     <AlertDialog :open="deleteDialogOpen" @update:open="(v) => (deleteDialogOpen = v)">

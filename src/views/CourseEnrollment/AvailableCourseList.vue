@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { computed, ref, reactive, onMounted, watch } from 'vue'
 import { BookMarked, Search, RotateCcw, Plus } from 'lucide-vue-next'
+import { useRouter } from 'vue-router'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -10,6 +11,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import {
   Table,
   TableBody,
@@ -30,15 +33,26 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { useNotification } from '@/composables/useNotification'
-import type { AvailableTeachingClassVO, SemesterVO, CourseType, CourseEnrollmentVO } from '@/types'
+import { formatDate } from '@/lib/date'
+import { isApiError } from '@/lib/api-error'
+import type {
+  AvailableTeachingClassVO,
+  CourseType,
+  EnrollmentBlockReason,
+  SemesterVO,
+  SelectionWindowAvailabilityVO,
+} from '@/types'
 import {
-getAvailableTeachingClasses,
+  getAvailableTeachingClasses,
+  getMyActiveSelectionWindows,
+  getCurrentSemester,
   enrollCourse,
   getSemesterList,
-  getMyEnrollments,
-}} from '@/lib/api'
+} from '@/lib/api'
+import PaginationBar from '@/components/PaginationBar.vue'
 
-const { success, error, info } = useNotification()
+const { success } = useNotification()
+const router = useRouter()
 
 // 课程类型映射
 const courseTypeMap: Record<string, string> = {
@@ -52,8 +66,8 @@ const isLoading = ref(false)
 const tableData = ref<AvailableTeachingClassVO[]>([])
 const total = ref(0)
 const semesters = ref<SemesterVO[]>([])
-const enrolledCourseNames = ref<string[]>([])
-const droppedCourseNames = ref<string[]>([])
+const availability = ref<SelectionWindowAvailabilityVO | null>(null)
+const isAvailabilityLoading = ref(false)
 
 // 查询参数
 const queryParams = reactive({
@@ -63,6 +77,7 @@ const queryParams = reactive({
   courseName: '',
   courseCode: '',
   courseType: undefined as CourseType | undefined,
+  onlyAvailable: false,
 })
 
 // 选课确认对话框
@@ -73,6 +88,40 @@ const isEnrolling = ref(false)
 // 错误提示对话框
 const errorDialogOpen = ref(false)
 const errorMessage = ref('')
+
+const goToProgramProgress = () => {
+  router.push({ name: 'ProgramProgress' })
+}
+
+const availabilitySummary = computed(() => {
+  if (!availability.value?.windows?.length) return ''
+  const typeLabel = (t?: CourseType) => (t ? courseTypeMap[t] || t : '全部课程类型')
+  return availability.value.windows
+    .map(
+      (w) =>
+        `${w.name}（${typeLabel(w.courseType)}，${formatDate(w.startTime, 'MM-DD HH:mm')}~${formatDate(
+          w.endTime,
+          'MM-DD HH:mm'
+        )}）`
+    )
+    .join('；')
+})
+
+const availabilityAlertVariant = computed(() => {
+  if (!availability.value) return 'default'
+  return availability.value.open ? 'default' : 'destructive'
+})
+
+const availabilityTitle = computed(() => {
+  if (!availability.value) return '选课窗口'
+  return availability.value.open ? '选课窗口已开放' : '当前不在选课窗口期内'
+})
+
+const availabilityDescription = computed(() => {
+  if (!availability.value) return '加载选课窗口状态中...'
+  if (availability.value.open) return availabilitySummary.value || '当前课程类型暂无可用窗口信息'
+  return availability.value.reason || '你可以浏览课程，但无法提交选课。'
+})
 
 // 加载学期列表
 const loadSemesters = async () => {
@@ -87,24 +136,70 @@ const loadSemesters = async () => {
   }
 }
 
-// 加载已选课程
-const loadEnrolledCourses = async () => {
+const loadCurrentSemester = async () => {
   try {
-    const res = await getMyEnrollments({ pageNum: 1, pageSize: 100 })
-    if (res?.data) {
-      enrolledCourseNames.value = res.data.records
-        .filter((item: CourseEnrollmentVO) => item.status === 'SELECTED')
-        .map((item: CourseEnrollmentVO) => item.courseName)
-        .filter((name): name is string => name !== undefined)
-      droppedCourseNames.value = res.data.records
-        .filter((item: CourseEnrollmentVO) => item.status === 'DROPPED')
-        .map((item: CourseEnrollmentVO) => item.courseName)
-        .filter((name): name is string => name !== undefined)
+    const res = await getCurrentSemester()
+    if (res?.data?.id && !queryParams.semesterId) {
+      queryParams.semesterId = res.data.id
     }
   } catch (err: unknown) {
-    console.error('加载选课信息失败', err)
+    console.debug('加载当前学期失败', err)
   }
 }
+
+// 加载当前用户可用的选课窗口（用于入口校验）
+const loadAvailability = async () => {
+  isAvailabilityLoading.value = true
+  try {
+    const res = await getMyActiveSelectionWindows({
+      semesterId: queryParams.semesterId || undefined,
+      courseType: queryParams.courseType || undefined,
+    })
+    availability.value = res?.data || null
+  } catch (err: unknown) {
+    console.error('加载选课窗口失败', err)
+    availability.value = null
+  } finally {
+    isAvailabilityLoading.value = false
+  }
+}
+
+const priorityValue = (row: AvailableTeachingClassVO) => {
+  const mandatory = row.isMandatory ? 1000 : 0
+  const recommended = row.isRecommended ? 200 : 0
+  const forMyClass = row.forMyAdministrativeClass ? 100 : 0
+  const selectable = row.canEnroll ? 10 : 0
+  return mandatory + recommended + forMyClass + selectable
+}
+
+const displayRows = computed(() => {
+  return [...tableData.value].sort((a, b) => priorityValue(b) - priorityValue(a))
+})
+
+const blockReasonLabel = (reason?: EnrollmentBlockReason) => {
+  switch (reason) {
+    case 'ALREADY_SELECTED':
+      return '已选'
+    case 'WINDOW_CLOSED':
+      return '未开放'
+    case 'FULL':
+      return '已满'
+    case 'NOT_ELIGIBLE':
+      return '不符合'
+    case 'TIME_CONFLICT':
+      return '冲突'
+    default:
+      return '不可选'
+  }
+}
+
+const enrollButtonLabel = (row: AvailableTeachingClassVO) => {
+  if (row.canEnroll) return '选课'
+  if (row.isEnrolled) return '已选'
+  return blockReasonLabel(row.blockReason)
+}
+
+const canClickEnroll = (row: AvailableTeachingClassVO) => !!row.canEnroll
 
 // 获取列表数据
 const fetchData = async () => {
@@ -114,6 +209,7 @@ const fetchData = async () => {
       ...queryParams,
       semesterId: queryParams.semesterId || undefined,
       courseType: queryParams.courseType || undefined,
+      onlyAvailable: queryParams.onlyAvailable || undefined,
     }
     const res = await getAvailableTeachingClasses(params)
     if (res?.data) {
@@ -142,45 +238,12 @@ const handleReset = () => {
   queryParams.courseName = ''
   queryParams.courseCode = ''
   queryParams.courseType = undefined
-  fetchData()
-}
-
-// 分页
-const prevPage = () => {
-  if (queryParams.pageNum > 1) {
-    queryParams.pageNum--
-    fetchData()
-  }
-}
-
-const nextPage = () => {
-  const maxPage = Math.ceil(total.value / queryParams.pageSize)
-  if (queryParams.pageNum < maxPage) {
-    queryParams.pageNum++
-    fetchData()
-  }
+  queryParams.onlyAvailable = false
 }
 
 // 选课
 const handleEnrollClick = (row: AvailableTeachingClassVO) => {
-  // 检查是否已退
-  if (isCourseDrooped(row)) {
-    errorMessage.value = '你已退过这门课，不可再选'
-    errorDialogOpen.value = true
-    return
-  }
-  // 检查是否超过容量
-  if (!isSelectable(row)) {
-    errorMessage.value = '该课程已满，无法选课'
-    errorDialogOpen.value = true
-    return
-  }
-  // 检查是否已选
-  if (isCourseEnrolled(row)) {
-    errorMessage.value = '你已选过这门课，不可再选'
-    errorDialogOpen.value = true
-    return
-  }
+  if (!canClickEnroll(row)) return
   itemToEnroll.value = row
   enrollDialogOpen.value = true
 }
@@ -192,12 +255,13 @@ const handleConfirmEnroll = async () => {
     await enrollCourse({ teachingClassId: itemToEnroll.value.id })
     success('选课成功')
     enrollDialogOpen.value = false
-    // 选课成功后重新加载已选课程，实时更新按钮状态
-    await loadEnrolledCourses()
     fetchData()
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : '选课失败'
-    errorMessage.value = message
+    if (isApiError(err) && err.bizCode) {
+      errorMessage.value = err.message
+    } else {
+      errorMessage.value = err instanceof Error ? err.message : '选课失败'
+    }
     errorDialogOpen.value = true
   } finally {
     isEnrolling.value = false
@@ -210,25 +274,18 @@ const formatCapacity = (enrolled?: number, capacity?: number) => {
   return `${enrolled || 0}/${capacity}`
 }
 
-// 检查课程是否已选
-const isCourseEnrolled = (row: AvailableTeachingClassVO): boolean => {
-  return row.courseName ? enrolledCourseNames.value.includes(row.courseName) : false
-}
-
-// 检查课程是否已退
-const isCourseDrooped = (row: AvailableTeachingClassVO): boolean => {
-  return row.courseName ? droppedCourseNames.value.includes(row.courseName) : false
-}
-
-// 是否可选
-const isSelectable = (row: AvailableTeachingClassVO) => {
-  if (!row.capacity) return true
-  return (row.enrolledCount || 0) < row.capacity
-}
+const isTeachingClassDisabled = (row: AvailableTeachingClassVO) => !row.canEnroll
 
 // 格式化排课时间
 const formatScheduleInfo = (
-  schedules?: { weekDay: number; startSection: number; endSection: number; classroom?: string }[]
+  schedules?: {
+    weekDay: number
+    startWeek?: number
+    endWeek?: number
+    startSection: number
+    endSection: number
+    classroom?: string
+  }[]
 ) => {
   if (!schedules || schedules.length === 0) return '-'
   const weekDayMap: Record<number, string> = {
@@ -243,16 +300,27 @@ const formatScheduleInfo = (
   return schedules
     .map(
       (s) =>
-        `${weekDayMap[s.weekDay] || ''}第${s.startSection}-${s.endSection}节${s.classroom ? `(${s.classroom})` : ''}`
+        `${weekDayMap[s.weekDay] || ''}${s.startWeek && s.endWeek ? `第${s.startWeek}-${s.endWeek}周` : ''}第${s.startSection}-${s.endSection}节${s.classroom ? `(${s.classroom})` : ''}`
     )
     .join('; ')
 }
 
 onMounted(() => {
   loadSemesters()
-  loadEnrolledCourses()
-  fetchData()
+  loadCurrentSemester().finally(() => {
+    loadAvailability()
+    fetchData()
+  })
 })
+
+watch(
+  () => [queryParams.semesterId, queryParams.courseType, queryParams.onlyAvailable] as const,
+  () => {
+    queryParams.pageNum = 1
+    loadAvailability()
+    fetchData()
+  }
+)
 </script>
 
 <template>
@@ -266,7 +334,14 @@ onMounted(() => {
         </h2>
         <p class="text-muted-foreground">浏览并选择本学期可选的课程</p>
       </div>
+      <Button variant="outline" @click="goToProgramProgress">培养计划进度</Button>
     </div>
+
+    <!-- 选课窗口提示 -->
+    <Alert v-if="!isAvailabilityLoading && availability" :variant="availabilityAlertVariant">
+      <AlertTitle>{{ availabilityTitle }}</AlertTitle>
+      <AlertDescription>{{ availabilityDescription }}</AlertDescription>
+    </Alert>
 
     <!-- 搜索区域 -->
     <div class="flex flex-wrap gap-4 items-end">
@@ -308,6 +383,10 @@ onMounted(() => {
           </SelectContent>
         </Select>
       </div>
+      <div class="flex items-center gap-2 pb-1">
+        <Switch v-model:checked="queryParams.onlyAvailable" />
+        <span class="text-sm text-muted-foreground select-none">仅看有余量</span>
+      </div>
       <div class="flex gap-2">
         <Button @click="handleSearch">
           <Search class="mr-2 h-4 w-4" />
@@ -331,6 +410,7 @@ onMounted(() => {
             <TableHead>主讲教师</TableHead>
             <TableHead>学分</TableHead>
             <TableHead>类型</TableHead>
+            <TableHead>标记</TableHead>
             <TableHead>选课人数</TableHead>
             <TableHead>上课时间</TableHead>
             <TableHead class="text-right">操作</TableHead>
@@ -338,18 +418,25 @@ onMounted(() => {
         </TableHeader>
         <TableBody>
           <TableRow v-if="isLoading">
-            <TableCell colspan="9" class="text-center py-8 text-muted-foreground">
+            <TableCell colspan="10" class="text-center py-8 text-muted-foreground">
               加载中...
             </TableCell>
           </TableRow>
           <TableRow v-else-if="tableData.length === 0">
-            <TableCell colspan="9" class="text-center py-8 text-muted-foreground">
+            <TableCell colspan="10" class="text-center py-8 text-muted-foreground">
               暂无可选课程
             </TableCell>
           </TableRow>
-          <TableRow v-for="row in tableData" :key="row.id">
+          <TableRow v-for="row in displayRows" :key="row.id">
             <TableCell class="font-medium">{{ row.courseCode }}</TableCell>
-            <TableCell>{{ row.courseName }}</TableCell>
+            <TableCell>
+              <div>{{ row.courseName }}</div>
+              <div class="mt-1 flex flex-wrap gap-1">
+                <Badge v-if="row.isMandatory" variant="destructive">必修</Badge>
+                <Badge v-else-if="row.isRecommended" variant="secondary">推荐</Badge>
+                <Badge v-if="row.forMyAdministrativeClass" variant="default">本班</Badge>
+              </div>
+            </TableCell>
             <TableCell>{{ row.name }}</TableCell>
             <TableCell>{{ row.teacherName || '-' }}</TableCell>
             <TableCell>{{ row.credit || '-' }}</TableCell>
@@ -359,28 +446,34 @@ onMounted(() => {
               </Badge>
             </TableCell>
             <TableCell>
-              <span :class="{ 'text-red-600': !isSelectable(row) }">
-                {{ formatCapacity(row.enrolledCount, row.capacity) }}
-              </span>
+              <div class="flex flex-wrap gap-1">
+                <Badge v-if="row.adminClassRestricted" variant="outline">行政班限制</Badge>
+                <Badge v-if="row.planSource" variant="outline">{{ row.planSource }}</Badge>
+              </div>
+            </TableCell>
+            <TableCell>
+              {{ formatCapacity(row.enrolledCount, row.capacity) }}
             </TableCell>
             <TableCell>{{ formatScheduleInfo(row.schedules) }}</TableCell>
             <TableCell class="text-right">
               <Button
                 size="sm"
-                :variant="
-                  isCourseEnrolled(row) || isCourseDrooped(row) || !isSelectable(row)
-                    ? 'outline'
-                    : 'default'
-                "
+                :disabled="isTeachingClassDisabled(row)"
+                :variant="isTeachingClassDisabled(row) ? 'outline' : 'default'"
                 :class="{
-                  'opacity-50 cursor-not-allowed':
-                    isCourseEnrolled(row) || isCourseDrooped(row) || !isSelectable(row),
+                  'opacity-50 cursor-not-allowed': isTeachingClassDisabled(row),
                 }"
                 @click="handleEnrollClick(row)"
               >
                 <Plus class="mr-1 h-4 w-4" />
-                {{ isCourseDrooped(row) ? '已退' : isCourseEnrolled(row) ? '已选' : '选课' }}
+                {{ enrollButtonLabel(row) }}
               </Button>
+              <div
+                v-if="!row.canEnroll && row.blockReason"
+                class="text-xs text-muted-foreground mt-1"
+              >
+                {{ blockReasonLabel(row.blockReason) }}
+              </div>
             </TableCell>
           </TableRow>
         </TableBody>
@@ -388,25 +481,14 @@ onMounted(() => {
     </div>
 
     <!-- 分页 -->
-    <div class="flex items-center justify-between">
-      <div class="text-sm text-muted-foreground">
-        共 {{ total }} 条记录，当前第 {{ queryParams.pageNum }} /
-        {{ Math.ceil(total / queryParams.pageSize) || 1 }} 页
-      </div>
-      <div class="flex gap-2">
-        <Button variant="outline" size="sm" :disabled="queryParams.pageNum <= 1" @click="prevPage">
-          上一页
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          :disabled="queryParams.pageNum >= Math.ceil(total / queryParams.pageSize)"
-          @click="nextPage"
-        >
-          下一页
-        </Button>
-      </div>
-    </div>
+    <PaginationBar
+      v-model:page-num="queryParams.pageNum"
+      v-model:page-size="queryParams.pageSize"
+      class="justify-between"
+      :total="total"
+      :is-loading="isLoading"
+      @change="fetchData"
+    />
 
     <!-- 选课确认对话框 -->
     <AlertDialog :open="enrollDialogOpen" @update:open="(v) => (enrollDialogOpen = v)">

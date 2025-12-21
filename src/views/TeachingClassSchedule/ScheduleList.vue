@@ -37,8 +37,9 @@ import {
   getTeachingClassList,
 } from '@/lib/api'
 import ScheduleEditDialog from '@/components/TeachingClassSchedule/ScheduleEditDialog.vue'
+import PaginationBar from '@/components/PaginationBar.vue'
 
-const { success, error, info } = useNotification()
+const { success, error } = useNotification()
 
 // 星期映射
 const weekDayMap: Record<number, string> = {
@@ -142,22 +143,6 @@ const handleReset = () => {
   queryParams.dayOfWeek = undefined
   queryParams.location = ''
   fetchData()
-}
-
-// 分页
-const prevPage = () => {
-  if (queryParams.pageNum > 1) {
-    queryParams.pageNum--
-    fetchData()
-  }
-}
-
-const nextPage = () => {
-  const maxPage = Math.ceil(total.value / queryParams.pageSize)
-  if (queryParams.pageNum < maxPage) {
-    queryParams.pageNum++
-    fetchData()
-  }
 }
 
 // 创建
@@ -357,25 +342,14 @@ onMounted(() => {
     </div>
 
     <!-- 分页 -->
-    <div class="flex items-center justify-between">
-      <div class="text-sm text-muted-foreground">
-        共 {{ total }} 条记录，当前第 {{ queryParams.pageNum }} /
-        {{ Math.ceil(total / queryParams.pageSize) || 1 }} 页
-      </div>
-      <div class="flex gap-2">
-        <Button variant="outline" size="sm" :disabled="queryParams.pageNum <= 1" @click="prevPage">
-          上一页
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          :disabled="queryParams.pageNum >= Math.ceil(total / queryParams.pageSize)"
-          @click="nextPage"
-        >
-          下一页
-        </Button>
-      </div>
-    </div>
+    <PaginationBar
+      v-model:page-num="queryParams.pageNum"
+      v-model:page-size="queryParams.pageSize"
+      class="justify-between"
+      :total="total"
+      :is-loading="isLoading"
+      @change="fetchData"
+    />
 
     <!-- 编辑对话框 -->
     <ScheduleEditDialog ref="editDialogRef" @success="handleEditSuccess" />

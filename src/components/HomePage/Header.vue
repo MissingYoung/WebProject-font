@@ -152,10 +152,7 @@ const handleFileSelected = async (event: Event) => {
           <DropdownMenuContent v-if="userStore.userInfo" align="end">
             <DropdownMenuLabel>我的账户</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem
-              class="flex flex-col items-start cursor-pointer"
-              @click="goToProfile"
-            >
+            <DropdownMenuItem class="flex flex-col items-start cursor-pointer" @click="goToProfile">
               <span>用户名: {{ userStore.userInfo.username }}</span>
               <span>学工号: {{ userStore.userInfo.sduId }}</span>
               <span>姓名：{{ userStore.userInfo.realName || userStore.userInfo.username }}</span>

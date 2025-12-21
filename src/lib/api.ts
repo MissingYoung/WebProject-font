@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { createApiError } from '@/lib/api-error'
 import type {
   LoginPayload,
   RegisterPayload,
@@ -10,7 +11,8 @@ import type {
   SendCodePayload,
   ResetPasswordPayload,
   SendEmailBindingCodePayload,
-  VerifyEmailCodePayload,
+  BindEmailPayload,
+  AuthMeVO,
   UserProfile,
   UpdateProfilePayload,
   CreateCoursePayload,
@@ -72,6 +74,7 @@ apiClient.interceptors.request.use(
     const token = userStore.token
 
     if (token) {
+      config.headers['Authorization'] = `Bearer ${token}`
       config.headers['satoken'] = token
     }
     return config
@@ -87,9 +90,16 @@ apiClient.interceptors.response.use(
     const res = response.data
     if (res.code !== 200) {
       console.error('API错误:', res.message || '未知错误')
-      return Promise.reject(new Error(res.message || 'Error'))
+      return Promise.reject(
+        createApiError({
+          code: res.code,
+          message: res.message || 'Error',
+          bizCode: res.bizCode,
+          data: res.data,
+        })
+      )
     }
-    return res // 如果业务码是 200，只返回 data 部分，简化后续操作
+    return res
   },
   (error) => {
     console.error('网络错误', error.response?.data?.message || error.message)
@@ -99,7 +109,22 @@ apiClient.interceptors.response.use(
         userStore.logout()
         window.location.href = '/login'
       }
-      return Promise.reject(new Error(error.response.data?.message || '服务器发生错误'))
+      const data = error.response.data as
+        | { code?: number; message?: string; bizCode?: string | null; data?: unknown }
+        | undefined
+      if (data && typeof data.code === 'number' && typeof data.message === 'string') {
+        return Promise.reject(
+          createApiError({
+            code: data.code,
+            message: data.message,
+            bizCode: data.bizCode,
+            data: data.data,
+          })
+        )
+      }
+      return Promise.reject(
+        new Error((data as { message?: string } | undefined)?.message || '服务器发生错误')
+      )
     }
     return Promise.reject(new Error('网络连接失败或服务器无响应'))
   }
@@ -111,6 +136,7 @@ type LogoutSuccessResponse = ApiResponse<null>
 type RegisterSuccessResponse = ApiResponse<AuthResponseData>
 type ChangePasswordSuccessResponse = ApiResponse<null>
 type GetUserSuccessResponse = ApiResponse<UserInfo>
+type GetAuthMeSuccessResponse = ApiResponse<AuthMeVO>
 type UpdateUserInfoSuccessResponse = ApiResponse<null>
 type GetUserInfoSuccessResponse = ApiResponse<UserInfo>
 type GetUserProfileSuccessResponse = ApiResponse<UserProfile>
@@ -159,7 +185,7 @@ export const login = async (payload: LoginPayload): Promise<LoginSuccessResponse
   apiClient.post('/auth/login', payload)
 
 //更新登出请求函数
-export const logout = async (): Promise<LogoutSuccessResponse> => apiClient.post('auth/logout')
+export const logout = async (): Promise<LogoutSuccessResponse> => apiClient.post('/auth/logout')
 
 //  更新注册请求函数
 export const register = async (payload: RegisterPayload): Promise<RegisterSuccessResponse> =>
@@ -185,6 +211,9 @@ export const changePassword = async (
  */
 export const getCurrentUser = async (userId: number): Promise<GetUserSuccessResponse> =>
   apiClient.get(`/auth/${userId}/info`)
+
+// 获取当前登录用户（含学业画像）
+export const getAuthMe = async (): Promise<GetAuthMeSuccessResponse> => apiClient.get('/auth/me')
 
 //公共接口，发送重置密码验证码
 export const sendPasswordResetCode = async (
@@ -561,6 +590,7 @@ import type {
   CourseSelectionWindowQueryParams,
   CreateSelectionWindowPayload,
   UpdateSelectionWindowPayload,
+  SelectionWindowAvailabilityVO,
   CourseEnrollmentVO,
   CourseEnrollmentQueryParams,
   AvailableTeachingClassVO,
@@ -570,6 +600,10 @@ import type {
   ProgramCourseRequirementQueryParams,
   CreateProgramCourseRequirementPayload,
   UpdateProgramCourseRequirementPayload,
+  ScheduleItemVO,
+  TimetableMeVO,
+  ProgramRequirementProgressVO,
+  CourseType,
 } from '@/types'
 
 type CreateAdministrativeClassSuccessResponse = ApiResponse<number>
@@ -912,6 +946,7 @@ type GetSelectionWindowSuccessResponse = ApiResponse<CourseSelectionWindowVO>
 type UpdateSelectionWindowSuccessResponse = ApiResponse<null>
 type DeleteSelectionWindowSuccessResponse = ApiResponse<null>
 type SelectionWindowStatusSuccessResponse = ApiResponse<null>
+type GetSelectionWindowAvailabilitySuccessResponse = ApiResponse<SelectionWindowAvailabilityVO>
 
 // 创建选课窗口
 export const createSelectionWindow = async (
@@ -966,6 +1001,13 @@ export const getActiveSelectionWindows = async (): Promise<
   ApiResponse<CourseSelectionWindowVO[]>
 > => apiClient.get('/course-selection-window/active')
 
+// 获取当前用户可用的选课窗口
+export const getMyActiveSelectionWindows = async (params?: {
+  semesterId?: number
+  courseType?: CourseType
+}): Promise<GetSelectionWindowAvailabilitySuccessResponse> =>
+  apiClient.get('/course-selection-window/me/active', { params })
+
 // --- 选课 (CourseEnrollment) API ---
 
 type EnrollCourseSuccessResponse = ApiResponse<number>
@@ -993,7 +1035,7 @@ export const getAvailableTeachingClasses = async (
 
 // 查询我的选课记录（学生视角）
 export const getMyEnrollments = async (
-  params: CourseEnrollmentQueryParams
+  params: CourseEnrollmentQueryParams & { includeSchedules?: boolean }
 ): Promise<GetEnrollmentListSuccessResponse> => apiClient.get('/course-enrollment/my', { params })
 
 // 分页查询选课记录（管理员视角）
@@ -1005,6 +1047,20 @@ export const getEnrollmentList = async (
 export const getEnrollmentDetail = async (id: number): Promise<GetEnrollmentSuccessResponse> =>
   apiClient.get(`/course-enrollment/${id}/detail`)
 
+// --- 课程表 (Timetable) API ---
+
+export const getTimetableMe = async (params?: {
+  semesterId?: number
+}): Promise<ApiResponse<TimetableMeVO>> => apiClient.get('/timetable/me', { params })
+
+export const getStudentMeSchedule = async (params?: {
+  semesterId?: number
+}): Promise<ApiResponse<ScheduleItemVO[]>> => apiClient.get('/student/me/schedule', { params })
+
+export const getTeacherMeSchedule = async (params?: {
+  semesterId?: number
+}): Promise<ApiResponse<ScheduleItemVO[]>> => apiClient.get('/teacher/me/schedule', { params })
+
 // --- 培养计划 (ProgramCourseRequirement) API ---
 
 type CreateProgramRequirementSuccessResponse = ApiResponse<number>
@@ -1012,6 +1068,7 @@ type GetProgramRequirementListSuccessResponse = ApiResponse<PageResult<ProgramCo
 type GetProgramRequirementSuccessResponse = ApiResponse<ProgramCourseRequirementVO>
 type UpdateProgramRequirementSuccessResponse = ApiResponse<null>
 type DeleteProgramRequirementSuccessResponse = ApiResponse<null>
+type GetProgramRequirementProgressSuccessResponse = ApiResponse<ProgramRequirementProgressVO>
 
 // 创建培养计划
 export const createProgramCourseRequirement = async (
@@ -1043,6 +1100,12 @@ export const deleteProgramCourseRequirement = async (
   id: number
 ): Promise<DeleteProgramRequirementSuccessResponse> =>
   apiClient.post(`/program-course-requirement/${id}/delete`)
+
+// 获取培养计划进度（学生端）
+export const getProgramRequirementProgressMe = async (params?: {
+  semesterId?: number
+}): Promise<GetProgramRequirementProgressSuccessResponse> =>
+  apiClient.get('/program-course-requirement/me/progress', { params })
 
 // --- 文件上传 (File) API ---
 
@@ -1082,8 +1145,7 @@ type GetSystemActivitySuccessResponse = ApiResponse<SystemActivity[]>
 // 获取 Dashboard 概览统计
 export const getDashboardOverview = async (params?: {
   semesterId?: number
-}): Promise<GetDashboardOverviewSuccessResponse> =>
-  apiClient.get('/dashboard/overview', { params })
+}): Promise<GetDashboardOverviewSuccessResponse> => apiClient.get('/dashboard/overview', { params })
 
 // 获取选课进度
 export const getEnrollmentProgress = async (params?: {

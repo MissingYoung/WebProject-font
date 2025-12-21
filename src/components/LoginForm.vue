@@ -75,7 +75,7 @@ const handleLogin = async () => {
       realName: result.data.realName || '',
       role: result.data.role,
       avatarUrl: '',
-      gender: 2, // 0=MALE, 1=FEMALE, 2=UNKNOWN
+      gender: 'UNKNOWN',
       birthday: '',
       phone: '',
       email: '',

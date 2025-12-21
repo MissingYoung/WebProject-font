@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
+import dayjs from 'dayjs'
 import { useUserStore } from '@/stores/user'
 import {
   getCurrentSemester,
@@ -8,6 +9,9 @@ import {
   getEnrollmentProgress,
   getPopularCourses,
   getOrgDistribution,
+  getStudentMeSchedule,
+  getTeacherMeSchedule,
+  getTimetableMe,
 } from '@/lib/api'
 import { useRouter } from 'vue-router'
 import type {
@@ -17,6 +21,8 @@ import type {
   EnrollmentProgress,
   PopularCourse,
   OrgDistribution,
+  Gender,
+  ScheduleItemVO,
 } from '@/types'
 
 // UI 组件
@@ -30,6 +36,9 @@ import {
   GraduationCap,
   Building2,
   Calendar,
+  Clock,
+  RefreshCw,
+  MapPin,
   BookOpen,
   Users,
   Shield,
@@ -66,15 +75,22 @@ const semesterError = ref<string | null>(null)
 const dashboardError = ref<string | null>(null)
 const orgDistributionError = ref<string | null>(null)
 
+// 今日课程（课程表预览）
+const isLoadingTodayCourses = ref(false)
+const todayCourses = ref<ScheduleItemVO[]>([])
+const todayCoursesError = ref<string | null>(null)
+
 // 用户信息
 const userInfo = computed(() => userStore.userInfo)
 const userInitial = computed(() => userStore.userInitial)
+const role = computed(() => userStore.me?.role || userInfo.value?.role || '')
 
 // 快捷操作菜单
 const quickActions = [
   { name: '课程管理', routeName: 'CourseList', icon: GraduationCap, color: 'bg-blue-500' },
   { name: '部门管理', routeName: 'DepartmentList', icon: Building2, color: 'bg-green-500' },
   { name: '学期管理', routeName: 'SemesterList', icon: Calendar, color: 'bg-yellow-500' },
+  { name: '课程表', routeName: 'Timetable', icon: Clock, color: 'bg-teal-500' },
   { name: '专业管理', routeName: 'MajorList', icon: BookOpen, color: 'bg-purple-500' },
   { name: '学生管理', routeName: 'StudentList', icon: GraduationCap, color: 'bg-pink-500' },
   { name: '教师管理', routeName: 'TeacherList', icon: Users, color: 'bg-indigo-500' },
@@ -83,10 +99,10 @@ const quickActions = [
 ]
 
 // 性别映射
-const genderMap: Record<number, string> = {
-  0: '男',
-  1: '女',
-  2: '未知',
+const genderMap: Record<Gender, string> = {
+  MALE: '男',
+  FEMALE: '女',
+  UNKNOWN: '未知',
 }
 
 // --- 方法 ---
@@ -122,6 +138,93 @@ const getGreeting = () => {
   if (hour < 18) return '下午好'
   return '晚上好'
 }
+
+const weekDayLabels = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+
+const todayWeekDay = computed(() => {
+  const d = dayjs().day()
+  return d === 0 ? 7 : d
+})
+
+const todayLabel = computed(() => {
+  return `${dayjs().format('YYYY-MM-DD')} ${weekDayLabels[todayWeekDay.value - 1] || ''}`.trim()
+})
+
+const semesterWeekCount = computed(() => {
+  if (currentSemester.value?.weekCount) return currentSemester.value.weekCount
+  if (currentSemester.value?.startDate && currentSemester.value?.endDate) {
+    const start = dayjs(currentSemester.value.startDate)
+    const end = dayjs(currentSemester.value.endDate)
+    return Math.max(1, end.diff(start, 'week') + 1)
+  }
+  return 16
+})
+
+const currentWeekNumber = computed(() => {
+  if (!currentSemester.value?.startDate) return 1
+  const start = dayjs(currentSemester.value.startDate)
+  const today = dayjs()
+  if (today.isBefore(start, 'day')) return 1
+  const diffDays = today.diff(start, 'day')
+  const w = Math.floor(diffDays / 7) + 1
+  return Math.min(Math.max(1, w), semesterWeekCount.value)
+})
+
+const courseLabel = (item: ScheduleItemVO) =>
+  item.courseName ||
+  item.teachingClassName ||
+  item.teachingClassCode ||
+  item.courseCode ||
+  '未命名课程'
+
+const normalizeTodayCourses = (items: ScheduleItemVO[]) => {
+  const week = currentWeekNumber.value
+  return items
+    .filter((i) => i.weekDay === todayWeekDay.value && week >= i.startWeek && week <= i.endWeek)
+    .sort((a, b) => {
+      if (a.startSection !== b.startSection) return a.startSection - b.startSection
+      if (a.endSection !== b.endSection) return a.endSection - b.endSection
+      return courseLabel(a).localeCompare(courseLabel(b))
+    })
+}
+
+const loadTodayCourses = async () => {
+  if (!currentSemester.value?.id) return
+
+  isLoadingTodayCourses.value = true
+  todayCoursesError.value = null
+  todayCourses.value = []
+
+  const semesterId = currentSemester.value.id
+
+  try {
+    const res = await getTimetableMe({ semesterId })
+    todayCourses.value = normalizeTodayCourses(res.data?.items || [])
+  } catch (_err: unknown) {
+    try {
+      if (role.value === 'teacher') {
+        const res = await getTeacherMeSchedule({ semesterId })
+        todayCourses.value = normalizeTodayCourses(res.data || [])
+      } else if (role.value === 'student') {
+        const res = await getStudentMeSchedule({ semesterId })
+        todayCourses.value = normalizeTodayCourses(res.data || [])
+      } else {
+        todayCoursesError.value = '当前账号暂无课程表'
+      }
+    } catch (err2: unknown) {
+      todayCoursesError.value = err2 instanceof Error ? err2.message : '加载今日课程失败'
+    }
+  } finally {
+    isLoadingTodayCourses.value = false
+  }
+}
+
+watch(
+  () => currentSemester.value?.id,
+  (id) => {
+    if (id) loadTodayCourses()
+  }
+)
 
 // 加载 Dashboard 统计数据
 const loadDashboardData = async () => {
@@ -167,7 +270,7 @@ const loadDashboardData = async () => {
     }
 
     const allFailed = [overviewRes, trendRes, progressRes, popularRes, distRes].every(
-      (res) => res.status === 'rejected',
+      (res) => res.status === 'rejected'
     )
     if (allFailed) {
       dashboardError.value = '所有数据加载失败，请稍后再试'
@@ -242,7 +345,7 @@ onMounted(() => {
             </div>
             <div class="flex items-center gap-2 text-muted-foreground">
               <span class="font-medium text-foreground w-16">性别:</span>
-              {{ genderMap[userInfo?.gender ?? 2] }}
+              {{ genderMap[userInfo?.gender || 'UNKNOWN'] }}
             </div>
           </div>
         </CardContent>
@@ -308,54 +411,106 @@ onMounted(() => {
         </CardContent>
       </Card>
 
-      <!-- 系统概览卡片 -->
+      <!-- 今日课程卡片 -->
       <Card class="md:col-span-1">
-        <CardHeader>
-          <CardTitle class="flex items-center gap-2">
-            <Shield class="h-5 w-5" />
-            系统概览
-          </CardTitle>
-          <CardDescription>教务管理系统功能模块</CardDescription>
+        <CardHeader class="space-y-1">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <CardTitle class="flex items-center gap-2">
+                <Clock class="h-5 w-5" />
+                今日课程
+              </CardTitle>
+              <CardDescription>
+                {{ todayLabel }}
+                <span v-if="currentSemester"> · 第 {{ currentWeekNumber }} 周</span>
+              </CardDescription>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              :disabled="!currentSemester || isLoadingTodayCourses"
+              title="刷新"
+              @click="loadTodayCourses"
+            >
+              <RefreshCw class="h-4 w-4" />
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
-          <div class="space-y-4">
-            <p class="text-sm text-muted-foreground">
-              本系统提供完整的教务管理功能，包括用户管理、课程管理、选课系统等核心模块。
-            </p>
-            <div class="grid grid-cols-2 gap-2 text-sm">
-              <div class="flex items-center gap-2">
-                <div class="h-2 w-2 rounded-full bg-green-500"></div>
-                用户管理
+          <div v-if="!currentSemester" class="text-center py-8 text-muted-foreground">
+            <Clock class="h-12 w-12 mx-auto mb-2 opacity-50" />
+            <p>未设置当前学期，无法加载今日课程</p>
+          </div>
+          <div v-else-if="isLoadingTodayCourses" class="flex items-center justify-center py-8">
+            <Loader2 class="h-6 w-6 animate-spin mr-2" />
+            加载中...
+          </div>
+          <div v-else-if="todayCoursesError" class="text-center py-8 text-destructive">
+            <AlertTriangle class="h-12 w-12 mx-auto mb-2 opacity-50" />
+            <p>{{ todayCoursesError }}</p>
+            <Button variant="outline" size="sm" class="mt-4" @click="loadTodayCourses">重试</Button>
+          </div>
+          <div v-else-if="todayCourses.length === 0" class="text-center py-8 text-muted-foreground">
+            <Clock class="h-12 w-12 mx-auto mb-2 opacity-50" />
+            <p>今天没有课程</p>
+          </div>
+          <div v-else class="space-y-2">
+            <div
+              v-for="item in todayCourses.slice(0, 6)"
+              :key="`${item.teachingClassId || item.teachingClassCode || ''}-${item.weekDay}-${item.startSection}-${item.endSection}-${item.classroom || ''}`"
+              class="rounded-lg border p-3 bg-card hover:bg-muted/50 transition-colors"
+            >
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <div class="font-medium truncate">{{ courseLabel(item) }}</div>
+                  <div
+                    class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground"
+                  >
+                    <span class="inline-flex items-center gap-1">
+                      <Clock class="h-3.5 w-3.5" />
+                      第 {{ item.startSection }}-{{ item.endSection }} 节
+                    </span>
+                    <span v-if="item.classroom" class="inline-flex items-center gap-1">
+                      <MapPin class="h-3.5 w-3.5" />
+                      {{ item.classroom }}
+                    </span>
+                    <span v-if="item.teacherName" class="inline-flex items-center gap-1">
+                      <User class="h-3.5 w-3.5" />
+                      {{ item.teacherName }}
+                    </span>
+                  </div>
+                </div>
+                <Badge variant="secondary" class="shrink-0">
+                  {{ item.startWeek }}-{{ item.endWeek }}周
+                </Badge>
               </div>
-              <div class="flex items-center gap-2">
-                <div class="h-2 w-2 rounded-full bg-blue-500"></div>
-                课程管理
-              </div>
-              <div class="flex items-center gap-2">
-                <div class="h-2 w-2 rounded-full bg-purple-500"></div>
-                组织架构
-              </div>
-              <div class="flex items-center gap-2">
-                <div class="h-2 w-2 rounded-full bg-orange-500"></div>
-                权限系统
+              <div v-if="item.remark" class="mt-2 text-xs text-muted-foreground break-words">
+                {{ item.remark }}
               </div>
             </div>
+            <div v-if="todayCourses.length > 6" class="text-xs text-muted-foreground text-center">
+              仅展示前 6 条，更多请查看完整课程表
+            </div>
           </div>
+          <Button variant="outline" size="sm" class="w-full mt-4" @click="navigateTo('Timetable')">
+            查看完整课程表
+            <ArrowRight class="ml-2 h-4 w-4" />
+          </Button>
         </CardContent>
       </Card>
     </div>
 
     <!-- 4. Dashboard 统计卡片（精简版）-->
     <div>
-      <h3 class="text-lg font-semibold mb-4">系统概览</h3>
+      <h3 class="text-lg font-semibold mb-4">数据概览</h3>
       <div v-if="isLoadingDashboard" class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card v-for="i in 4" :key="i">
           <CardHeader>
-            <div class="h-4 w-2/3 rounded bg-muted animate-pulse" />
+            <div class="h-4 w-2/3 rounded bg-muted animate-pulse"></div>
           </CardHeader>
           <CardContent class="space-y-2">
-            <div class="h-8 w-1/3 rounded bg-muted animate-pulse" />
-            <div class="h-3 w-1/2 rounded bg-muted animate-pulse" />
+            <div class="h-8 w-1/3 rounded bg-muted animate-pulse"></div>
+            <div class="h-3 w-1/2 rounded bg-muted animate-pulse"></div>
           </CardContent>
         </Card>
       </div>
