@@ -31,7 +31,7 @@ const isLoading = ref(false)
 const isSubmitting = ref(false)
 const currentRole = ref<RoleVO | null>(null)
 const allPermissions = ref<PermissionVO[]>([])
-const selectedPermissionIds = ref<Set<number>>(new Set())
+const selectedPermissionKeys = ref<Set<string>>(new Set())
 
 // 按类型分组的权限
 const groupedPermissions = computed(() => {
@@ -51,38 +51,108 @@ const groupedPermissions = computed(() => {
 
 // --- 方法 ---
 
+const DEFAULT_PAGE_SIZE = 100
+const MAX_PAGES_SAFETY_LIMIT = 200
+
+type PageResultLike<T> = {
+  records: T[]
+  total?: number
+  pageNum?: number
+  pageSize?: number
+  pages?: number
+}
+
+const normalizePermissionKey = (raw: unknown): string => {
+  if (typeof raw !== 'string') return ''
+  const key = raw.trim()
+  if (!key) return ''
+  // 兼容后端可能返回的菜单/目录权限 key 前缀，例如 "menu:system:role"
+  return key.startsWith('menu:') ? key.slice('menu:'.length) : key
+}
+
+const isPermissionSelected = (permissionKey: string): boolean =>
+  selectedPermissionKeys.value.has(normalizePermissionKey(permissionKey))
+
+const extractRecordsFromResponse = <T,>(data: unknown): { records: T[]; pages: number } => {
+  if (Array.isArray(data)) return { records: data as T[], pages: 1 }
+
+  if (data && typeof data === 'object' && 'records' in data) {
+    const page = data as PageResultLike<T>
+    const records = Array.isArray(page.records) ? page.records : []
+    const pages =
+      typeof page.pages === 'number' && Number.isFinite(page.pages) && page.pages > 0
+        ? page.pages
+        : typeof page.total === 'number' && Number.isFinite(page.total) && page.total >= 0
+          ? Math.max(1, Math.ceil(page.total / (page.pageSize || DEFAULT_PAGE_SIZE)))
+          : 1
+    return { records, pages }
+  }
+
+  return { records: [], pages: 1 }
+}
+
+const fetchAllPermissions = async (): Promise<PermissionVO[]> => {
+  const result: PermissionVO[] = []
+  let pageNum = 1
+  let pages = 1
+
+  for (let i = 0; i < MAX_PAGES_SAFETY_LIMIT; i += 1) {
+    const res = await getAllPermissions({ pageNum, pageSize: DEFAULT_PAGE_SIZE })
+    const extracted = extractRecordsFromResponse<PermissionVO>(res?.data as unknown)
+    result.push(...extracted.records)
+    pages = extracted.pages
+
+    if (pageNum >= pages) break
+    if (extracted.records.length === 0) break
+    pageNum += 1
+  }
+
+  return result
+}
+
+const fetchAllRolePermissions = async (roleId: number): Promise<PermissionVO[]> => {
+  const result: PermissionVO[] = []
+  let pageNum = 1
+  let pages = 1
+
+  for (let i = 0; i < MAX_PAGES_SAFETY_LIMIT; i += 1) {
+    const res = await getRolePermissions(roleId, { pageNum, pageSize: DEFAULT_PAGE_SIZE })
+    const extracted = extractRecordsFromResponse<PermissionVO>(res?.data as unknown)
+    result.push(...extracted.records)
+    pages = extracted.pages
+
+    if (pageNum >= pages) break
+    if (extracted.records.length === 0) break
+    pageNum += 1
+  }
+
+  return result
+}
+
 // 打开对话框
 const openDialog = async (role: RoleVO) => {
   currentRole.value = role
-  selectedPermissionIds.value = new Set()
+  selectedPermissionKeys.value = new Set()
   isOpen.value = true
   isLoading.value = true
 
   try {
-    // 并行加载所有权限和当前角色的权限
-    const [allRes, roleRes] = await Promise.all([getAllPermissions(), getRolePermissions(role.id)])
+    // 注意：/permission/all 和 /role/{id}/permissions 都是分页接口，这里需要把所有页取全
+    const [all, rolePermissions] = await Promise.all([
+      fetchAllPermissions(),
+      fetchAllRolePermissions(role.id),
+    ])
 
-    if (allRes && allRes.data) {
-      // 处理分页格式响应 - 后端返回 {records: [...]} 格式
-      const data = allRes.data as unknown
-      if (Array.isArray(data)) {
-        allPermissions.value = data as PermissionVO[]
-      } else if (data && typeof data === 'object' && 'records' in data) {
-        allPermissions.value = (data as { records: PermissionVO[] }).records
-      }
-    }
-
-    if (roleRes && roleRes.data) {
-      // 处理分页格式响应
-      const data = roleRes.data as unknown
-      let permissions: PermissionVO[] = []
-      if (Array.isArray(data)) {
-        permissions = data as PermissionVO[]
-      } else if (data && typeof data === 'object' && 'records' in data) {
-        permissions = (data as { records: PermissionVO[] }).records
-      }
-      selectedPermissionIds.value = new Set(permissions.map((p) => p.id))
-    }
+    allPermissions.value = all
+    const allKeySet = new Set(
+      all.map((p) => normalizePermissionKey(p.key)).filter((key) => key.length > 0)
+    )
+    const roleKeySet = new Set(
+      rolePermissions.map((p) => normalizePermissionKey(p.key)).filter((key) => key.length > 0)
+    )
+    selectedPermissionKeys.value = new Set(
+      Array.from(roleKeySet).filter((key) => allKeySet.has(key))
+    )
   } catch (error) {
     console.error('加载权限数据失败', error)
     showError('加载权限数据失败')
@@ -97,34 +167,36 @@ const closeDialog = () => {
   isOpen.value = false
   currentRole.value = null
   allPermissions.value = []
-  selectedPermissionIds.value = new Set()
+  selectedPermissionKeys.value = new Set()
 }
 
 // 切换权限选择
-const togglePermission = (permissionId: number) => {
-  const newSet = new Set(selectedPermissionIds.value)
-  if (newSet.has(permissionId)) {
-    newSet.delete(permissionId)
-  } else {
-    newSet.add(permissionId)
-  }
-  selectedPermissionIds.value = newSet
+const setPermissionSelected = (permissionKey: string, selected: boolean) => {
+  const key = normalizePermissionKey(permissionKey)
+  if (!key) return
+
+  const newSet = new Set(selectedPermissionKeys.value)
+  if (selected) newSet.add(key)
+  else newSet.delete(key)
+  selectedPermissionKeys.value = newSet
 }
 
 // 全选/取消全选某类型的权限
 const toggleAllType = (type: 'directories' | 'menus', selected: boolean) => {
-  const newSet = new Set(selectedPermissionIds.value)
+  const newSet = new Set(selectedPermissionKeys.value)
   const permissions =
     type === 'directories' ? groupedPermissions.value.directories : groupedPermissions.value.menus
 
   permissions.forEach((p) => {
+    const key = normalizePermissionKey(p.key)
+    if (!key) return
     if (selected) {
-      newSet.add(p.id)
+      newSet.add(key)
     } else {
-      newSet.delete(p.id)
+      newSet.delete(key)
     }
   })
-  selectedPermissionIds.value = newSet
+  selectedPermissionKeys.value = newSet
 }
 
 // 检查某类型是否全选
@@ -132,7 +204,7 @@ const isAllTypeSelected = (type: 'directories' | 'menus') => {
   const permissions =
     type === 'directories' ? groupedPermissions.value.directories : groupedPermissions.value.menus
   if (permissions.length === 0) return false
-  return permissions.every((p) => selectedPermissionIds.value.has(p.id))
+  return permissions.every((p) => selectedPermissionKeys.value.has(normalizePermissionKey(p.key)))
 }
 
 // 提交权限分配
@@ -141,8 +213,13 @@ const handleSubmit = async () => {
 
   isSubmitting.value = true
   try {
+    const permissionIds = allPermissions.value
+      .filter((p) => selectedPermissionKeys.value.has(normalizePermissionKey(p.key)))
+      .map((p) => Number(p.id))
+      .filter((id) => Number.isFinite(id))
+
     await assignRolePermissions(currentRole.value.id, {
-      permissionIds: Array.from(selectedPermissionIds.value),
+      permissionIds,
     })
     showSuccess('权限分配成功')
     closeDialog()
@@ -201,15 +278,15 @@ defineExpose({
             <div
               v-for="permission in groupedPermissions.directories"
               :key="permission.id"
-              class="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50"
+              class="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50"
             >
               <div class="flex-1 min-w-0">
                 <div class="font-medium text-sm truncate">{{ permission.name }}</div>
                 <code class="text-xs text-muted-foreground">{{ permission.key }}</code>
               </div>
               <Switch
-                :checked="selectedPermissionIds.has(permission.id)"
-                @update:checked="() => togglePermission(permission.id)"
+                :model-value="isPermissionSelected(permission.key)"
+                @update:model-value="(v: boolean) => setPermissionSelected(permission.key, v)"
               />
             </div>
           </div>
@@ -233,15 +310,15 @@ defineExpose({
             <div
               v-for="permission in groupedPermissions.menus"
               :key="permission.id"
-              class="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50"
+              class="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50"
             >
               <div class="flex-1 min-w-0">
                 <div class="font-medium text-sm truncate">{{ permission.name }}</div>
                 <code class="text-xs text-muted-foreground">{{ permission.key }}</code>
               </div>
               <Switch
-                :checked="selectedPermissionIds.has(permission.id)"
-                @update:checked="() => togglePermission(permission.id)"
+                :model-value="isPermissionSelected(permission.key)"
+                @update:model-value="(v: boolean) => setPermissionSelected(permission.key, v)"
               />
             </div>
           </div>
@@ -255,7 +332,7 @@ defineExpose({
 
       <!-- 统计信息 -->
       <div class="py-2 text-sm text-muted-foreground border-t">
-        已选择 {{ selectedPermissionIds.size }} / {{ allPermissions.length }} 个权限
+        已选择 {{ selectedPermissionKeys.size }} / {{ allPermissions.length }} 个权限
       </div>
 
       <DialogFooter>

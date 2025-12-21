@@ -84,6 +84,9 @@ const todayCoursesError = ref<string | null>(null)
 const userInfo = computed(() => userStore.userInfo)
 const userInitial = computed(() => userStore.userInitial)
 const role = computed(() => userStore.me?.role || userInfo.value?.role || '')
+const displayName = computed(
+  () => userInfo.value?.realName?.trim() || userInfo.value?.username || '未设置姓名'
+)
 
 // 快捷操作菜单
 const quickActions = [
@@ -299,9 +302,7 @@ onMounted(() => {
         <h2 class="text-2xl font-bold tracking-tight flex items-center gap-2">
           <Home class="h-6 w-6" /> 我的桌面
         </h2>
-        <p class="text-muted-foreground">
-          {{ getGreeting() }}，{{ userInfo?.realName || userInfo?.username || '用户' }}
-        </p>
+        <p class="text-muted-foreground">{{ getGreeting() }}，{{ displayName }}</p>
       </div>
     </div>
 
@@ -319,11 +320,11 @@ onMounted(() => {
         <CardContent>
           <div class="flex items-center gap-4 mb-4">
             <Avatar class="h-16 w-16">
-              <AvatarImage :src="userInfo?.avatarUrl ?? ''" :alt="userInfo?.realName ?? ''" />
+              <AvatarImage :src="userInfo?.avatarUrl ?? ''" :alt="displayName" />
               <AvatarFallback class="text-lg">{{ userInitial }}</AvatarFallback>
             </Avatar>
             <div>
-              <h3 class="font-semibold text-lg">{{ userInfo?.realName || '未设置姓名' }}</h3>
+              <h3 class="font-semibold text-lg">{{ displayName }}</h3>
               <p class="text-sm text-muted-foreground">@{{ userInfo?.username }}</p>
               <Badge v-if="userInfo?.role" variant="secondary" class="mt-1">
                 {{ userInfo.role }}

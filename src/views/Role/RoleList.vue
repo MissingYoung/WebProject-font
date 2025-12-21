@@ -244,7 +244,7 @@ onMounted(() => {
     </div>
 
     <!-- 3. 表格区域 -->
-    <div class="border rounded-md bg-white">
+    <div class="border rounded-md bg-card">
       <Table>
         <TableHeader>
           <TableRow>
@@ -279,7 +279,7 @@ onMounted(() => {
             <TableCell class="font-medium">{{ item.id }}</TableCell>
             <TableCell>{{ item.name }}</TableCell>
             <TableCell>
-              <code class="bg-gray-100 px-2 py-1 rounded text-sm">{{ item.key }}</code>
+              <code class="bg-muted px-2 py-1 rounded text-sm">{{ item.key }}</code>
             </TableCell>
             <TableCell class="max-w-[200px] truncate" :title="item.description">
               {{ item.description || '-' }}
@@ -371,7 +371,9 @@ onMounted(() => {
             确认删除该角色吗？
           </AlertDialogTitle>
           <AlertDialogDescription>
-            您正在尝试删除角色：<span class="font-bold text-black">{{ roleToDelete?.name }}</span>
+            您正在尝试删除角色：<span class="font-bold text-foreground">{{
+              roleToDelete?.name
+            }}</span>
             ({{ roleToDelete?.key }})。
             <br />
             <span class="text-red-500 text-xs mt-2 block">
@@ -383,7 +385,7 @@ onMounted(() => {
           <AlertDialogCancel :disabled="isDeleting">取消</AlertDialogCancel>
           <AlertDialogAction
             :disabled="isDeleting"
-            class="bg-red-600 hover:bg-red-700 text-white"
+            class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             @click.prevent="handleConfirmDelete"
           >
             {{ isDeleting ? '删除中...' : '确认删除' }}

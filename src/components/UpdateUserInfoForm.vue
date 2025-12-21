@@ -237,7 +237,7 @@ const handleUpdate = async () => {
               <img
                 :src="formData.avatarUrl"
                 :alt="formData.username"
-                class="h-24 w-24 rounded-full object-cover border-2 border-gray-200"
+                class="h-24 w-24 rounded-full object-cover border-2 border-border"
               />
             </div>
           </div>

@@ -94,7 +94,7 @@ const handleChangePassword = async () => {
 </script>
 
 <template>
-  <div class="flex min-h-screen items-center justify-center bg-muted/40">
+  <div class="flex min-h-screen items-center justify-center bg-background">
     <Card class="w-full max-w-md">
       <CardHeader>
         <CardTitle class="text-2xl">修改密码</CardTitle>
@@ -120,19 +120,16 @@ const handleChangePassword = async () => {
         </div>
       </CardContent>
       <CardFooter>
-        <Button
-          :disabled="isLoading"
-          class="w-full bg-black text-white hover:bg-green-600 focus-visible:ring-red-500"
-          @click="handleChangePassword"
-        >
+        <Button :disabled="isLoading" class="w-full" @click="handleChangePassword">
           <Loader2 v-if="isLoading" class="mr-2 h-4 w-4 animate-spin" />
           确认修改
         </Button>
       </CardFooter>
       <CardFooter>
         <Button
+          variant="secondary"
           :disabled="isLoading"
-          class="w-full bg-black text-white hover:bg-red-600 focus-visible:ring-red-500"
+          class="w-full"
           @click="cancelChangePassword"
         >
           <Loader2 v-if="isLoading" class="mr-2 h-4 w-4 animate-spin" />

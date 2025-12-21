@@ -458,18 +458,21 @@ export const getFamilyMemberList = async (
 // --- 权限 (Permission) API ---
 
 type GetPermissionListSuccessResponse = ApiResponse<PageResult<PermissionVO>>
-type GetAllPermissionsSuccessResponse = ApiResponse<PermissionVO[]>
+type GetAllPermissionsSuccessResponse = ApiResponse<PageResult<PermissionVO>>
 type GetPermissionSuccessResponse = ApiResponse<PermissionVO>
 type GetCurrentUserPermissionsSuccessResponse = ApiResponse<PermissionVO[]>
+type GetRolePermissionsSuccessResponse = ApiResponse<PageResult<PermissionVO>>
 
 // 获取权限列表 (分页)
 export const getPermissionList = async (
   params: PermissionQueryParams
 ): Promise<GetPermissionListSuccessResponse> => apiClient.get('/permission/list', { params })
 
-// 获取所有权限
-export const getAllPermissions = async (): Promise<GetAllPermissionsSuccessResponse> =>
-  apiClient.get('/permission/all')
+// 获取所有权限 (分页接口；不传参默认后端分页大小)
+export const getAllPermissions = async (params?: {
+  pageNum?: number
+  pageSize?: number
+}): Promise<GetAllPermissionsSuccessResponse> => apiClient.get('/permission/all', { params })
 
 // 获取权限详情
 export const getPermissionDetail = async (id: number): Promise<GetPermissionSuccessResponse> =>
@@ -477,8 +480,10 @@ export const getPermissionDetail = async (id: number): Promise<GetPermissionSucc
 
 // 获取指定角色的权限列表
 export const getRolePermissions = async (
-  roleId: number
-): Promise<GetAllPermissionsSuccessResponse> => apiClient.get(`/permission/role/${roleId}`)
+  roleId: number,
+  params?: { pageNum?: number; pageSize?: number }
+): Promise<GetRolePermissionsSuccessResponse> =>
+  apiClient.get(`/role/${roleId}/permissions`, { params })
 
 // 获取当前用户的权限列表
 export const getCurrentUserPermissions =

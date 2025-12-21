@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { KeyRound, LogOut, Upload } from 'lucide-vue-next'
+import { KeyRound, Loader2, LogOut, Shield, Upload } from 'lucide-vue-next'
 import { useUserStore } from '@/stores/user'
 import { useRouter } from 'vue-router'
-import { uploadFile, updateUserProfile } from '@/lib/api'
+import { login, uploadFile, updateUserProfile } from '@/lib/api'
 import { useNotification } from '@/composables/useNotification'
+import type { UserInfo } from '@/types'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -22,6 +23,7 @@ const router = useRouter()
 const { confirm, success, error } = useNotification()
 const isUploading = ref(false)
 const fileInputRef = ref<HTMLInputElement | null>(null)
+const isLoggingInDemoAdmin = ref(false)
 
 const goToProfile = () => {
   router.push({ name: 'UserProfile' })
@@ -48,6 +50,57 @@ const handleSwitchAccount = async () => {
   await userStore.logout()
   success('已退出登录')
   router.push({ name: 'Login' })
+}
+
+const handleDemoAdminLogin = async () => {
+  const confirmed = userStore.isLoggedIn
+    ? await confirm({
+        title: '切换为演示管理员',
+        description: '将退出当前账号，并使用演示用管理员账号登录，是否继续？',
+      })
+    : true
+
+  if (!confirmed) return
+
+  isLoggingInDemoAdmin.value = true
+  try {
+    if (userStore.isLoggedIn) {
+      await userStore.logout()
+    }
+
+    const result = await login({ sduId: '202400011111', password: '123456' })
+    if (!result?.data) {
+      throw new Error('登录服务响应异常，请稍后重试')
+    }
+
+    const { token, username } = result.data
+    const miniUserInfo: UserInfo = {
+      id: result.data.userId,
+      username: username,
+      sduId: '202400011111',
+      realName: result.data.realName || '',
+      role: result.data.role,
+      avatarUrl: '',
+      gender: 'UNKNOWN',
+      birthday: '',
+      phone: '',
+      email: '',
+      ethnic: '',
+      politicalStatus: '',
+      description: '',
+    }
+
+    userStore.setUser({ token, user: miniUserInfo })
+    await userStore.fetchMenuTree()
+
+    success('已使用演示用管理员登录')
+    await router.push({ name: 'Dashboard' })
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : '登录失败，请稍后重试'
+    error(message)
+  } finally {
+    isLoggingInDemoAdmin.value = false
+  }
 }
 
 // 触发文件选择对话框
@@ -130,7 +183,7 @@ const handleFileSelected = async (event: Event) => {
 <!-- 导航栏整体布局 -->
 <template>
   <header
-    class="sticky top-0 z-50 flex h-14 items-center gap-4 border-b bg-background sm:static lg:h-[60px] sm:bg-transparent px-6"
+    class="sticky top-0 z-50 flex h-14 items-center gap-4 border-b bg-card px-6 sm:static lg:h-[60px]"
   >
     <div class="container mx-auto flex w-full items-center justify-between pr-4 sm:pr-6">
       <div>
@@ -139,10 +192,27 @@ const handleFileSelected = async (event: Event) => {
 
       <!-- 个人资料下拉菜单 -->
       <div class="flex items-center gap-2">
+        <Button
+          variant="secondary"
+          class="whitespace-nowrap"
+          :disabled="isLoggingInDemoAdmin"
+          title="使用 202400011111 / 123456 登录"
+          @click="handleDemoAdminLogin"
+        >
+          <Loader2 v-if="isLoggingInDemoAdmin" class="mr-2 h-4 w-4 animate-spin" />
+          <Shield v-else class="mr-2 h-4 w-4" />
+          演示用管理员
+        </Button>
         <span class="text-sm font-medium hidden md:inline">个人资料</span>
         <DropdownMenu>
           <DropdownMenuTrigger as-child>
-            <Button variant="outline" size="icon" class="overflow-hidden rounded-full">
+            <Button
+              variant="outline"
+              size="icon"
+              title="打开个人资料菜单"
+              aria-label="打开个人资料菜单"
+              class="overflow-hidden rounded-full"
+            >
               <Avatar class="h-9 w-9">
                 <AvatarImage :src="userStore.userInfo?.avatarUrl || ''" alt="Avatar" />
                 <AvatarFallback>{{ userStore.userInitial }}</AvatarFallback>

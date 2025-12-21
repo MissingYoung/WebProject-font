@@ -491,7 +491,7 @@ export interface MajorQueryParams {
 // --- 权限 (Permission) ---
 
 // 权限类型枚举
-export type PermissionType = 'DIRECTORY' | 'MENU'
+export type PermissionType = 'DIRECTORY' | 'MENU' | 'API'
 
 // 权限状态枚举
 export type PermissionStatus = 'ACTIVE' | 'DISABLED'

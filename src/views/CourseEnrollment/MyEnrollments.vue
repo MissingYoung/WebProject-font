@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { BookCheck, Search, RotateCcw, Trash2 } from 'lucide-vue-next'
+import { BookCheck, Loader2, Search, RotateCcw, Trash2 } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import { Button } from '@/components/ui/button'
 import {
@@ -199,7 +199,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="space-y-4">
+  <div class="space-y-6 p-6">
     <!-- 标题栏 -->
     <div class="flex items-center justify-between">
       <div>
@@ -213,11 +213,12 @@ onMounted(() => {
     </div>
 
     <!-- 搜索区域 -->
-    <div class="flex flex-wrap gap-4 items-end">
-      <div class="flex-1 min-w-[200px] max-w-[250px]">
+    <div class="flex flex-wrap gap-4 items-end border p-4 rounded-lg bg-card">
+      <div class="grid gap-2 w-[180px]">
+        <label class="text-sm font-medium">学期</label>
         <Select v-model="queryParams.semesterId">
           <SelectTrigger>
-            <SelectValue placeholder="选择学期" />
+            <SelectValue placeholder="全部" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem v-for="semester in semesters" :key="semester.id" :value="semester.id">
@@ -226,10 +227,11 @@ onMounted(() => {
           </SelectContent>
         </Select>
       </div>
-      <div class="flex-1 min-w-[150px] max-w-[180px]">
+      <div class="grid gap-2 w-[150px]">
+        <label class="text-sm font-medium">状态</label>
         <Select v-model="queryParams.status">
           <SelectTrigger>
-            <SelectValue placeholder="状态" />
+            <SelectValue placeholder="全部" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="SELECTED">已选</SelectItem>
@@ -239,7 +241,7 @@ onMounted(() => {
           </SelectContent>
         </Select>
       </div>
-      <div class="flex gap-2">
+      <div class="flex gap-2 pb-0.5">
         <Button @click="handleSearch">
           <Search class="mr-2 h-4 w-4" />
           搜索
@@ -252,7 +254,7 @@ onMounted(() => {
     </div>
 
     <!-- 表格 -->
-    <div class="border rounded-lg">
+    <div class="border rounded-md bg-card">
       <Table>
         <TableHeader>
           <TableRow>
@@ -270,14 +272,16 @@ onMounted(() => {
         </TableHeader>
         <TableBody>
           <TableRow v-if="isLoading">
-            <TableCell colspan="10" class="text-center py-8 text-muted-foreground">
-              加载中...
+            <TableCell colspan="10" class="h-24 text-center">
+              <div class="flex items-center justify-center gap-2">
+                <Loader2 class="h-4 w-4 animate-spin" /> 加载中...
+              </div>
             </TableCell>
           </TableRow>
           <TableRow v-else-if="tableData.length === 0">
-            <TableCell colspan="10" class="text-center py-8 text-muted-foreground">
-              暂无选课记录
-            </TableCell>
+            <TableCell colspan="10" class="h-24 text-center text-muted-foreground"
+              >暂无选课记录</TableCell
+            >
           </TableRow>
           <TableRow v-for="row in tableData" :key="row.id">
             <TableCell class="font-medium">{{ row.courseCode }}</TableCell>
@@ -301,11 +305,11 @@ onMounted(() => {
               <Button
                 v-if="canDrop(row)"
                 variant="ghost"
-                size="icon"
+                size="sm"
                 title="退课"
                 @click="handleDropClick(row)"
               >
-                <Trash2 class="h-4 w-4 text-red-600" />
+                <Trash2 class="h-4 w-4 text-red-600" />退课
               </Button>
               <span v-else class="text-muted-foreground text-sm">-</span>
             </TableCell>
@@ -318,7 +322,6 @@ onMounted(() => {
     <PaginationBar
       v-model:page-num="queryParams.pageNum"
       v-model:page-size="queryParams.pageSize"
-      class="justify-between"
       :total="total"
       :is-loading="isLoading"
       @change="fetchData"
@@ -333,7 +336,7 @@ onMounted(() => {
           </AlertDialogTitle>
           <AlertDialogDescription>
             您正在退选课程：
-            <span class="font-bold text-black">
+            <span class="font-bold text-foreground">
               {{ itemToDrop?.courseName }} - {{ itemToDrop?.teachingClassName }}
             </span>
             <br />
@@ -346,7 +349,7 @@ onMounted(() => {
           <AlertDialogCancel :disabled="isDropping">取消</AlertDialogCancel>
           <AlertDialogAction
             :disabled="isDropping"
-            class="bg-red-600 hover:bg-red-700 text-white"
+            class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             @click.prevent="handleConfirmDrop"
           >
             {{ isDropping ? '退课中...' : '确认退课' }}

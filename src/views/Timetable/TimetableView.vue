@@ -261,14 +261,14 @@ onMounted(async () => {
       <AlertDescription>{{ errorMessage }}</AlertDescription>
     </Alert>
 
-    <Alert v-else-if="!isLoading && visibleItems.length === 0" class="bg-white">
+    <Alert v-else-if="!isLoading && visibleItems.length === 0" class="bg-card">
       <AlertTitle>本周暂无课程</AlertTitle>
       <AlertDescription>你可以切换到其它周次或其它学期查看。</AlertDescription>
     </Alert>
 
     <!-- 周视图（桌面） -->
     <div class="hidden md:block">
-      <div class="border rounded-lg bg-white overflow-hidden">
+      <div class="border rounded-lg bg-card overflow-hidden">
         <div class="grid" :style="gridStyle">
           <!-- Header left -->
           <div class="border-b bg-muted/40"></div>
@@ -286,7 +286,7 @@ onMounted(async () => {
             <div class="border-t px-3 py-2 text-sm text-muted-foreground bg-muted/10">
               第 {{ section }} 节
             </div>
-            <div v-for="d in 7" :key="`${section}-${d}`" class="border-t border-l bg-white"></div>
+            <div v-for="d in 7" :key="`${section}-${d}`" class="border-t border-l bg-card"></div>
           </template>
 
           <!-- Items -->
@@ -335,7 +335,7 @@ onMounted(async () => {
           <div
             v-for="(item, idx) in visibleItems.filter((i) => weekDayLabels[i.weekDay - 1] === day)"
             :key="`${item.teachingClassId}-${idx}`"
-            class="border rounded-md p-3 bg-white"
+            class="border rounded-md p-3 bg-card"
             @click="openDetail(item)"
           >
             <div class="font-semibold">{{ item.courseName || item.teachingClassName }}</div>

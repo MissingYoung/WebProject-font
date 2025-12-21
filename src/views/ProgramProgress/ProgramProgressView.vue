@@ -163,7 +163,7 @@ watch(
       </CardContent>
     </Card>
 
-    <div class="border rounded-lg bg-white overflow-hidden">
+    <div class="border rounded-lg bg-card overflow-hidden">
       <div class="px-4 py-3 border-b flex items-center justify-between">
         <div class="font-medium">课程列表</div>
         <div class="text-sm text-muted-foreground">共 {{ filteredItems.length }} 门</div>

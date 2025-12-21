@@ -145,11 +145,7 @@ const handleLogin = async () => {
       </div>
     </CardContent>
     <CardFooter>
-      <Button
-        class="w-full bg-black text-white hover:bg-blue-600 focus-visible:ring-blue-500"
-        :disabled="isLoading"
-        @click="handleLogin"
-      >
+      <Button class="w-full" :disabled="isLoading" @click="handleLogin">
         <Loader2 v-if="isLoading" class="mr-2 h-4 w-4 animate-spin" />
         {{ isLoading ? '登录中...' : '登 录' }}
       </Button>

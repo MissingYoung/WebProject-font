@@ -211,7 +211,7 @@ onMounted(() => {
     </div>
 
     <!-- 3. 表格区域 -->
-    <div class="border rounded-md bg-white">
+    <div class="border rounded-md bg-card">
       <Table>
         <TableHeader>
           <TableRow>
@@ -298,7 +298,7 @@ onMounted(() => {
             确认删除该家庭成员吗？
           </AlertDialogTitle>
           <AlertDialogDescription>
-            您正在尝试删除家庭成员：<span class="font-bold text-black">{{
+            您正在尝试删除家庭成员：<span class="font-bold text-foreground">{{
               memberToDelete?.name
             }}</span>
             （{{ relationshipMap[memberToDelete?.relationship || 'OTHER'] }}）。
@@ -310,7 +310,7 @@ onMounted(() => {
           <AlertDialogCancel :disabled="isDeleting">取消</AlertDialogCancel>
           <AlertDialogAction
             :disabled="isDeleting"
-            class="bg-red-600 hover:bg-red-700 text-white"
+            class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             @click.prevent="handleConfirmDelete"
           >
             {{ isDeleting ? '删除中...' : '确认删除' }}

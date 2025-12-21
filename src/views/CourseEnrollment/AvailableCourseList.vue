@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, reactive, onMounted, watch } from 'vue'
-import { BookMarked, Search, RotateCcw, Plus } from 'lucide-vue-next'
+import { BookMarked, Loader2, Search, RotateCcw, Plus } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -324,7 +324,7 @@ watch(
 </script>
 
 <template>
-  <div class="space-y-4">
+  <div class="space-y-6 p-6">
     <!-- 标题栏 -->
     <div class="flex items-center justify-between">
       <div>
@@ -344,11 +344,12 @@ watch(
     </Alert>
 
     <!-- 搜索区域 -->
-    <div class="flex flex-wrap gap-4 items-end">
-      <div class="flex-1 min-w-[200px] max-w-[250px]">
+    <div class="flex flex-wrap gap-4 items-end border p-4 rounded-lg bg-card">
+      <div class="grid gap-2 w-[180px]">
+        <label class="text-sm font-medium">学期</label>
         <Select v-model="queryParams.semesterId">
           <SelectTrigger>
-            <SelectValue placeholder="选择学期" />
+            <SelectValue placeholder="全部" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem v-for="semester in semesters" :key="semester.id" :value="semester.id">
@@ -357,24 +358,27 @@ watch(
           </SelectContent>
         </Select>
       </div>
-      <div class="flex-1 min-w-[200px] max-w-[250px]">
+      <div class="grid gap-2 w-[200px]">
+        <label class="text-sm font-medium">课程名称</label>
         <Input
           v-model="queryParams.courseName"
-          placeholder="课程名称"
+          placeholder="输入名称"
           @keyup.enter="handleSearch"
         />
       </div>
-      <div class="flex-1 min-w-[150px] max-w-[180px]">
+      <div class="grid gap-2 w-[150px]">
+        <label class="text-sm font-medium">课程编码</label>
         <Input
           v-model="queryParams.courseCode"
-          placeholder="课程编码"
+          placeholder="输入编码"
           @keyup.enter="handleSearch"
         />
       </div>
-      <div class="flex-1 min-w-[150px] max-w-[180px]">
+      <div class="grid gap-2 w-[150px]">
+        <label class="text-sm font-medium">课程类型</label>
         <Select v-model="queryParams.courseType">
           <SelectTrigger>
-            <SelectValue placeholder="课程类型" />
+            <SelectValue placeholder="全部" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="REQUIRED">必修</SelectItem>
@@ -383,11 +387,14 @@ watch(
           </SelectContent>
         </Select>
       </div>
-      <div class="flex items-center gap-2 pb-1">
-        <Switch v-model:checked="queryParams.onlyAvailable" />
-        <span class="text-sm text-muted-foreground select-none">仅看有余量</span>
+      <div class="grid gap-2">
+        <label class="text-sm font-medium">余量</label>
+        <div class="flex items-center gap-2 pb-0.5">
+          <Switch v-model:checked="queryParams.onlyAvailable" />
+          <span class="text-sm text-muted-foreground select-none">仅看有余量</span>
+        </div>
       </div>
-      <div class="flex gap-2">
+      <div class="flex gap-2 pb-0.5">
         <Button @click="handleSearch">
           <Search class="mr-2 h-4 w-4" />
           搜索
@@ -400,7 +407,7 @@ watch(
     </div>
 
     <!-- 表格 -->
-    <div class="border rounded-lg">
+    <div class="border rounded-md bg-card">
       <Table>
         <TableHeader>
           <TableRow>
@@ -418,12 +425,14 @@ watch(
         </TableHeader>
         <TableBody>
           <TableRow v-if="isLoading">
-            <TableCell colspan="10" class="text-center py-8 text-muted-foreground">
-              加载中...
+            <TableCell colspan="10" class="h-24 text-center">
+              <div class="flex items-center justify-center gap-2">
+                <Loader2 class="h-4 w-4 animate-spin" /> 加载中...
+              </div>
             </TableCell>
           </TableRow>
           <TableRow v-else-if="tableData.length === 0">
-            <TableCell colspan="10" class="text-center py-8 text-muted-foreground">
+            <TableCell colspan="10" class="h-24 text-center text-muted-foreground">
               暂无可选课程
             </TableCell>
           </TableRow>
@@ -484,7 +493,6 @@ watch(
     <PaginationBar
       v-model:page-num="queryParams.pageNum"
       v-model:page-size="queryParams.pageSize"
-      class="justify-between"
       :total="total"
       :is-loading="isLoading"
       @change="fetchData"
@@ -497,7 +505,7 @@ watch(
           <AlertDialogTitle class="flex items-center gap-2"> 确认选课？ </AlertDialogTitle>
           <AlertDialogDescription>
             您正在选择课程：
-            <span class="font-bold text-black">
+            <span class="font-bold text-foreground">
               {{ itemToEnroll?.courseName }} - {{ itemToEnroll?.name }}
             </span>
             <br />

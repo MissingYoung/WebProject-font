@@ -76,11 +76,11 @@ const indentStyle = computed(() => ({
     <!-- 菜单项 -->
     <div
       :class="[
-        'flex items-center justify-between rounded-lg px-3 py-2 transition-all cursor-pointer',
-        'hover:text-primary hover:bg-muted/50',
+        'flex items-center justify-between rounded-lg px-3 py-2 transition-colors cursor-pointer',
+        'hover:text-sidebar-primary hover:bg-sidebar-accent',
         {
-          'bg-muted text-primary': isActive,
-          'text-muted-foreground': !isActive,
+          'bg-sidebar-accent text-sidebar-primary': isActive,
+          'text-sidebar-foreground/70': !isActive,
           'font-semibold': isDirectory && level === 0,
         },
       ]"

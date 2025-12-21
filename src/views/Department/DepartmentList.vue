@@ -310,7 +310,7 @@ onMounted(async () => {
     </div>
 
     <!-- 3. 表格区域 -->
-    <div class="border rounded-md bg-white">
+    <div class="border rounded-md bg-card">
       <Table>
         <TableHeader>
           <TableRow>

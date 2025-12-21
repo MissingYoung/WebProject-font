@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
-import { createDepartment, updateDepartment } from '@/lib/api'
+import { computed, reactive, ref } from 'vue'
+import { createDepartment, getDepartmentList, updateDepartment } from '@/lib/api'
 import type { CreateDepartmentPayload, DepartmentVO } from '@/types'
-import { Loader2 } from 'lucide-vue-next'
+import { CornerDownRight, Loader2 } from 'lucide-vue-next'
 import { useNotification } from '@/composables/useNotification'
 
 // Shadcn UI 组件
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import {
   Dialog,
   DialogContent,
@@ -19,6 +20,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
 
 const { success } = useNotification()
 
@@ -34,7 +36,7 @@ const currentId = ref<number | null>(null)
 
 // 初始数据
 const initialState: CreateDepartmentPayload = {
-  parentId: undefined, // 默认为顶级部门
+  parentId: 0, // 0 表示顶级部门
   code: '',
   name: '',
   shortName: '',
@@ -43,8 +45,123 @@ const initialState: CreateDepartmentPayload = {
 
 const formData = reactive<CreateDepartmentPayload>({ ...initialState })
 
+const departments = ref<DepartmentVO[]>([])
+const isLoadingDepartments = ref(false)
+
+const loadDepartments = async () => {
+  if (isLoadingDepartments.value) return
+  isLoadingDepartments.value = true
+  try {
+    const pageSize = 100
+    const all: DepartmentVO[] = []
+
+    const first = await getDepartmentList({ pageNum: 1, pageSize })
+    if (!first?.data) return
+
+    all.push(...first.data.records)
+
+    const pages = first.data.pages ?? 1
+    for (let pageNum = 2; pageNum <= pages; pageNum++) {
+      const res = await getDepartmentList({ pageNum, pageSize })
+      if (!res?.data) break
+      all.push(...res.data.records)
+      if (res.data.records.length < pageSize) break
+    }
+
+    departments.value = all
+  } catch (err) {
+    console.error('加载部门列表失败', err)
+  } finally {
+    isLoadingDepartments.value = false
+  }
+}
+
+type DepartmentOption = {
+  id: number
+  depth: number
+  name: string
+  code: string
+  status: DepartmentVO['status']
+}
+
+const departmentOptions = computed<DepartmentOption[]>(() => {
+  const list = departments.value
+  const byParentId = new Map<number, DepartmentVO[]>()
+  for (const dept of list) {
+    const parentId = dept.parentId ?? 0
+    const children = byParentId.get(parentId)
+    if (children) children.push(dept)
+    else byParentId.set(parentId, [dept])
+  }
+
+  const collator = new Intl.Collator('zh-Hans-CN', { numeric: true, sensitivity: 'base' })
+  for (const children of byParentId.values()) {
+    children.sort((a, b) => collator.compare(a.name, b.name))
+  }
+
+  const excluded = new Set<number>()
+  if (currentId.value != null) {
+    const stack = [currentId.value]
+    excluded.add(currentId.value)
+    while (stack.length > 0) {
+      const id = stack.pop()!
+      const children = byParentId.get(id) ?? []
+      for (const child of children) {
+        if (excluded.has(child.id)) continue
+        excluded.add(child.id)
+        stack.push(child.id)
+      }
+    }
+  }
+
+  const options: DepartmentOption[] = []
+  const visited = new Set<number>()
+
+  const walk = (parentId: number, depth: number) => {
+    const children = byParentId.get(parentId) ?? []
+    for (const child of children) {
+      if (excluded.has(child.id)) continue
+      visited.add(child.id)
+      options.push({
+        id: child.id,
+        depth,
+        name: child.name,
+        code: child.code,
+        status: child.status,
+      })
+      walk(child.id, depth + 1)
+    }
+  }
+
+  walk(0, 0)
+
+  for (const dept of list) {
+    if (visited.has(dept.id) || excluded.has(dept.id)) continue
+    options.push({
+      id: dept.id,
+      depth: 0,
+      name: dept.name,
+      code: dept.code,
+      status: dept.status,
+    })
+  }
+
+  return options
+})
+
+const selectedParentLabel = computed(() => {
+  const parentId = formData.parentId ?? 0
+  if (parentId === 0) return '无（顶级部门）'
+  const dept = departments.value.find((d) => d.id === parentId)
+  if (!dept) return `ID: ${parentId}`
+  const codeText = dept.code ? `（${dept.code}）` : ''
+  const disabledText = dept.status === 'DISABLED' ? '（禁用）' : ''
+  return `${dept.name}${codeText}${disabledText}`
+})
+
 // 打开弹窗方法
 const openDialog = (dept?: DepartmentVO) => {
+  void loadDepartments()
   open.value = true
   error.value = null
 
@@ -54,7 +171,7 @@ const openDialog = (dept?: DepartmentVO) => {
     currentId.value = dept.id
     // 回显数据
     Object.assign(formData, {
-      parentId: dept.parentId,
+      parentId: dept.parentId ?? 0,
       code: dept.code,
       name: dept.name,
       shortName: dept.shortName || '',
@@ -82,10 +199,9 @@ const handleSubmit = async () => {
   error.value = null
 
   try {
-    // 数据处理：确保 parentId如果是空字符串则转为 undefined 或 0
     const payload = {
       ...formData,
-      parentId: formData.parentId ? Number(formData.parentId) : 0, // API 示例中 0 可能代表顶级
+      parentId: formData.parentId ?? 0, // 0 代表顶级
     }
 
     if (isEditMode.value && currentId.value) {
@@ -143,14 +259,43 @@ const handleSubmit = async () => {
             <Input id="shortName" v-model="formData.shortName" placeholder="例如: 计科" />
           </div>
           <div class="grid gap-2">
-            <Label for="parentId">上级部门ID</Label>
-            <!-- 暂时用数字输入框，0或空表示顶级 -->
-            <Input
-              id="parentId"
-              v-model="formData.parentId"
-              type="number"
-              placeholder="0 或空为顶级"
-            />
+            <Label>上级部门</Label>
+            <Select
+              :model-value="String(formData.parentId ?? 0)"
+              @update:model-value="(v) => (formData.parentId = Number(v))"
+            >
+              <SelectTrigger :disabled="isLoadingDepartments">
+                <span class="truncate">{{ selectedParentLabel }}</span>
+              </SelectTrigger>
+              <SelectContent class="max-h-[320px]">
+                <SelectItem value="0">
+                  <span class="flex w-full items-center gap-2">
+                    <span class="text-muted-foreground">无（顶级部门）</span>
+                  </span>
+                </SelectItem>
+                <SelectItem v-for="opt in departmentOptions" :key="opt.id" :value="String(opt.id)">
+                  <span class="flex w-full items-center gap-2">
+                    <span
+                      class="shrink-0"
+                      aria-hidden="true"
+                      :style="{ width: `${opt.depth * 12}px` }"
+                    ></span>
+                    <CornerDownRight
+                      v-if="opt.depth > 0"
+                      class="size-4 shrink-0 text-muted-foreground"
+                      aria-hidden="true"
+                    />
+                    <span class="truncate">{{ opt.name }}</span>
+                    <span v-if="opt.code" class="shrink-0 text-xs text-muted-foreground">
+                      （{{ opt.code }}）
+                    </span>
+                    <Badge v-if="opt.status === 'DISABLED'" variant="secondary" class="ml-auto"
+                      >禁用</Badge
+                    >
+                  </span>
+                </SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 

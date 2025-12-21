@@ -15,7 +15,7 @@ export const useUserStore = defineStore(
     const isInitialized = ref(false)
     const isLoggedIn = computed(() => !!token.value && !!userInfo.value) //判断用户是否登录
     const userRealName = computed(
-      () => userInfo.value?.username || userInfo.value?.realName || '访客'
+      () => userInfo.value?.realName || userInfo.value?.username || '访客'
     )
     const isSoftLoggedOut = ref(false)
 

@@ -253,7 +253,7 @@ onMounted(() => {
     </div>
 
     <!-- 3. 表格区域 -->
-    <div class="border rounded-md bg-white">
+    <div class="border rounded-md bg-card">
       <Table>
         <TableHeader>
           <TableRow>
@@ -295,9 +295,7 @@ onMounted(() => {
             <TableCell class="text-sm">{{ item.endDate }}</TableCell>
             <TableCell>{{ item.weekCount || '-' }}</TableCell>
             <TableCell>
-              <Badge v-if="item.currentTerm" variant="default" class="bg-green-600">
-                当前学期
-              </Badge>
+              <Badge v-if="item.currentTerm" variant="default"> 当前学期 </Badge>
               <Badge v-else variant="secondary"> 非当前 </Badge>
             </TableCell>
 
@@ -309,7 +307,7 @@ onMounted(() => {
                   variant="ghost"
                   size="sm"
                   title="设为当前学期"
-                  class="text-green-600 hover:text-green-700 hover:bg-green-50"
+                  class="text-primary hover:text-primary/90 hover:bg-accent"
                   @click="handleSetCurrentClick(item)"
                 >
                   <CheckCircle class="h-4 w-4 mr-1" />设为当前
@@ -355,7 +353,7 @@ onMounted(() => {
             确认删除该学期吗？
           </AlertDialogTitle>
           <AlertDialogDescription>
-            您正在尝试删除学期：<span class="font-bold text-black">{{
+            您正在尝试删除学期：<span class="font-bold text-foreground">{{
               semesterToDelete?.name
             }}</span>
             ({{ semesterToDelete?.academicYear }})。
@@ -369,7 +367,7 @@ onMounted(() => {
           <AlertDialogCancel :disabled="isDeleting">取消</AlertDialogCancel>
           <AlertDialogAction
             :disabled="isDeleting"
-            class="bg-red-600 hover:bg-red-700 text-white"
+            class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             @click.prevent="handleConfirmDelete"
           >
             {{ isDeleting ? '删除中...' : '确认删除' }}
@@ -382,12 +380,13 @@ onMounted(() => {
     <AlertDialog :open="setCurrentDialogOpen" @update:open="(v) => (setCurrentDialogOpen = v)">
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle class="flex items-center gap-2 text-green-600">
+          <AlertDialogTitle class="flex items-center gap-2 text-primary">
             <CheckCircle class="h-5 w-5" />
             确认设为当前学期吗？
           </AlertDialogTitle>
           <AlertDialogDescription>
-            您正在将学期 <span class="font-bold text-black">{{ semesterToSetCurrent?.name }}</span>
+            您正在将学期
+            <span class="font-bold text-foreground">{{ semesterToSetCurrent?.name }}</span>
             设为当前学期。
             <br />
             <span class="text-muted-foreground text-xs mt-2 block"
@@ -399,7 +398,7 @@ onMounted(() => {
           <AlertDialogCancel :disabled="isSettingCurrent">取消</AlertDialogCancel>
           <AlertDialogAction
             :disabled="isSettingCurrent"
-            class="bg-green-600 hover:bg-green-700 text-white"
+            class="bg-primary text-primary-foreground hover:bg-primary/90"
             @click.prevent="handleConfirmSetCurrent"
           >
             {{ isSettingCurrent ? '设置中...' : '确认设置' }}

@@ -101,7 +101,9 @@ const handleUpdate = async () => {
         </Alert>
       </div>
 
-      <p class="text-sm text-gray-500 mb-4 text-center">当前角色：{{ userRole || '未知' }}</p>
+      <p class="text-sm text-muted-foreground mb-4 text-center">
+        当前角色：{{ userRole || '未知' }}
+      </p>
 
       <div class="flex flex-col items-center">
         <div class="w-full max-w-2xl grid gap-5">
@@ -140,7 +142,7 @@ const handleUpdate = async () => {
               <img
                 :src="formData.avatarUrl"
                 :alt="formData.username"
-                class="h-24 w-24 rounded-full object-cover border-2 border-gray-200"
+                class="h-24 w-24 rounded-full object-cover border-2 border-border"
               />
             </div>
           </div>

@@ -168,7 +168,7 @@ onMounted(() => {
     </div>
 
     <!-- 3. 表格区域 -->
-    <div class="border rounded-md bg-white">
+    <div class="border rounded-md bg-card">
       <Table>
         <TableHeader>
           <TableRow>
@@ -204,7 +204,7 @@ onMounted(() => {
             <TableCell class="font-medium">{{ item.id }}</TableCell>
             <TableCell>{{ item.name }}</TableCell>
             <TableCell>
-              <code class="bg-gray-100 px-2 py-1 rounded text-sm">{{ item.key }}</code>
+              <code class="bg-muted px-2 py-1 rounded text-sm">{{ item.key }}</code>
             </TableCell>
             <TableCell>
               <div class="flex items-center gap-1">

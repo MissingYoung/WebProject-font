@@ -253,7 +253,7 @@ onMounted(() => {
     </div>
 
     <!-- 3. 表格区域 -->
-    <div class="border rounded-md bg-white">
+    <div class="border rounded-md bg-card">
       <Table>
         <TableHeader>
           <TableRow>
@@ -308,7 +308,7 @@ onMounted(() => {
               <div class="flex justify-end gap-2 items-center">
                 <!-- 查看详情 -->
                 <Button variant="ghost" size="sm" title="查看详情" @click="handleViewDetail(item)">
-                  <Eye class="h-4 w-4 text-gray-600" />详情
+                  <Eye class="h-4 w-4 text-muted-foreground" />详情
                 </Button>
                 <!-- 编辑按钮 -->
                 <Button variant="ghost" size="sm" title="编辑学业信息" @click="handleEdit(item)">

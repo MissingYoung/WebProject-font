@@ -2,6 +2,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import {
   BookOpen,
+  Loader2,
   Plus,
   Search,
   RotateCcw,
@@ -252,7 +253,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="space-y-4">
+  <div class="space-y-6 p-6">
     <!-- 标题栏 -->
     <div class="flex items-center justify-between">
       <div>
@@ -269,11 +270,12 @@ onMounted(() => {
     </div>
 
     <!-- 搜索区域 -->
-    <div class="flex flex-wrap gap-4 items-end">
-      <div class="flex-1 min-w-[200px] max-w-[250px]">
+    <div class="flex flex-wrap gap-4 items-end border p-4 rounded-lg bg-card">
+      <div class="grid gap-2 w-[180px]">
+        <label class="text-sm font-medium">学期</label>
         <Select v-model="queryParams.semesterId">
           <SelectTrigger>
-            <SelectValue placeholder="选择学期" />
+            <SelectValue placeholder="全部" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem v-for="semester in semesters" :key="semester.id" :value="semester.id">
@@ -282,24 +284,27 @@ onMounted(() => {
           </SelectContent>
         </Select>
       </div>
-      <div class="flex-1 min-w-[200px] max-w-[250px]">
+      <div class="grid gap-2 w-[180px]">
+        <label class="text-sm font-medium">课程名称</label>
         <Input
           v-model="queryParams.courseName"
-          placeholder="课程名称"
+          placeholder="输入名称"
           @keyup.enter="handleSearch"
         />
       </div>
-      <div class="flex-1 min-w-[150px] max-w-[180px]">
+      <div class="grid gap-2 w-[150px]">
+        <label class="text-sm font-medium">课程编码</label>
         <Input
           v-model="queryParams.courseCode"
-          placeholder="课程编码"
+          placeholder="输入编码"
           @keyup.enter="handleSearch"
         />
       </div>
-      <div class="flex-1 min-w-[150px] max-w-[180px]">
+      <div class="grid gap-2 w-[150px]">
+        <label class="text-sm font-medium">课程类型</label>
         <Select v-model="queryParams.courseType">
           <SelectTrigger>
-            <SelectValue placeholder="课程类型" />
+            <SelectValue placeholder="全部" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="REQUIRED">必修</SelectItem>
@@ -308,10 +313,11 @@ onMounted(() => {
           </SelectContent>
         </Select>
       </div>
-      <div class="flex-1 min-w-[150px] max-w-[180px]">
+      <div class="grid gap-2 w-[150px]">
+        <label class="text-sm font-medium">状态</label>
         <Select v-model="queryParams.status">
           <SelectTrigger>
-            <SelectValue placeholder="状态" />
+            <SelectValue placeholder="全部" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="DRAFT">草稿</SelectItem>
@@ -322,7 +328,7 @@ onMounted(() => {
           </SelectContent>
         </Select>
       </div>
-      <div class="flex gap-2">
+      <div class="flex gap-2 pb-0.5">
         <Button @click="handleSearch">
           <Search class="mr-2 h-4 w-4" />
           搜索
@@ -335,7 +341,7 @@ onMounted(() => {
     </div>
 
     <!-- 表格 -->
-    <div class="border rounded-lg">
+    <div class="border rounded-md bg-card">
       <Table>
         <TableHeader>
           <TableRow>
@@ -352,14 +358,16 @@ onMounted(() => {
         </TableHeader>
         <TableBody>
           <TableRow v-if="isLoading">
-            <TableCell colspan="9" class="text-center py-8 text-muted-foreground">
-              加载中...
+            <TableCell colspan="9" class="h-24 text-center">
+              <div class="flex items-center justify-center gap-2">
+                <Loader2 class="h-4 w-4 animate-spin" /> 加载中...
+              </div>
             </TableCell>
           </TableRow>
           <TableRow v-else-if="tableData.length === 0">
-            <TableCell colspan="9" class="text-center py-8 text-muted-foreground">
-              暂无数据
-            </TableCell>
+            <TableCell colspan="9" class="h-24 text-center text-muted-foreground"
+              >暂无数据</TableCell
+            >
           </TableRow>
           <TableRow v-for="row in tableData" :key="row.id">
             <TableCell class="font-medium">{{ row.courseCode }}</TableCell>
@@ -375,58 +383,58 @@ onMounted(() => {
             </TableCell>
             <TableCell>{{ formatDate(row.createTime) }}</TableCell>
             <TableCell class="text-right">
-              <div class="flex justify-end gap-1">
-                <Button variant="ghost" size="icon" title="编辑" @click="handleEdit(row)">
-                  <Pencil class="h-4 w-4" />
+              <div class="flex flex-wrap justify-end gap-2">
+                <Button variant="ghost" size="sm" title="编辑" @click="handleEdit(row)">
+                  <Pencil class="h-4 w-4" />编辑
                 </Button>
                 <!-- 状态流转按钮 -->
                 <Button
                   v-if="row.status === 'DRAFT'"
                   variant="ghost"
-                  size="icon"
+                  size="sm"
                   title="进入排课"
                   @click="handleSetScheduling(row)"
                 >
-                  <Play class="h-4 w-4 text-blue-600" />
+                  <Play class="h-4 w-4 text-blue-600" />进入排课
                 </Button>
                 <Button
                   v-if="row.status === 'SCHEDULING'"
                   variant="ghost"
-                  size="icon"
+                  size="sm"
                   title="开放选课"
                   @click="handleOpenEnrollment(row)"
                 >
-                  <Play class="h-4 w-4 text-green-600" />
+                  <Play class="h-4 w-4 text-green-600" />开放选课
                 </Button>
                 <Button
                   v-if="row.status === 'ENROLLMENT_OPEN'"
                   variant="ghost"
-                  size="icon"
+                  size="sm"
                   title="关闭选课"
                   @click="handleCloseEnrollment(row)"
                 >
-                  <Lock class="h-4 w-4 text-orange-600" />
+                  <Lock class="h-4 w-4 text-orange-600" />关闭选课
                 </Button>
                 <Button
                   v-if="['SCHEDULING', 'ENROLLMENT_CLOSED'].includes(row.status)"
                   variant="ghost"
-                  size="icon"
+                  size="sm"
                   title="归档"
                   @click="handleArchive(row)"
                 >
-                  <Archive class="h-4 w-4 text-gray-600" />
+                  <Archive class="h-4 w-4 text-muted-foreground" />归档
                 </Button>
                 <Button
                   v-if="row.status !== 'DRAFT'"
                   variant="ghost"
-                  size="icon"
+                  size="sm"
                   title="退回草稿"
                   @click="handleSetDraft(row)"
                 >
-                  <StopCircle class="h-4 w-4 text-yellow-600" />
+                  <StopCircle class="h-4 w-4 text-yellow-600" />退回草稿
                 </Button>
-                <Button variant="ghost" size="icon" title="删除" @click="handleDeleteClick(row)">
-                  <Trash2 class="h-4 w-4 text-red-600" />
+                <Button variant="ghost" size="sm" title="删除" @click="handleDeleteClick(row)">
+                  <Trash2 class="h-4 w-4 text-red-600" />删除
                 </Button>
               </div>
             </TableCell>
@@ -439,7 +447,6 @@ onMounted(() => {
     <PaginationBar
       v-model:page-num="queryParams.pageNum"
       v-model:page-size="queryParams.pageSize"
-      class="justify-between"
       :total="total"
       :is-loading="isLoading"
       @change="fetchData"
@@ -457,7 +464,7 @@ onMounted(() => {
           </AlertDialogTitle>
           <AlertDialogDescription>
             您正在尝试删除开课：
-            <span class="font-bold text-black">{{ itemToDelete?.courseName }}</span>
+            <span class="font-bold text-foreground">{{ itemToDelete?.courseName }}</span>
             <br />
             <span class="text-red-500 text-xs mt-2 block">
               注意：删除后相关的教学班和选课记录将受到影响
@@ -468,7 +475,7 @@ onMounted(() => {
           <AlertDialogCancel :disabled="isDeleting">取消</AlertDialogCancel>
           <AlertDialogAction
             :disabled="isDeleting"
-            class="bg-red-600 hover:bg-red-700 text-white"
+            class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             @click.prevent="handleConfirmDelete"
           >
             {{ isDeleting ? '删除中...' : '确认删除' }}

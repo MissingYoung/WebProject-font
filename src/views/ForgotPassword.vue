@@ -143,7 +143,7 @@ const goBack = () => {
 </script>
 
 <template>
-  <div class="flex items-center justify-center min-h-screen bg-gray-50 px-4">
+  <div class="flex items-center justify-center min-h-screen bg-background px-4">
     <Card class="w-full max-w-sm">
       <CardHeader style="center">
         <CardTitle class="text-2xl text-center">找回密码</CardTitle>
@@ -225,11 +225,7 @@ const goBack = () => {
       </CardContent>
 
       <CardFooter class="flex flex-col gap-2">
-        <Button
-          class="w-full bg-black text-white hover:bg-blue-600 focus-visible:ring-blue-500"
-          :disabled="isLoading"
-          @click="handleSubmit"
-        >
+        <Button class="w-full" :disabled="isLoading" @click="handleSubmit">
           <Loader2 v-if="isLoading" class="mr-2 h-4 w-4 animate-spin" />
           {{ isLoading ? '提交中...' : '重置密码' }}
         </Button>

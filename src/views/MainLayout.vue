@@ -12,7 +12,7 @@ import Slidebar from '@/components/HomePage/Slidebar.vue'
       <!-- 引入顶部导航栏 -->
       <Header />
       <!-- 主内容区域 -->
-      <main class="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-gray-50/50">
+      <main class="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-background">
         <!-- 路由出口，用于显示具体的业务页面 -->
         <router-view />
       </main>

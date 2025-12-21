@@ -9,6 +9,7 @@ import type {
   Gender,
 } from '@/types'
 import { Loader2 } from 'lucide-vue-next'
+import { useNotification } from '@/composables/useNotification'
 
 // Shadcn UI 组件
 import { Button } from '@/components/ui/button'
@@ -30,6 +31,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+
+const { success, error: notifyError } = useNotification()
 
 const emit = defineEmits(['success'])
 
@@ -121,7 +124,7 @@ const handleSubmit = async () => {
   error.value = null
 
   try {
-    if (isEditMode.value && currentMemberId.value) {
+    if (isEditMode.value && currentMemberId.value !== null) {
       // 编辑模式
       const payload: UpdateFamilyMemberRequest = {
         name: formData.name,
@@ -130,7 +133,8 @@ const handleSubmit = async () => {
         phone: formData.phone,
       }
       await updateFamilyMember(currentMemberId.value, payload)
-    } else if (currentUserId.value) {
+      success('家庭成员更新成功')
+    } else if (currentUserId.value !== null) {
       // 新增模式
       const payload: CreateFamilyMemberRequest = {
         userId: currentUserId.value,
@@ -140,6 +144,10 @@ const handleSubmit = async () => {
         phone: formData.phone,
       }
       await createFamilyMember(payload)
+      success('家庭成员创建成功')
+    } else {
+      error.value = '缺少用户 ID，无法创建家庭成员'
+      return
     }
 
     open.value = false
@@ -147,6 +155,7 @@ const handleSubmit = async () => {
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : isEditMode.value ? '更新失败' : '创建失败'
     error.value = message
+    notifyError(message)
   } finally {
     isLoading.value = false
   }
